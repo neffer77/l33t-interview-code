@@ -1,0 +1,24 @@
+name: Validate Codeopolis
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  javascript-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check phase4.js
+          node --check adaptive-boss.js
+          node --check worker-bridge.js
+          node --check python-worker.js
+          node --check phase5.js
+          node --check phase5-career.js
