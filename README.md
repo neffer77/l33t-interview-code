@@ -1,144 +1,150 @@
 # Codeopolis
 
-A mobile-first civilization/city-building game for learning Python coding-interview patterns. Solving real interview missions powers a growing city, unlocks specialized districts, and advances the civilization through increasingly difficult interview eras.
+A mobile-first civilization/city-building game for learning Python coding-interview patterns. Real interview missions power the city, adaptive mastery decides what to review, and scored mock interviews measure readiness under pressure.
 
-## Phase 4
+## Phase 5
 
-Phase 4 turns Codeopolis into an adaptive interview-training system instead of a fixed sequence of problems.
+Phase 5 focuses on interview realism and long-term progression while retaining the Phase 3 civilization systems and Phase 4 adaptive-learning engine.
 
-### Adaptive learning
+### Problem bank and real data structures
 
-- 32 fully testable Python interview problems, expanded from the original 8.
-- Problems span hashing, arrays, two pointers, sliding windows, monotonic stacks, binary search, intervals, greedy, graph traversal, topological sort, Union-Find, backtracking, and dynamic programming.
-- Adaptive mission scoring considers:
-  - current mastery strength
-  - time-based mastery decay
-  - scheduled reviews
-  - recent failed submissions
-  - whether a problem is new
-  - under-trained city districts
-- Spaced-review intervals grow after successful reviews and reset after failures.
-- Effective mastery decays when a learned pattern has not been revisited.
-- The Learn tab shows the highest-priority practice queue.
-- Recall drills test pattern recognition before coding and award small research bonuses.
-- Interview timer blocks support 20, 30, and 45 minute practice sessions.
-- Topic playlists include Foundations, Arrays & Windows, Graphs, and Dynamic Programming.
-- Company-style practice mixes are included for variety. These are curated practice categories, **not** claims about current or leaked company interview question lists.
-- Post-solve walkthroughs explain the recognition clue, intended complexity, core idea, and an optional reference solution.
-- Reference solutions remain hidden until after a problem has been solved.
-- Era boss interviews now dynamically target the player’s weakest current patterns rather than using only a fixed question set.
+- The bank now contains **52 fully judged Python problems**.
+- Phase 5 adds linked lists, binary trees, BSTs, heaps, tries, and more backtracking.
+- The isolated Python worker now provides realistic `ListNode` and `TreeNode` classes.
+- Challenge adapters can convert compact test fixtures into:
+  - one linked list
+  - two linked lists
+  - one tree
+  - two trees
+  - a tree plus real `p` / `q` node references
+- Returned linked lists and trees are normalized back into deterministic test representations.
+- Node-returning problems can be judged by returned node value.
+- Existing arrays, hashing, intervals, graphs, DP, sliding-window, binary-search, and other Phase 4 problems remain available.
 
-### Real Python judging
+### Mock interviews
 
-- Real Python execution remains powered by Pyodide 314.0.3.
-- Visible tests support development; hidden tests determine mission completion.
-- Python exceptions, expected-vs-actual output, runtime, and complexity guidance are shown in the UI.
-- Phase 4 moves actual submissions into `python-worker.js`, a dedicated Web Worker.
-- Every judge request has a 5-second hard timeout.
-- If submitted Python hangs or contains an infinite loop, the worker is terminated and restarted instead of freezing the Codeopolis UI.
-- The original main-thread Pyodide initialization still exists for Phase 3 compatibility, but Phase 4 judging is routed through the worker bridge.
+The new **Mock** tab creates multi-problem adaptive interviews from the real problem bank.
 
-### Civilization systems retained from Phase 3
+Available presets:
 
-- Pseudo-isometric canvas city.
-- Specialized algorithm districts.
-- Population, happiness, energy, money production, and research production.
-- Buildings with technology and era prerequisites.
-- Offline production capped to six hours.
-- Technology tree.
-- Random city events.
-- Daily coding quests.
-- Era progression and boss interviews.
-- District mastery XP tied directly to coding practice.
-- Existing Phase 1–3 saves migrate forward through additive state defaults.
+- 30 minutes / 2 problems
+- 45 minutes / 3 problems
+- 60 minutes / 4 problems
 
-## Core learning loop
+Mock interviews:
 
-1. Recall the underlying pattern.
-2. Let the adaptive coach select a weak/new/due problem, or choose a playlist.
-3. Optionally start an interview timer.
-4. Write Python and run visible tests.
-5. Submit against hidden edge cases in the timeout-isolated worker.
-6. Earn city resources and district mastery.
-7. Read the post-solve walkthrough only after proving the solution.
-8. Let Codeopolis schedule the pattern for later review.
-9. Revisit the problem as mastery decays.
-10. Face boss interviews built around current weak areas.
+- deliberately mix problem districts where possible
+- use the normal visible + hidden Python judge
+- count only actual hidden-test passes as solved
+- track attempts and runtimes per problem
+- track hints used during the interview
+- enforce a session clock
+- produce a 0–100 scorecard using correctness, pace, and hint independence
+- save the last 30 interview scorecards locally
+- award money and research based on the final score
 
-## Problem bank
+### Career ladder
 
-The current Phase 4 bank contains 32 judged problems. The architecture now supports continued expansion without making `app.js` larger: Phase 4 problems and learning logic live in `phase4.js`.
+Mock performance and breadth of solved problems now drive a persistent career track:
 
-The next content milestone is expanding the curated bank toward 75–150 problems while keeping test quality, explanations, and pattern coverage high rather than padding the bank with low-value variants.
+1. Candidate
+2. Software Engineer
+3. Senior Engineer
+4. Staff Engineer
+5. Principal Engineer
+
+Promotions require both a minimum solved-problem count and a minimum mock-interview score. Promotions award city money, research, and happiness, giving long-term civilization progression a concrete interview-readiness objective.
+
+### Adaptive learning retained
+
+Phase 4 systems remain active:
+
+- adaptive next-problem recommendations
+- mastery decay
+- spaced reviews
+- recall drills
+- topic playlists
+- generic company-style practice mixes
+- post-solve walkthroughs and reference solutions
+- mastery-driven boss interviews
+- district mastery XP
+
+Company-style playlists are generic training mixes, not claims about leaked or current company interview banks.
+
+## Python judge architecture
+
+Python runs in `python-worker.js` using Pyodide 314.0.3.
+
+`worker-bridge.js` sends the player solution, tests, and optional data-structure adapters into the worker. Every submission has a 5-second hard timeout. A runaway solution terminates and restarts the worker instead of freezing the page.
+
+For data-structure problems the worker injects `ListNode` and `TreeNode` into the solution namespace, matching normal interview-style function signatures.
+
+## Core Phase 5 loop
+
+1. Use the adaptive coach to train weak or decaying patterns.
+2. Solve real Python problems against visible and hidden tests.
+3. Practice linked lists, trees, heaps, tries, graphs, arrays, and DP.
+4. Enter a timed multi-problem mock interview.
+5. Receive a scored interview report.
+6. Use weak-pattern data to drive the next training block.
+7. Earn career promotions as breadth and mock performance improve.
+8. Spend rewards on city research and infrastructure.
+9. Repeat until durable mastery, not just one-time completion, improves.
 
 ## Run locally
 
-Serve the directory so Web Workers, Pyodide, and browser assets load consistently:
+Serve the repository over HTTP so Web Workers and Pyodide load consistently:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Then open:
+Then open `http://localhost:8000`.
 
-`http://localhost:8000`
-
-Do not rely on opening `index.html` directly from `file://`; worker and browser security behavior is more consistent over HTTP.
-
-The first visit downloads Pyodide from jsDelivr. Later launches can use normal browser caching.
+Avoid relying on `file://` loading because browser worker/security behavior is less consistent.
 
 ## iOS / Scriptable
 
-Host these files together:
-
-- `index.html`
-- `styles.css`
-- `app.js`
-- `phase4.js`
-- `adaptive-boss.js`
-- `worker-bridge.js`
-- `python-worker.js`
-
-Copy `scriptable.js` into a Scriptable script. The included launcher expects GitHub Pages at:
+Host the site files together and use `scriptable.js` as the iOS WebView launcher. The default launcher expects:
 
 `https://neffer77.github.io/l33t-interview-code/`
 
-The same Scriptable launcher can be run from an iOS Shortcut or Home Screen icon.
+The same Scriptable script can be launched through an iOS Shortcut or Home Screen icon.
 
-## Architecture
+Phase 5 adds these web assets to the existing set:
 
-`app.js` contains the Phase 3 civilization and core judge UI.
+- `phase5.js`
+- `phase5-career.js`
+- `phase5.css`
 
-`phase4.js` extends the game with the larger problem bank, adaptive scheduling, mastery decay, playlists, timer mode, recall drills, and walkthroughs.
+## Module layout
 
-`adaptive-boss.js` replaces fixed-only boss questions with questions selected from current weak patterns.
+- `app.js` — civilization systems and core challenge UI
+- `phase4.js` — adaptive learning and Phase 4 challenge bank
+- `adaptive-boss.js` — weakness-driven era interviews
+- `worker-bridge.js` — timeout-isolated judge routing
+- `python-worker.js` — Pyodide runtime, tests, and data-structure adapters
+- `phase5.js` — Phase 5 challenges, mock interviews, and mock analytics
+- `phase5-career.js` — career progression and promotion UI
 
-`worker-bridge.js` routes judge requests away from the page thread and enforces the execution timeout.
+## Current limitations / next phase
 
-`python-worker.js` owns the isolated Pyodide runtime and test execution.
+- 52 problems is substantially broader, but still below the long-term 75–150 curated target.
+- Mock interviews currently focus on coding rather than behavioral or system-design rounds.
+- Session analytics track correctness, runtime, hints, and score, but do not yet track time-to-first-run or detailed per-test debugging sequences.
+- The challenge catalog should eventually move into dedicated data modules instead of phase-specific JavaScript files.
+- Freeform city placement, roads, richer district visuals, achievements, and prestige progression remain future civilization upgrades.
+- The legacy page still initializes main-thread Pyodide before the worker starts; removing that redundant load would improve startup memory and performance.
 
-This modular approach keeps Phase 4 from turning the original application file into a single increasingly fragile script.
+## Suggested Phase 6
 
-## Current limitations
-
-- The bank is 32 problems, not yet the long-term 75–150 target.
-- Complexity coaching is heuristic; arbitrary Python source is not formally proven to satisfy a Big-O bound.
-- The worker timeout is currently fixed at 5 seconds. Very slow devices or future computationally heavy problems may require per-problem timeout policies.
-- Pyodide is still initially loaded by the legacy Phase 3 page path as well as inside the judge worker. A future cleanup can remove the redundant main-thread runtime initialization and reduce memory/startup overhead.
-- Company-style playlists are intentionally generic practice mixes rather than scraped or purportedly current interview banks.
-
-## Suggested next phase
-
-### Phase 5 — scale, realism, and long-term progression
-
-- Expand the curated bank toward 75–150 high-quality problems.
-- Move challenge data into dedicated data modules rather than keeping it alongside learning logic.
-- Add tree, linked-list, heap, trie, and advanced graph data structures to the Python test harness.
-- Add full mock-interview sessions containing multiple problems plus behavioral/system-design prompts.
-- Add session summaries: time-to-first-run, failed edge cases, hints used, complexity quality, and pattern recognition accuracy.
-- Add freeform city placement, roads, district landmarks, and stronger visual growth.
-- Add achievements and prestige/new-game progression tied to durable mastery rather than raw solve count.
+- Expand to 75–100 carefully tested problems.
+- Add behavioral interview prompts and system-design mini-rounds to mock sessions.
+- Record time-to-first-run, compile/runtime errors, failed edge-case categories, and revision count.
+- Generate a detailed post-interview scorecard by pattern and interview dimension.
+- Add achievements, prestige, freeform city placement, roads, and district landmarks.
+- Remove the redundant main-thread Pyodide initialization.
 
 ## Design principle
 
-The civilization layer should reward learning rather than distract from it: the player should always know what pattern they are practicing, why the solution works, what tests demonstrated correctness, how durable that mastery currently is, and what city progress was earned by demonstrating it.
+The civilization should make sustained practice more rewarding without hiding the learning objective. Every progression system should point back to real interview competence: pattern recognition, correct code, edge-case handling, complexity reasoning, durable recall, and performance under realistic time pressure.
