@@ -1,225 +1,239 @@
 # Codeopolis
 
-A mobile-first civilization/city-building game for learning Python coding-interview patterns. Real interview missions power a city you can physically shape, adaptive mastery decides what to review, and scored mock interviews measure readiness under pressure.
+A mobile-first civilization/city-building game for learning Python coding-interview patterns. Real judged interview problems power a living city, adaptive mastery decides what to review, and the civilization increasingly reflects what the player can actually remember and apply.
 
-## Phase 6 — Living Codeopolis
+## Phase 7 — Mastery Civilization
 
-Phase 6 changes the priority from adding more interview questions to making the existing learning loop feel like a real game. The 52-problem Phase 5 bank, adaptive scheduler, career ladder, mock interviews, and timeout-isolated Python judge remain intact.
+Phase 7 builds directly on the interactive city and game-feel engine from Phase 6. The central design change is that **money is no longer sufficient to build the best civilization**. Advanced infrastructure, discoveries, megaprojects, and strategy now depend on durable knowledge.
 
-The new goal is simple: **the most exciting actions in the game should also be the actions that produce real learning.**
+The 52-problem Python bank, timeout-isolated Pyodide judge, adaptive scheduler, mock interviews, career ladder, living Canvas city, touch controls, roads, citizens, traffic, day/night cycle, Momentum, and solve celebrations remain intact.
 
-### Interactive city
+## Mastery economy
 
-The old fixed pseudo-isometric display is replaced by a persistent interactive Canvas 2D world.
+Phase 7 introduces a durable **Knowledge Index** derived from the player's retained mastery across the six major algorithm districts:
 
-- 12×8 isometric city grid with a saved world model.
-- Drag to pan on desktop or mobile.
-- Scroll/pinch to zoom.
-- Tap tiles to inspect, build, or edit roads.
-- Purchased buildings enter a placement inventory instead of appearing at a fixed location.
-- Existing buildings can be relocated without losing ownership.
-- Roads are real saved map objects and cost city credits to construct.
-- Existing Phase 1–5 saves migrate their current buildings into a starter city automatically.
-- Camera position, layout, roads, audio preference, and world state persist locally.
+- Arrays / windows / pointers
+- Hashing / retrieval
+- Data structures
+- Search
+- Graphs
+- Dynamic programming
 
-### Living simulation
+A district's score is based on solved breadth plus current effective mastery, including Phase 4 mastery decay. This means a problem solved once months ago is less economically meaningful than a pattern that can still be recalled and applied.
 
-The city now moves even when the player is not clicking menus.
+Knowledge now affects the game in two ways:
 
-- Animated citizens scale with city population.
-- Cars follow connected road tiles.
-- Agents choose new connected road segments as they move.
-- Day/night lighting runs on an accelerated world clock.
-- Buildings illuminate at night.
-- Construction sites grow over several seconds after placement.
-- Construction cranes and particle effects make new infrastructure visibly arrive.
-- Reward particles can focus on the district associated with the solved problem.
+1. A modest global knowledge multiplier improves passive money and research production.
+2. Advanced buildings have explicit knowledge gates.
 
-The simulation remains intentionally lightweight and dependency-free so the same app can run in a normal browser and the Scriptable iOS WebView.
+Examples:
 
-### Mastery changes the skyline
+- Hash Market requires Hash mastery.
+- Search Observatory requires Search mastery.
+- Graph Transit Hub requires Graph mastery plus the Network Science discovery.
+- DP Research Lab requires Dynamic Programming mastery plus the Dynamic Planning discovery.
+- Algorithm Tower requires meaningful breadth across several districts.
+- Interview Academy requires broad mastery plus career progression.
 
-District mastery is no longer just a number in a menu. Building height and visual intensity scale with district XP.
+Phase 7 also adds four mastery landmarks:
 
-For example, repeated graph mastery makes Graph Transit infrastructure visibly more developed, while DP mastery grows Dynamic Planning structures. The long-term intent is for a screenshot of a city to communicate what the player actually knows.
+- 💠 Knowledge Exchange
+- 🛰️ Autonomous Routing Nexus
+- 🧬 Optimization Institute
+- 🛡️ Resilience Command Center
 
-### Game feel and audiovisual feedback
+These cannot be reached by currency grinding alone.
 
-Phase 6 adds a procedural game-feel layer without requiring external audio assets.
+## Hidden Discovery Atlas
 
-- Web Audio API solve/build/discovery cues generated at runtime.
-- Optional vibration/haptic requests on supported devices.
-- Sound can be muted from the city toolbar.
-- Major solve celebrations are skippable.
-- Reduced-motion browser preferences disable the strongest animations.
-- The camera can fly to the relevant algorithm district after a meaningful solve.
+The technology tree now contains genuinely hidden fields. Locked discoveries display a clue rather than their final identity.
 
-### Learning-aligned RewardEngine
+Phase 7 currently includes ten discoveries, including:
 
-Phase 6 introduces a centralized reward presentation layer around the existing economy rather than replacing the proven Phase 1–5 scoring.
+- Fast Retrieval Systems
+- Algorithmic Industry
+- Network Science
+- Dynamic Planning
+- Structured Computation
+- Systems Science
+- Resilient Infrastructure
+- Optimization Science
+- Autonomous Networks
+- Computational Frontier
 
-The engine observes the real result of the Python judge and reacts to:
+Discoveries are triggered by combinations of retained algorithm mastery, career progress, and physical city development such as road connectivity.
 
-- new problem mastery
-- spaced/repeated mastery
-- problem difficulty
-- city district XP earned
-- actual money/research changes
-- successful recall drills
+When a new field is discovered, the player receives an audiovisual reveal and a small research reward. These reveals are deterministic consequences of demonstrated progress rather than login rewards or idle loot.
 
-It does **not** reward waiting, repeatedly opening the app, or tapping idle reward buttons.
+Existing saves receive credit for mastery already earned before Phase 7.
 
-#### Momentum instead of brittle streaks
+## Strategic compute doctrines
 
-Phase 6 adds a 0–100 Momentum meter. Meaningful learning raises momentum. Time away lets it decline gradually, but missing a day never resets months of progress to zero.
+Discovering **Systems Science** unlocks a civilization-wide compute doctrine.
 
-This is designed to create a strong “I am in a groove” signal without making absence feel catastrophic.
+### 🖥️ Centralized Supercomputing
 
-#### Research breakthroughs
+Prioritizes research throughput while sacrificing some economic flexibility.
 
-Newly mastered problems can occasionally trigger a deterministic surprise **Research Breakthrough**. Breakthroughs are intentionally gated behind a real first solve and can happen only once per problem.
+### 🌐 Distributed Systems
 
-A breakthrough gives a small research/happiness bonus and an extra audiovisual reveal. Variable reinforcement is therefore attached to demonstrated learning rather than passive engagement.
+Provides balanced production and substantially stronger crisis resilience.
 
-### Solve celebration
+### 📡 Edge Civilization
 
-A successful submission can now trigger a dedicated game payoff showing:
+Prioritizes commercial productivity and local autonomy with a smaller research bonus.
 
-- mission mastered / mastery reinforced
-- credits earned
-- research earned
-- district mastery gained
-- current momentum
-- optional research breakthrough
+The first doctrine choice is free. Switching later costs research, so choices matter, but the player is not permanently trapped by an early decision.
 
-The corresponding city district receives particle effects and the camera can move toward it. Hard/new solves receive stronger presentation than routine reviews, while the celebration remains dismissible.
+## Learning-driven city crises
 
-## Phase 6 architecture
+Phase 7 pulls part of the planned crisis system forward because it is a natural consequence of the mastery economy.
 
-Phase 1–5 grew through fast additive scripts. Phase 6 starts the migration toward a maintainable game architecture without risking the existing learning/judge stack.
+Possible incidents include:
+
+- Cache Stampede
+- Data Pipeline Congestion
+- Scheduler Overload
+- Search Index Outage
+- Transit Network Partition
+- Planning Deadlock
+
+Crises do **not** choose an arbitrary question. The system identifies a weak algorithm district and chooses a useful unlocked problem from that district.
+
+While a crisis is active, one portion of passive production is modestly degraded. The player can:
+
+1. Solve the engineering incident through the normal visible + hidden Python judge, earning a substantial resolution reward, or
+2. Use expensive emergency mitigation to restore the city without completing the learning challenge.
+
+There is no countdown that destroys the city and no punishment for taking time away. The purpose is contextual pressure and relevance, not anxiety.
+
+## Civic contracts
+
+Phase 7 adds three lightweight daily learning contracts:
+
+- reinforce the current weakest district
+- complete two successful recall drills
+- master one previously unsolved problem
+
+Contracts auto-complete when the underlying real learning event occurs and award small city resources.
+
+They are intentionally different from login quests: opening the app or waiting does not complete anything.
+
+## Megaprojects
+
+Four long-horizon projects provide multi-session objectives:
+
+### ☁️ Civic Knowledge Cloud
+
+Combines strong Hash + Search mastery, the Fast Retrieval discovery, and city development.
+
+### 🚄 Autonomous Transit Grid
+
+Requires Autonomous Networks, high Graph/Search mastery, and a developed road network.
+
+### 🧬 Optimization Campus
+
+Requires Optimization Science plus strong DP and Array mastery.
+
+### 🛡️ Resilient Civic Network
+
+Requires broad retained knowledge, Resilient Infrastructure, and an extensive road system.
+
+Megaprojects award unique landmark buildings plus money/research. The landmark enters the Phase 6 placement inventory so the player chooses where the achievement physically appears in the city.
+
+## Strategy UI
+
+Phase 7 adds an **✨ Strategy** surface containing:
+
+- Knowledge Index
+- district mastery cards
+- hidden Discovery Atlas
+- compute doctrine selection
+- civic contracts
+- megaproject progress
+
+Mission Control also displays active engineering incidents and lets the player jump directly to the associated challenge.
+
+## Architecture
+
+Phase 7 continues the modular architecture started in Phase 6.
 
 ```text
 src/
   core/
-    namespace.js       shared namespace, utilities, event bus
+    namespace.js
 
   game/
-    world.js           saved grid, roads, placement, migration
-    camera.js          isometric transforms, pan/zoom/touch input
-    simulation.js      citizens, traffic, day/night, particles
-    renderer.js        procedural isometric rendering
-    audio.js           generated sound + optional haptics
-    reward-engine.js   learning-aligned reward presentation
-    game-ui.js         planner controls, placement, celebrations
-    bootstrap.js       compatibility integration with Phase 1–5
+    world.js
+    camera.js
+    simulation.js
+    renderer.js
+    audio.js
+    reward-engine.js
+    game-ui.js
+    bootstrap.js
+    crisis-system.js          Phase 7 incidents
+    phase7-ui.js              strategy/discovery/crisis UI
+
+  progression/
+    mastery-economy.js        durable knowledge + infrastructure gates
+    discoveries.js            hidden technology graph
+    quests.js                 civic contracts + megaprojects
+    phase7-bootstrap.js       event integration
 ```
 
-This lets future civilization, story, quest, audio, and rendering systems grow inside `/src` rather than continuing the `phaseN.js` pattern indefinitely.
+The existing learning code remains the source of truth for whether a player actually solved something. Phase 7 listens to those verified events rather than creating a parallel scoring system.
 
-The existing learning layer is intentionally preserved:
+## Core Phase 7 loop
 
-- `app.js` — original civilization systems and challenge UI
-- `phase4.js` — adaptive learning, mastery decay, recall, walkthroughs
-- `adaptive-boss.js` — weakness-driven era interviews
-- `worker-bridge.js` — timeout-isolated judge routing
-- `python-worker.js` — Pyodide and realistic data-structure adapters
-- `phase5.js` — 52-problem bank additions and mock interviews
-- `phase5-career.js` — career progression
-
-### Integration strategy
-
-`bootstrap.js` loads last. It wraps the existing public gameplay hooks rather than duplicating them:
-
-- `submitCode()` still decides whether Python is correct; Phase 6 only presents the verified outcome.
-- `buyBuilding()` still charges the established economy; Phase 6 turns the purchased structure into placement inventory.
-- `render()` still renders all learning/career panels; Phase 6 decorates them and owns the city canvas.
-- `resetGame()` still resets the established save; Phase 6 reloads cleanly after a confirmed reset.
-
-This is intentionally lower risk than rewriting the judge, scheduler, career, and city economy at the same time.
-
-## Phase 5 systems retained
-
-The Phase 6 branch keeps all Phase 5 functionality:
-
-- **52 fully judged Python problems**.
-- Arrays, hashing, windows, pointers, intervals, graphs, Union-Find, DP, backtracking, linked lists, trees, BSTs, heaps, and tries.
-- Real `ListNode` and `TreeNode` adapters inside the Python worker.
-- 30 / 45 / 60 minute multi-problem mock interviews.
-- Hidden-test-based mock scoring.
-- Adaptive practice and mastery decay.
-- Spaced review and recall drills.
-- Post-solve walkthroughs.
-- Candidate → Software Engineer → Senior → Staff → Principal career progression.
-
-## Core Phase 6 loop
-
-1. A useful adaptive challenge is selected.
-2. Recognize the pattern and write real Python.
-3. Run visible tests and debug failures.
-4. Submit against hidden tests in the isolated worker.
-5. A verified solve creates an audiovisual payoff.
-6. The matching district visually responds.
-7. Spend earned resources on a building or road.
-8. Physically choose where that progress appears in the city.
-9. Watch the civilization become more alive and specialized.
-10. Follow the next adaptive challenge, mock interview, review, or city objective.
+1. The adaptive coach identifies useful practice.
+2. The player recognizes a pattern and writes real Python.
+3. Visible and hidden tests verify the implementation.
+4. Effective mastery and the matching district strengthen.
+5. A new knowledge combination may reveal a hidden discovery.
+6. Knowledge unlocks better infrastructure or a new strategic doctrine.
+7. Weak areas can surface naturally as city engineering incidents.
+8. Civic contracts create short goals; megaprojects create long goals.
+9. Completed landmarks are physically placed in the interactive city.
+10. The city increasingly becomes a map of retained computer-science knowledge.
 
 ## Run locally
 
-Serve the repository over HTTP so Web Workers and Pyodide work consistently:
+Serve over HTTP so Web Workers and Pyodide behave consistently:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Then open:
+Then open `http://localhost:8000`.
 
-`http://localhost:8000`
-
-Avoid relying on `file://` loading because worker/security behavior is less consistent.
-
-## iOS / Scriptable
-
-Host the complete repository site and use `scriptable.js` as the WebView launcher. The default launcher points to:
+The default Scriptable launcher points to:
 
 `https://neffer77.github.io/l33t-interview-code/`
 
-The Phase 6 renderer uses pointer events and supports touch drag/pinch interaction. Web Audio still follows browser gesture rules, so sound becomes available after the first user interaction.
-
 ## Validation
 
-`.github/workflows/validate.yml` now recursively runs `node --check` against every JavaScript file in the repository and verifies that every local asset referenced by `index.html` exists.
+`.github/workflows/validate.yml` recursively syntax-checks every JavaScript file and verifies that every local asset referenced from `index.html` exists. This automatically covers the new Phase 7 modules.
 
-This matters more after Phase 6 because game code is intentionally split into multiple modules.
+## Next game-quality milestone
 
-## Next game-quality milestones
+### Phase 8 — characters, narrative, and interview encounters
 
-Phase 6 establishes the engine foundation. The next high-value work should build *on this engine* rather than going back to a flat question-bank roadmap.
+The strongest next step is to give the systems emotional context:
 
-### Phase 7 — mastery economy and discoveries
+- persistent engineering characters with specialties and progression
+- characters who react to discoveries, crises, promotions, and megaprojects
+- multi-step story missions
+- fictional companies and recruiting messages
+- interview boss encounters presented as in-world opportunities
+- algorithm crises with richer multi-stage event chains
+- debugging incidents
+- behavioral and eventually system-design rounds
 
-- Centralize actual economic reward calculation, not only presentation.
-- Knowledge-gated buildings and megaprojects.
-- Hidden technology discoveries unlocked by combinations of mastered patterns.
-- More meaningful strategic research choices.
-
-### Phase 8 — crises, quests, and narrative
-
-- City incidents whose engineering problem maps naturally to an interview pattern.
-- Multi-session megaprojects.
-- Characters who give missions and react to progress.
-- Recruiting messages and interview boss encounters presented as in-world events.
-
-### Later
-
-- AI interviewer and communication scoring.
-- Debugging incidents.
-- System-design city simulation.
-- Branching careers and fictional companies.
-- Collections and learning-aligned achievements.
-- Prestige / founder endgame.
-- Expansion toward 100–150 high-quality problems after the surrounding game is compelling enough to make players want the next challenge.
+The AI interviewer should follow after that foundation so conversation and communication scoring have a world and cast to attach to.
 
 ## Design principle
 
-Codeopolis should not hide studying behind arbitrary points. The civilization exists to make real learning outcomes emotionally legible: a solved problem should change the world, durable mastery should change the skyline, and the most satisfying actions in the game should also be the actions that make the player better at interviews.
+**The most exciting action available to the player should also be a useful learning action.**
+
+Currency is satisfying, but knowledge is power. A skyline upgrade should represent retained mastery, a discovery should represent concepts becoming connected, and a crisis should point toward exactly the skill the player most benefits from practicing next.
