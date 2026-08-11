@@ -1,13 +1,28 @@
 // Phase 4 judge hardening: run submitted Python in a killable Web Worker.
 let judgeWorker=null;
 let judgeWorkerReady=false;
+let judgeWorkerStatus='loading';
 let judgeSeq=0;
 const judgePending=new Map();
 const JUDGE_TIMEOUT_MS=5000;
 
+const baseWorkerRenderChallenge=renderChallenge;
+renderPythonStatus=function(){
+  pyStatus=judgeWorkerStatus;
+  const el=$('#pythonStatus');
+  if(!el)return;
+  el.className='tag '+(judgeWorkerStatus==='ready'?'ready':judgeWorkerStatus==='error'?'error':'loading');
+  el.textContent=judgeWorkerStatus==='ready'?'Python worker ready':judgeWorkerStatus==='error'?'Python worker unavailable':'Loading Python worker…';
+};
+renderChallenge=function(){
+  pyStatus=judgeWorkerStatus;
+  baseWorkerRenderChallenge();
+};
+
 function startJudgeWorker(){
   if(judgeWorker)judgeWorker.terminate();
   judgeWorkerReady=false;
+  judgeWorkerStatus='loading';
   pyStatus='loading';
   renderPythonStatus();
   judgeWorker=new Worker('python-worker.js');
@@ -15,6 +30,7 @@ function startJudgeWorker(){
     const msg=event.data||{};
     if(msg.type==='ready'){
       judgeWorkerReady=true;
+      judgeWorkerStatus='ready';
       pyStatus='ready';
       renderPythonStatus();
       renderChallenge();
@@ -22,8 +38,10 @@ function startJudgeWorker(){
     }
     if(msg.type==='boot-error'){
       judgeWorkerReady=false;
+      judgeWorkerStatus='error';
       pyStatus='error';
       renderPythonStatus();
+      renderChallenge();
       console.error('Python worker boot error:',msg.error);
       return;
     }
@@ -37,8 +55,11 @@ function startJudgeWorker(){
   };
   judgeWorker.onerror=error=>{
     console.error('Python worker error:',error);
+    judgeWorkerReady=false;
+    judgeWorkerStatus='error';
     pyStatus='error';
     renderPythonStatus();
+    renderChallenge();
   };
 }
 
@@ -65,6 +86,7 @@ judge=function(c,code,cases){
   });
 };
 
-// The Phase 3 runtime may already have started loading on the main thread before this bridge loads.
-// All submissions from this point forward use the isolated worker instead.
+// Phase 3 may have started loading a main-thread Pyodide instance before this bridge loads.
+// All judging from this point forward is routed through the isolated worker, and UI readiness
+// follows worker readiness rather than the legacy main-thread runtime.
 startJudgeWorker();
