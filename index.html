@@ -52,7 +52,7 @@
       <div class="section-title"><h2>Mission Control</h2><span id="pythonStatus" class="tag loading">Loading Python…</span></div>
       <div id="dailyQuest" class="quest-card"></div>
       <div id="bossCard" class="boss-card"></div>
-      <p class="muted">Real Python tests drive the civilization. The adaptive coach now prioritizes weak and decaying patterns, while playlists and timed interview blocks let you deliberately train specific skills.</p>
+      <p class="muted">Real Python tests drive the civilization. The adaptive coach prioritizes weak and decaying patterns, while playlists and timed interview blocks let you deliberately train specific skills.</p>
       <div id="mission"></div>
       <hr>
       <b>Phase 4 loop</b>
@@ -61,10 +61,11 @@
       <button class="btn" onclick="resetGame()">Reset</button>
     </aside>
   </div>
-  <div class="footer">Python runs locally in WebAssembly with Pyodide. Civilization, coding history, mastery decay, and review schedules are stored on this device.</div>
+  <div class="footer">Python submissions run inside a timeout-isolated Web Worker. Civilization, coding history, mastery decay, and review schedules are stored on this device.</div>
 </main>
 <script src="https://cdn.jsdelivr.net/pyodide/v314.0.3/full/pyodide.js"></script>
 <script src="app.js"></script>
 <script src="phase4.js"></script>
+<script src="worker-bridge.js"></script>
 </body>
 </html>
