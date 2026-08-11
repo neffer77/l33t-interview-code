@@ -27,11 +27,12 @@
 
   <div class="layout">
     <section class="panel">
-      <div class="section-title"><h2>Your Civilization</h2><span id="era" class="tag">Settlement Era</span></div>
+      <div class="section-title"><h2>Your Civilization</h2><div><span id="phaseLabel" class="tag">Phase 4 · Adaptive Learning</span> <span id="era" class="tag">Settlement Era</span></div></div>
       <canvas id="cityCanvas" width="900" height="390" aria-label="Codeopolis city map"></canvas>
       <div id="citySummary" class="city-summary"></div>
       <div class="tabs">
         <button data-tab="challenge" class="active">⚔️ Challenge</button>
+        <button data-tab="learning">🧠 Learn</button>
         <button data-tab="cityTab">🏙️ City</button>
         <button data-tab="build">🏗️ Build</button>
         <button data-tab="researchTab">🔬 Research</button>
@@ -39,6 +40,7 @@
         <button data-tab="statsTab">📊 Progress</button>
       </div>
       <div id="challengeTab"></div>
+      <div id="learningTab" class="hidden"></div>
       <div id="cityTab" class="hidden"></div>
       <div id="buildTab" class="hidden"></div>
       <div id="researchTab" class="hidden"></div>
@@ -50,18 +52,19 @@
       <div class="section-title"><h2>Mission Control</h2><span id="pythonStatus" class="tag loading">Loading Python…</span></div>
       <div id="dailyQuest" class="quest-card"></div>
       <div id="bossCard" class="boss-card"></div>
-      <p class="muted">Real Python tests drive the civilization. Solve new missions, revisit weak patterns, and pass boss interviews to unlock new eras.</p>
+      <p class="muted">Real Python tests drive the civilization. The adaptive coach now prioritizes weak and decaying patterns, while playlists and timed interview blocks let you deliberately train specific skills.</p>
       <div id="mission"></div>
       <hr>
-      <b>Phase 3 loop</b>
-      <p class="muted">Practice → pass tests → specialize districts → manage city resources → complete reviews → defeat boss interviews → advance eras.</p>
+      <b>Phase 4 loop</b>
+      <p class="muted">Recall → recognize pattern → code → pass hidden tests → study walkthrough → schedule review → strengthen districts → repeat under interview timing.</p>
       <button class="btn" onclick="exportSave()">Export Save</button>
       <button class="btn" onclick="resetGame()">Reset</button>
     </aside>
   </div>
-  <div class="footer">Python runs locally in WebAssembly with Pyodide. Civilization and coding progress are stored on this device.</div>
+  <div class="footer">Python runs locally in WebAssembly with Pyodide. Civilization, coding history, mastery decay, and review schedules are stored on this device.</div>
 </main>
 <script src="https://cdn.jsdelivr.net/pyodide/v314.0.3/full/pyodide.js"></script>
 <script src="app.js"></script>
+<script src="phase4.js"></script>
 </body>
 </html>
