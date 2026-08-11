@@ -1,4 +1,4 @@
-// Phase 4 judge hardening: run submitted Python in a killable Web Worker.
+// Phase 4/5 judge hardening: run submitted Python in a killable Web Worker.
 let judgeWorker=null;
 let judgeWorkerReady=false;
 let judgeWorkerStatus='loading';
@@ -82,11 +82,8 @@ judge=function(c,code,cases){
       startJudgeWorker();
     },JUDGE_TIMEOUT_MS);
     judgePending.set(id,{resolve,timer});
-    judgeWorker.postMessage({type:'judge',id,fn:c.fn,normalize:c.normalize||null,code,cases});
+    judgeWorker.postMessage({type:'judge',id,fn:c.fn,normalize:c.normalize||null,inputAdapter:c.inputAdapter||null,outputAdapter:c.outputAdapter||null,code,cases});
   });
 };
 
-// Phase 3 may have started loading a main-thread Pyodide instance before this bridge loads.
-// All judging from this point forward is routed through the isolated worker, and UI readiness
-// follows worker readiness rather than the legacy main-thread runtime.
 startJudgeWorker();
