@@ -13,12 +13,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check JavaScript syntax
+      - name: Check all JavaScript syntax
         run: |
-          node --check app.js
-          node --check phase4.js
-          node --check adaptive-boss.js
-          node --check worker-bridge.js
-          node --check python-worker.js
-          node --check phase5.js
-          node --check phase5-career.js
+          find . -type f -name '*.js' -not -path './node_modules/*' -print0 | sort -z | xargs -0 -n1 node --check
+      - name: Verify local page assets exist
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('index.html').read_text()
+          refs = re.findall(r'(?:src|href)="([^"]+)"', html)
+          local = [r for r in refs if not r.startswith(('http://','https://','data:','#'))]
+          missing = [r for r in local if not Path(r).exists()]
+          if missing:
+              raise SystemExit('Missing local assets: ' + ', '.join(missing))
+          print('Validated local assets:', ', '.join(local))
+          PY

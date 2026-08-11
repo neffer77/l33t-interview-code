@@ -7,13 +7,14 @@
 <title>Codeopolis — Python Interview Civilization</title>
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="phase5.css">
+<link rel="stylesheet" href="phase6.css">
 </head>
 <body>
 <main class="app">
   <div class="top">
     <div class="brand">
       <h1>🏙️ Codeopolis</h1>
-      <small>Build a civilization powered by Python interview mastery.</small>
+      <small>Build a living civilization powered by Python interview mastery.</small>
     </div>
     <div class="stats">
       <div class="pill">💰 <b id="money">0</b></div>
@@ -28,8 +29,8 @@
 
   <div class="layout">
     <section class="panel">
-      <div class="section-title"><h2>Your Civilization</h2><div><span id="phaseLabel" class="tag">Phase 5 · Interview Realism</span> <span id="era" class="tag">Settlement Era</span></div></div>
-      <canvas id="cityCanvas" width="900" height="390" aria-label="Codeopolis city map"></canvas>
+      <div class="section-title"><h2>Your Civilization</h2><div><span id="phaseLabel" class="tag">Phase 6 · Living Codeopolis</span> <span id="era" class="tag">Settlement Era</span></div></div>
+      <canvas id="cityCanvas" width="900" height="390" aria-label="Interactive Codeopolis city map. Drag to pan, pinch or scroll to zoom, and tap tiles to build or inspect."></canvas>
       <div id="citySummary" class="city-summary"></div>
       <div class="tabs">
         <button data-tab="challenge" class="active">⚔️ Challenge</button>
@@ -55,16 +56,16 @@
       <div class="section-title"><h2>Mission Control</h2><span id="pythonStatus" class="tag loading">Loading Python…</span></div>
       <div id="dailyQuest" class="quest-card"></div>
       <div id="bossCard" class="boss-card"></div>
-      <p class="muted">Practice adaptively or enter a scored mock interview. TreeNode and ListNode problems now run with realistic interview-style signatures in the isolated Python judge.</p>
+      <p class="muted">Solve real Python problems to grow a city you can now physically shape. Mastery changes district skylines, rewards trigger visible construction and celebrations, and every meaningful progression beat is tied back to demonstrated learning.</p>
       <div id="mission"></div>
       <hr>
-      <b>Phase 5 loop</b>
-      <p class="muted">Learn → practice realistic data structures → run multi-problem mocks → analyze weak patterns → earn career promotions → strengthen districts → repeat under pressure.</p>
+      <b>Phase 6 loop</b>
+      <p class="muted">Recognize → code → debug → pass hidden tests → celebrate → place or upgrade the city → discover a new goal → return to the next useful challenge.</p>
       <button class="btn" onclick="exportSave()">Export Save</button>
       <button class="btn" onclick="resetGame()">Reset</button>
     </aside>
   </div>
-  <div class="footer">Python submissions run inside a timeout-isolated Web Worker. Mock scores, career rank, mastery, coding history, and civilization progress stay on this device.</div>
+  <div class="footer">Python runs in the timeout-isolated worker. The Phase 6 world, camera, city layout, momentum, mastery, interview history, and civilization progress remain local to this device.</div>
 </main>
 <script src="https://cdn.jsdelivr.net/pyodide/v314.0.3/full/pyodide.js"></script>
 <script src="app.js"></script>
@@ -73,5 +74,14 @@
 <script src="worker-bridge.js"></script>
 <script src="phase5.js"></script>
 <script src="phase5-career.js"></script>
+<script src="src/core/namespace.js"></script>
+<script src="src/game/world.js"></script>
+<script src="src/game/camera.js"></script>
+<script src="src/game/simulation.js"></script>
+<script src="src/game/renderer.js"></script>
+<script src="src/game/audio.js"></script>
+<script src="src/game/reward-engine.js"></script>
+<script src="src/game/game-ui.js"></script>
+<script src="src/game/bootstrap.js"></script>
 </body>
 </html>
