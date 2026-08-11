@@ -1,27 +1,58 @@
 # Codeopolis
 
-A mobile-first civilization/city-building game for learning Python coding-interview patterns. Solving interview missions earns money and research points that grow your city and unlock technology.
+A mobile-first civilization/city-building game for learning Python coding-interview patterns. Solving real interview missions powers a growing city, unlocks specialized districts, and advances the civilization through increasingly difficult interview eras.
 
-## Phase 2
+## Phase 3
 
-Codeopolis now has a real in-browser Python judge powered by Pyodide rather than the original structural keyword checker.
+Phase 3 turns the coding judge into the economic engine for a deeper civilization game.
 
-- 8 Python interview missions: hash maps, stacks, one-pass arrays, binary search, sliding window, two pointers, graph traversal, and dynamic programming.
+### Coding and mastery
+
+- 8 Python interview missions covering hash maps, stacks, arrays, binary search, sliding windows, two pointers, graph traversal, and dynamic programming.
 - Real Python execution in WebAssembly with Pyodide 314.0.3.
-- Separate visible tests for development and hidden edge-case tests for mission submission.
-- Python exception and failed-test feedback.
-- Runtime measurements per submission.
-- Intended Big-O targets plus lightweight complexity coaching.
-- Per-problem attempts, passes, best runtime, and last-solved timestamps.
-- Persistent solution history and recent pass-rate metrics.
-- A spaced-review queue that brings solved patterns back after increasing intervals.
-- Money + research reward economy, buildable city, research tree, levels, streaks, hints, and sequential mission unlocking.
-- Existing Phase 1 `localStorage` saves are migrated forward instead of discarded.
-- Responsive webpage and Scriptable iOS WebView launcher remain supported.
+- Visible tests for development and hidden edge-case tests for mission submission.
+- Exception, expected-vs-actual, runtime, and target-complexity feedback.
+- Attempts, passes, best runtime, history, and spaced review tracking.
+- Solves now award mastery XP to the matching city district.
+- Re-solving mastered problems still advances district mastery, so review has an in-game purpose.
+
+### Civilization systems
+
+- Pseudo-isometric canvas city map designed to remain lightweight on iPhone and in Scriptable WebView.
+- Specialized algorithm districts:
+  - Array Foundry
+  - Hash Bazaar
+  - Stack Quarter
+  - Search Observatory
+  - Graph Transit
+  - Dynamic Planning Bureau
+- Population, happiness, energy, passive money production, and passive research production.
+- Buildings with district identities, resource yields, energy costs, technology requirements, and era requirements.
+- Offline/passive production capped to six hours between sessions.
+- Technology tree with explicit prerequisites instead of a flat shop.
+- Civic Automation technology for a passive-production multiplier.
+- Random city events with consequential choices and a persistent event log.
+- Daily coding quests with city rewards.
+- Multi-question boss interviews that gate later civilization eras.
+- Stronger mission unlocks: later interview problems require both earlier mastery and progression through era bosses.
+- Existing Phase 1 and Phase 2 saves migrate forward through additive defaults rather than being wiped.
+
+## Core game loop
+
+1. Recognize an interview pattern.
+2. Write and test real Python.
+3. Pass visible and hidden tests.
+4. Earn money, research, XP, and district mastery.
+5. Build specialized city infrastructure.
+6. Research prerequisite technologies.
+7. Maintain population, happiness, and energy.
+8. Complete reviews and daily quests.
+9. Pass an era boss interview.
+10. Unlock harder problems and a more advanced civilization.
 
 ## Run locally
 
-Serve the directory rather than opening the file directly so the Pyodide runtime and assets load consistently:
+Serve the directory so Pyodide and browser assets load consistently:
 
 ```bash
 python3 -m http.server 8000
@@ -29,7 +60,7 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000`.
 
-The first visit downloads the Pyodide runtime from jsDelivr, so Python may take a moment to become ready. Later loads can benefit from normal browser caching.
+The first visit downloads the Pyodide runtime from jsDelivr. Normal browser caching helps later launches.
 
 ## iOS / Scriptable
 
@@ -37,39 +68,44 @@ Host `index.html`, `app.js`, and `styles.css` together. Copy `scriptable.js` int
 
 `https://neffer77.github.io/l33t-interview-code/`
 
-Enable GitHub Pages after merging/publishing the site, or replace `GAME_URL` with any URL where the site is hosted. You can add the Scriptable script to an iOS Shortcut or Home Screen.
+Enable GitHub Pages after merging/publishing the site, or replace `GAME_URL` with another hosted copy. The same launcher can be placed behind an iOS Shortcut or Home Screen icon.
 
-## How judging works
+## Python judge architecture
 
-`Run tests` executes the visible examples only. `Submit mission` runs the visible suite first and then an additional hidden edge-case suite. Rewards are granted only after all tests pass.
+`Run tests` executes public examples. `Submit mission` executes public tests and then hidden edge cases. Rewards are granted only when all tests pass.
 
-Each submission executes the user's function inside a fresh Python namespace. Test arguments are recreated for every test case so solutions that mutate their inputs do not contaminate later cases.
+Each submission executes the player's function in a fresh Python namespace. Arguments are recreated for each case so input mutation does not contaminate later tests.
 
-The complexity feedback is intentionally heuristic. The stated target complexity is the learning objective; the browser does not attempt to mathematically prove Big-O from arbitrary Python source.
+Complexity coaching remains intentionally heuristic. The target Big-O shown on the mission is the learning objective; arbitrary Python source is not formally analyzed for asymptotic complexity.
 
-## Current safety/runtime limitation
+## Current limitations
 
-Pyodide executes locally in the page. This keeps the project backend-free and is convenient for iOS, but an intentionally infinite loop in submitted Python can still occupy the page's execution thread. Moving execution into a Web Worker with a hard timeout is a good hardening step for a later iteration.
+Pyodide still executes submitted code on the page's main thread. A deliberately infinite loop can freeze the page. The next technical hardening step should move the judge into a Web Worker and enforce a hard execution timeout.
+
+The city map is a lightweight pseudo-isometric canvas rather than a full tile-placement editor. Phase 3 focuses on tying civilization state to learning progression before adding freeform placement, roads, animated citizens, or richer simulation AI.
 
 ## Roadmap
 
-### Phase 3 — deeper civilization game
-- Isometric/canvas city map.
-- District specialization tied to interview patterns.
-- Population, happiness, energy, production, and research rates.
-- Tech-tree prerequisites.
-- Random city events that trigger review questions.
-- Daily quests and boss interviews.
-- Stronger mastery-driven unlock requirements rather than completion alone.
+### Phase 4 — adaptive learning system
 
-### Phase 4 — learning system
-- 75–150 curated problems organized by pattern.
-- Adaptive problem selection based on weak patterns.
+- Expand to 75–150 curated interview problems organized by pattern.
+- Adaptive mission selection based on weak patterns and historical mistakes.
 - Recall questions before coding and pattern-recognition drills.
 - Interview timer mode and company/topic playlists.
 - More sophisticated mastery decay and scheduled review.
 - Optional reference solutions and post-solve walkthroughs.
+- Boss interviews built from live mastery weaknesses rather than fixed questions.
+- Web Worker Python judge with hard execution timeout.
+
+### Later civilization upgrades
+
+- Freeform tile placement and roads.
+- Animated city growth and district landmarks.
+- More event chains and policies.
+- Resource specialization by district level.
+- Citizen/jobs simulation tied to algorithm mastery.
+- Achievement system and long-term prestige/new-game progression.
 
 ## Design principle
 
-The civilization layer should reward learning rather than distract from it: the player should always know which Python pattern they are practicing, why it works, what tests demonstrated correctness, and what city progress they earned by demonstrating it.
+The civilization layer should reward learning rather than distract from it: the player should always know which Python pattern they are practicing, why the solution works, what tests demonstrated correctness, and what city progress was earned by demonstrating mastery.
