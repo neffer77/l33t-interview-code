@@ -24,7 +24,7 @@ Programs identify multiple stakeholder teams and contain five ordered stages:
 4. mentoring/coaching plan
 5. roadmap prioritization decision
 
-Leadership stretch work unlocks after two completed projects at the current employer and 65 overall readiness.
+The first leadership cycle unlocks after two completed projects at the current employer and 65 overall readiness. Every additional leadership cycle requires two additional completed projects at that employer, which prevents repeatedly replaying one charter without fresh delivery evidence.
 
 ## Transparent written rubrics
 
@@ -55,7 +55,7 @@ Roadmap evidence covers:
 - risk
 - explicit decision and sequencing
 
-Written stages require 70+. The UI exposes missing rubric dimensions and feedback rather than presenting a black-box score.
+Written stages require 70+, at least 70 words, and coverage of all but at most one rubric dimension. The UI exposes missing rubric dimensions and feedback rather than presenting a black-box score.
 
 ## Authoritative technical stages
 
@@ -85,7 +85,8 @@ Promotion into Staff requires:
 
 Promotion into Principal requires:
 - the existing Phase 19 promotion-ready performance review,
-- at least two completed leadership programs at the current employer,
+- at least two completed leadership cycles at the current employer,
+- two additional completed company projects between qualifying leadership cycles,
 - leadership average of 82+, and
 - leadership best score of 85+.
 
@@ -94,10 +95,11 @@ Senior-level promotions below Staff continue to use the Phase 19 rules without a
 ## No farming
 
 - Starting a program gives no promotion credit.
-- Written exercises below threshold do not advance the program.
+- Written exercises below threshold, too short, or missing too many rubric dimensions do not advance the program.
 - Architecture and incident stages advance only from their existing scored completion events.
-- Repeating program attempts is allowed for deliberate practice, but promotion readiness uses completed evidence, not button presses.
+- Another leadership cycle requires fresh employer-specific project delivery first.
 - Leadership evidence is scoped to the current employer.
+- Changing employers supersedes unfinished leadership work from the prior company.
 
 ## UI
 
