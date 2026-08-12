@@ -1,0 +1,18 @@
+(function(C){'use strict';
+class QualityAudit{
+ constructor(game){this.game=game;this.key='codeopolis-phase25-audit-v1';this.state=this.load()}
+ load(){try{return Object.assign({sessions:0,last:null,history:[]},JSON.parse(localStorage.getItem(this.key)||'{}'))}catch{return{sessions:0,last:null,history:[]}}}
+ save(){localStorage.setItem(this.key,JSON.stringify(this.state))}
+ n(v,d=0){v=Number(v);return Number.isFinite(v)?v:d}
+ gather(){const g=this.game||window.game||{},tele=g.phase11?.telemetry?.sessionSummary?.()||{},coach=g.phase16?.readiness?.snapshot?.()||g.phase16?.readiness?.summary?.()||{},s=window.state||g.state||{};return{solved:(s.solved||[]).length,buildings:(s.buildings||[]).length,money:this.n(s.money),research:this.n(s.research),level:this.n(s.level,1),streak:this.n(s.streak),minutes:this.n(tele.minutes),sessionSolved:this.n(tele.sessionSolved||tele.solved),readiness:this.n(coach.overall||coach.score),repoReviews:(window.RepositorySim?.state?.history||[]).length,projects:(window.RealProjects?.state?.history||[]).length}}
+ audit(){const x=this.gather(),issues=[],wins=[];let onboarding=100,economy=100,learning=100,variety=100,retention=100;
+  if(x.solved===0){onboarding-=20;issues.push(['onboarding','No judged solve yet','Make the first challenge unmistakably primary and explain its city payoff.'])}else wins.push('Judged coding loop activated');
+  if(x.solved>0&&x.buildings===0){onboarding-=18;issues.push(['onboarding','Learning is not visibly changing the city','Prompt one immediate post-solve build choice.'])}
+  const cps=x.solved?x.money/x.solved:x.money;if(cps>900){economy-=25;issues.push(['economy','Credits are accumulating faster than mastery','Raise meaningful sinks or reduce repeatable credit rewards.'])}if(x.solved>=8&&x.money<150){economy-=20;issues.push(['economy','Economy may feel starved','Check build costs against median judged-solve rewards.'])}
+  if(x.solved>=10&&x.readiness<35){learning-=20;issues.push(['learning','Solve count is not converting into interview readiness','Increase review/reasoning transfer and surface weak-skill missions.'])}if(x.readiness>=70)wins.push('Interview readiness has reached a strong signal');
+  if(x.solved>=12&&x.repoReviews===0){variety-=12;issues.push(['variety','Repository review skill is unused','Recommend Repository Lab after core coding fluency.'])}if(x.solved>=15&&x.projects===0){variety-=15;issues.push(['variety','No multi-file engineering transfer yet','Route advanced players into Engineering Projects.'])}
+  if(x.minutes>45&&x.sessionSolved===0){retention-=18;issues.push(['session','Long session without a visible learning win','Offer a short recovery mission or smaller review task.'])}if(x.streak>=3)wins.push('Return habit is established');
+  const dimensions={onboarding,economy,learning,variety,retention};const overall=Math.round(Object.values(dimensions).reduce((a,b)=>a+b,0)/5);const result={at:Date.now(),overall,dimensions,metrics:x,issues:issues.slice(0,6),wins:wins.slice(0,5)};this.state.last=result;this.state.history.push(result);this.state.history=this.state.history.slice(-20);this.save();window.dispatchEvent(new CustomEvent('codeopolis:quality-audit',{detail:result}));return result}
+ recommendations(){const a=this.state.last||this.audit();return a.issues.map((i,n)=>({priority:n+1,area:i[0],problem:i[1],action:i[2]}))}
+}
+C.register('QualityAudit',QualityAudit);})(window.Codeopolis);
