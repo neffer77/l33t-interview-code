@@ -1,0 +1,18 @@
+(function(C){'use strict';
+class Phase27Tuning{
+ constructor(game){this.game=game;this.state=game?.state||window.state||{};this.key='codeopolis-phase27-tuning-v1';this.meta=this.load();this.policy={starterGrantSolves:3,starterGrantMoney:90,starterGrantResearch:12,varietyWindow:4,varietyBonusMoney:35,varietyBonusResearch:8,retainedBonusMoney:60,retainedBonusResearch:18,recoveryMinutes:45,recoverySolveThreshold:1};}
+ load(){try{return Object.assign({version:1,grants:[],recentFamilies:[],lastRecoveryAt:null},JSON.parse(localStorage.getItem(this.key)||'{}'))}catch{return{version:1,grants:[],recentFamilies:[],lastRecoveryAt:null}}}
+ save(){localStorage.setItem(this.key,JSON.stringify(this.meta));}
+ familyOf(c){return c?.family||c?.pattern||c?.district||'general'}
+ solvedCount(){return (this.state.solved||[]).length}
+ grant(id,money,research,label){if(this.meta.grants.includes(id))return null;this.meta.grants.push(id);this.state.money=(this.state.money||0)+money;this.state.research=(this.state.research||0)+research;this.save();if(typeof persist==='function')persist(false);const out={id,money,research,label};C.events.emit('phase27:tuning-reward',out);return out}
+ onMastered(ev){if(!ev?.challenge)return;const c=ev.challenge,family=this.familyOf(c),count=this.solvedCount();
+  if(ev.first&&count<=this.policy.starterGrantSolves)this.grant(`starter:${c.id}`,this.policy.starterGrantMoney,this.policy.starterGrantResearch,'Civic starter grant');
+  const recent=this.meta.recentFamilies.slice(-this.policy.varietyWindow);if(ev.first&&recent.length&& !recent.includes(family))this.grant(`variety:${c.id}`,this.policy.varietyBonusMoney,this.policy.varietyBonusResearch,'Skill transfer bonus');
+  const skill=window.Codeopolis?.game?.phase26?.graph?.summary?.()?.skills?.find?.(s=>s.challengeIds?.includes?.(c.id));if(skill?.state==='Retained')this.grant(`retained:${c.id}:${skill.id}`,this.policy.retainedBonusMoney,this.policy.retainedBonusResearch,'Retention bonus');
+  this.meta.recentFamilies.push(family);this.meta.recentFamilies=this.meta.recentFamilies.slice(-8);this.save();}
+ recoveryNeeded(){const tele=this.game?.phase11?.telemetry?.sessionSummary?.()||{};const minutes=Number(tele.minutes)||0,sessionSolved=Number(tele.sessionSolved??tele.solvedThisSession??0)||0;if(minutes<this.policy.recoveryMinutes||sessionSolved>=this.policy.recoverySolveThreshold)return null;return{minutes,sessionSolved,action:'Switch to a 5–10 minute review, Repository Lab item, or one weak-skill guided challenge. Stop chasing a long unsolved problem for the session.'}}
+ economySnapshot(){const solved=this.solvedCount(),money=Number(this.state.money)||0,research=Number(this.state.research)||0,buildings=(this.state.buildings||[]).length;return{solved,money,research,buildings,creditsPerSolve:solved?Math.round(money/solved):money}}
+ explain(){return[{name:'First 3 new solves',rule:`+${this.policy.starterGrantMoney} credits / +${this.policy.starterGrantResearch} research`,why:'Make early learning visibly change the city sooner.'},{name:'New skill family',rule:`+${this.policy.varietyBonusMoney} credits / +${this.policy.varietyBonusResearch} research`,why:'Reward transfer and breadth rather than repeating one pattern.'},{name:'Retained evidence',rule:`+${this.policy.retainedBonusMoney} credits / +${this.policy.retainedBonusResearch} research`,why:'Make durable recall more valuable than one-time completion.'},{name:'Long low-progress session',rule:`Recovery prompt after ${this.policy.recoveryMinutes} minutes with no solved objective`,why:'Protect learning quality and reduce grind.'}]}
+}
+C.register('Phase27Tuning',Phase27Tuning);})(window.Codeopolis);
