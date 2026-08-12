@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="phase6.css">
 <link rel="stylesheet" href="phase7.css">
 <link rel="stylesheet" href="phase8.css">
+<link rel="stylesheet" href="phase9.css">
 </head>
 <body>
 <main class="app">
@@ -31,7 +32,7 @@
 
   <div class="layout">
     <section class="panel">
-      <div class="section-title"><h2>Your Civilization</h2><div><span id="phaseLabel" class="tag">Phase 8 · People & Possibility</span> <span id="era" class="tag">Settlement Era</span></div></div>
+      <div class="section-title"><h2>Your Civilization</h2><div><span id="phaseLabel" class="tag">Phase 9 · Engineering Simulator</span> <span id="era" class="tag">Settlement Era</span></div></div>
       <canvas id="cityCanvas" width="900" height="390" aria-label="Interactive Codeopolis city map. Drag to pan, pinch or scroll to zoom, and tap tiles to build or inspect."></canvas>
       <div id="citySummary" class="city-summary"></div>
       <div class="tabs">
@@ -58,16 +59,16 @@
       <div class="section-title"><h2>Mission Control</h2><span id="pythonStatus" class="tag loading">Loading Python…</span></div>
       <div id="dailyQuest" class="quest-card"></div>
       <div id="bossCard" class="boss-card"></div>
-      <p class="muted">Your civilization now has people inside it: mentors react to meaningful learning, relationships deepen around the skills they care about, and fictional companies reach out when your retained mastery profile proves you are ready.</p>
+      <p class="muted">Codeopolis now trains the engineering skills that happen around the solution too: explain your reasoning, debug broken production code, defend complexity, practice behavioral stories, and assemble system designs.</p>
       <div id="mission"></div>
       <hr>
-      <b>Phase 8 loop</b>
-      <p class="muted">Master → earn trust → resolve incidents with your team → attract recruiting interest → complete real coding rounds → explain your reasoning → unlock stronger career and story possibilities.</p>
+      <b>Phase 9 loop</b>
+      <p class="muted">Explain → code → debug → pass → defend performance → design systems → communicate decisions → turn stronger engineering judgment into city, career, and team progress.</p>
       <button class="btn" onclick="exportSave()">Export Save</button>
       <button class="btn" onclick="resetGame()">Reset</button>
     </aside>
   </div>
-  <div class="footer">Python remains isolated in the timeout worker. Team relationships, story beats, recruiting history, city progress, mastery, and interview outcomes stay local to this device.</div>
+  <div class="footer">Python remains isolated in the timeout worker. Freeform reasoning evaluation is local and rubric-based; no API key or external AI service is required.</div>
 </main>
 <script src="https://cdn.jsdelivr.net/pyodide/v314.0.3/full/pyodide.js"></script>
 <script src="app.js"></script>
@@ -98,5 +99,12 @@
 <script src="src/story/crisis-chains.js"></script>
 <script src="src/story/phase8-ui.js"></script>
 <script src="src/story/phase8-bootstrap.js"></script>
+<script src="src/interview/reasoning-evaluator.js"></script>
+<script src="src/interview/ai-interviewer.js"></script>
+<script src="src/game/debugging-system.js"></script>
+<script src="src/game/system-design.js"></script>
+<script src="src/interview/behavioral.js"></script>
+<script src="src/interview/phase9-ui.js"></script>
+<script src="src/interview/phase9-bootstrap.js"></script>
 </body>
 </html>
