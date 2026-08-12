@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="phase5.css">
 <link rel="stylesheet" href="phase6.css">
 <link rel="stylesheet" href="phase7.css">
+<link rel="stylesheet" href="phase8.css">
 </head>
 <body>
 <main class="app">
@@ -30,7 +31,7 @@
 
   <div class="layout">
     <section class="panel">
-      <div class="section-title"><h2>Your Civilization</h2><div><span id="phaseLabel" class="tag">Phase 7 · Mastery Civilization</span> <span id="era" class="tag">Settlement Era</span></div></div>
+      <div class="section-title"><h2>Your Civilization</h2><div><span id="phaseLabel" class="tag">Phase 8 · People & Possibility</span> <span id="era" class="tag">Settlement Era</span></div></div>
       <canvas id="cityCanvas" width="900" height="390" aria-label="Interactive Codeopolis city map. Drag to pan, pinch or scroll to zoom, and tap tiles to build or inspect."></canvas>
       <div id="citySummary" class="city-summary"></div>
       <div class="tabs">
@@ -57,16 +58,16 @@
       <div class="section-title"><h2>Mission Control</h2><span id="pythonStatus" class="tag loading">Loading Python…</span></div>
       <div id="dailyQuest" class="quest-card"></div>
       <div id="bossCard" class="boss-card"></div>
-      <p class="muted">The city now understands what you know. Durable mastery gates advanced infrastructure, combinations of learned concepts reveal hidden discoveries, and weak systems can become real engineering incidents that point you toward the next useful challenge.</p>
+      <p class="muted">Your civilization now has people inside it: mentors react to meaningful learning, relationships deepen around the skills they care about, and fictional companies reach out when your retained mastery profile proves you are ready.</p>
       <div id="mission"></div>
       <hr>
-      <b>Phase 7 loop</b>
-      <p class="muted">Master → discover → choose a strategy → build knowledge-gated infrastructure → respond to city incidents → complete civic contracts and megaprojects → strengthen the weakest part of your civilization.</p>
+      <b>Phase 8 loop</b>
+      <p class="muted">Master → earn trust → resolve incidents with your team → attract recruiting interest → complete real coding rounds → explain your reasoning → unlock stronger career and story possibilities.</p>
       <button class="btn" onclick="exportSave()">Export Save</button>
       <button class="btn" onclick="resetGame()">Reset</button>
     </aside>
   </div>
-  <div class="footer">Python remains isolated in the timeout worker. City layout, discoveries, doctrine, civic contracts, incidents, mastery, interview history, and career progress stay local to this device.</div>
+  <div class="footer">Python remains isolated in the timeout worker. Team relationships, story beats, recruiting history, city progress, mastery, and interview outcomes stay local to this device.</div>
 </main>
 <script src="https://cdn.jsdelivr.net/pyodide/v314.0.3/full/pyodide.js"></script>
 <script src="app.js"></script>
@@ -90,5 +91,12 @@
 <script src="src/progression/quests.js"></script>
 <script src="src/game/phase7-ui.js"></script>
 <script src="src/progression/phase7-bootstrap.js"></script>
+<script src="src/story/characters.js"></script>
+<script src="src/story/recruiting.js"></script>
+<script src="src/story/narrative.js"></script>
+<script src="src/story/interview-encounters.js"></script>
+<script src="src/story/crisis-chains.js"></script>
+<script src="src/story/phase8-ui.js"></script>
+<script src="src/story/phase8-bootstrap.js"></script>
 </body>
 </html>

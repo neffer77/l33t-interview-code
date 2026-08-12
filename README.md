@@ -1,205 +1,141 @@
 # Codeopolis
 
-A mobile-first civilization/city-building game for learning Python coding-interview patterns. Real judged interview problems power a living city, adaptive mastery decides what to review, and the civilization increasingly reflects what the player can actually remember and apply.
+A mobile-first civilization/city-building game for learning Python coding-interview patterns. Real judged interview problems power a living city, retained mastery controls civilization growth, and Phase 8 gives that progression a cast, narrative context, and in-world recruiting loop.
 
-## Phase 7 — Mastery Civilization
+## Phase 8 — People & Possibility
 
-Phase 7 builds directly on the interactive city and game-feel engine from Phase 6. The central design change is that **money is no longer sufficient to build the best civilization**. Advanced infrastructure, discoveries, megaprojects, and strategy now depend on durable knowledge.
+Phase 8 adds characters, relationships, recruiting, narrative reactions, richer crisis follow-ups, and interview encounters without replacing the existing learning engine. The 52-problem Python bank, timeout-isolated judge, adaptive scheduling, mocks, mastery economy, interactive city, discoveries, doctrines, civic contracts, and megaprojects remain intact.
 
-The 52-problem Python bank, timeout-isolated Pyodide judge, adaptive scheduler, mock interviews, career ladder, living Canvas city, touch controls, roads, citizens, traffic, day/night cycle, Momentum, and solve celebrations remain intact.
+### Engineering team
 
-## Mastery economy
+Six persistent characters now inhabit Codeopolis:
 
-Phase 7 introduces a durable **Knowledge Index** derived from the player's retained mastery across the six major algorithm districts:
+- 🧠 Maya Chen — Staff Algorithms Engineer
+- 🛠️ Theo Brooks — Infrastructure Engineer
+- 🔬 Luna Alvarez — Research Scientist
+- 🎙️ Marcus Reed — Engineering Manager
+- 🏗️ Jin Park — Systems Architect
+- 🚀 Ada Vale — Founder
 
-- Arrays / windows / pointers
-- Hashing / retrieval
-- Data structures
-- Search
-- Graphs
-- Dynamic programming
+Characters have specialties, relationship XP, levels, unlock conditions, and a persistent interaction log. Relationship progress is earned through relevant mastery, crisis work, and interview practice rather than dialogue clicking.
 
-A district's score is based on solved breadth plus current effective mastery, including Phase 4 mastery decay. This means a problem solved once months ago is less economically meaningful than a pattern that can still be recalled and applied.
+### Narrative reactions
 
-Knowledge now affects the game in two ways:
+The story layer reacts to meaningful game events:
 
-1. A modest global knowledge multiplier improves passive money and research production.
-2. Advanced buildings have explicit knowledge gates.
+- first-time and repeated mastery
+- career progression
+- city engineering incidents
+- crisis resolution
+- recruiting messages
+- interview starts and outcomes
 
-Examples:
+Mentor reactions are short and skill-oriented. They are intended to make progress emotionally legible without turning the app into a visual novel.
 
-- Hash Market requires Hash mastery.
-- Search Observatory requires Search mastery.
-- Graph Transit Hub requires Graph mastery plus the Network Science discovery.
-- DP Research Lab requires Dynamic Programming mastery plus the Dynamic Planning discovery.
-- Algorithm Tower requires meaningful breadth across several districts.
-- Interview Academy requires broad mastery plus career progression.
+### Recruiting world
 
-Phase 7 also adds four mastery landmarks:
+Five fictional companies can now contact the player when real readiness thresholds are met:
 
-- 💠 Knowledge Exchange
-- 🛰️ Autonomous Routing Nexus
-- 🧬 Optimization Institute
-- 🛡️ Resilience Command Center
+- 🤖 Nova Robotics
+- ☁️ Atlas Cloud
+- 🧬 Helix AI
+- 🛡️ Vector Security
+- 🛰️ Orbital Systems
 
-These cannot be reached by currency grinding alone.
+Each company has a different skill profile and requires a combination of retained Knowledge Index, solved-problem breadth, and career rank before it can reach out.
 
-## Hidden Discovery Atlas
+Recruiting messages therefore represent demonstrated readiness, not random loot or passive timers.
 
-The technology tree now contains genuinely hidden fields. Locked discoveries display a clue rather than their final identity.
+### Interview encounters
 
-Phase 7 currently includes ten discoveries, including:
+Company interviews are three-round coding encounters. The coding problem for each round is selected from the existing judged challenge bank with preference for the company's technical focus.
 
-- Fast Retrieval Systems
-- Algorithmic Industry
-- Network Science
-- Dynamic Planning
-- Structured Computation
-- Systems Science
-- Resilient Infrastructure
-- Optimization Science
-- Autonomous Networks
-- Computational Frontier
+A round only advances after the relevant problem passes the real hidden-test judge. After a successful coding round, the player receives a short communication follow-up covering skills such as:
 
-Discoveries are triggered by combinations of retained algorithm mastery, career progress, and physical city development such as road connectivity.
+- stating assumptions and invariants
+- explaining failed edge cases
+- discussing time/space tradeoffs
+- comparing competing approaches
+- justifying complexity
 
-When a new field is discovered, the player receives an audiovisual reveal and a small research reward. These reveals are deterministic consequences of demonstrated progress rather than login rewards or idle loot.
+The communication component contributes to the final interview score, but it cannot replace working code.
 
-Existing saves receive credit for mastery already earned before Phase 7.
+Successful company loops award city resources and become persistent recruiting history. Completed companies are removed from the active inbox so they cannot be farmed repeatedly.
 
-## Strategic compute doctrines
+### Crisis chains
 
-Discovering **Systems Science** unlocks a civilization-wide compute doctrine.
+Phase 7 incidents now have narrative aftermath. Solving incidents such as a transit partition, cache stampede, planning deadlock, or scheduler overload can produce follow-up engineering reviews with the relevant specialist.
 
-### 🖥️ Centralized Supercomputing
+These aftermath beats reinforce the broader lesson behind the code—for example, moving from restoring graph connectivity to thinking about traffic concentration and resilience.
 
-Prioritizes research throughput while sacrificing some economic flexibility.
+### Team UI
 
-### 🌐 Distributed Systems
+Phase 8 adds a **👥 Team** surface with:
 
-Provides balanced production and substantially stronger crisis resilience.
+- character roster and relationship levels
+- mentor specialties
+- recruiting inbox
+- active interview round tracker
+- story feed
+- communication follow-up overlays
+- interview result reports
 
-### 📡 Edge Civilization
+Mission Control also surfaces the most recent team/recruiting development and active interview status.
 
-Prioritizes commercial productivity and local autonomy with a smaller research bonus.
+## Phase 8 architecture
 
-The first doctrine choice is free. Switching later costs research, so choices matter, but the player is not permanently trapped by an early decision.
-
-## Learning-driven city crises
-
-Phase 7 pulls part of the planned crisis system forward because it is a natural consequence of the mastery economy.
-
-Possible incidents include:
-
-- Cache Stampede
-- Data Pipeline Congestion
-- Scheduler Overload
-- Search Index Outage
-- Transit Network Partition
-- Planning Deadlock
-
-Crises do **not** choose an arbitrary question. The system identifies a weak algorithm district and chooses a useful unlocked problem from that district.
-
-While a crisis is active, one portion of passive production is modestly degraded. The player can:
-
-1. Solve the engineering incident through the normal visible + hidden Python judge, earning a substantial resolution reward, or
-2. Use expensive emergency mitigation to restore the city without completing the learning challenge.
-
-There is no countdown that destroys the city and no punishment for taking time away. The purpose is contextual pressure and relevance, not anxiety.
-
-## Civic contracts
-
-Phase 7 adds three lightweight daily learning contracts:
-
-- reinforce the current weakest district
-- complete two successful recall drills
-- master one previously unsolved problem
-
-Contracts auto-complete when the underlying real learning event occurs and award small city resources.
-
-They are intentionally different from login quests: opening the app or waiting does not complete anything.
-
-## Megaprojects
-
-Four long-horizon projects provide multi-session objectives:
-
-### ☁️ Civic Knowledge Cloud
-
-Combines strong Hash + Search mastery, the Fast Retrieval discovery, and city development.
-
-### 🚄 Autonomous Transit Grid
-
-Requires Autonomous Networks, high Graph/Search mastery, and a developed road network.
-
-### 🧬 Optimization Campus
-
-Requires Optimization Science plus strong DP and Array mastery.
-
-### 🛡️ Resilient Civic Network
-
-Requires broad retained knowledge, Resilient Infrastructure, and an extensive road system.
-
-Megaprojects award unique landmark buildings plus money/research. The landmark enters the Phase 6 placement inventory so the player chooses where the achievement physically appears in the city.
-
-## Strategy UI
-
-Phase 7 adds an **✨ Strategy** surface containing:
-
-- Knowledge Index
-- district mastery cards
-- hidden Discovery Atlas
-- compute doctrine selection
-- civic contracts
-- megaproject progress
-
-Mission Control also displays active engineering incidents and lets the player jump directly to the associated challenge.
-
-## Architecture
-
-Phase 7 continues the modular architecture started in Phase 6.
+Phase 8 continues the modular `/src` migration:
 
 ```text
 src/
-  core/
-    namespace.js
-
-  game/
-    world.js
-    camera.js
-    simulation.js
-    renderer.js
-    audio.js
-    reward-engine.js
-    game-ui.js
-    bootstrap.js
-    crisis-system.js          Phase 7 incidents
-    phase7-ui.js              strategy/discovery/crisis UI
-
-  progression/
-    mastery-economy.js        durable knowledge + infrastructure gates
-    discoveries.js            hidden technology graph
-    quests.js                 civic contracts + megaprojects
-    phase7-bootstrap.js       event integration
+  story/
+    characters.js             roster + relationships
+    recruiting.js             company readiness + offers
+    narrative.js              milestone/reaction feed
+    interview-encounters.js   coding + communication round controller
+    crisis-chains.js          post-incident narrative chains
+    phase8-ui.js              team/recruiting/story surfaces
+    phase8-bootstrap.js       integration with verified learning events
 ```
 
-The existing learning code remains the source of truth for whether a player actually solved something. Phase 7 listens to those verified events rather than creating a parallel scoring system.
+The existing learning stack remains the source of truth. Phase 8 listens to `learning:mastered`, crisis, career, and other established events instead of inventing a parallel correctness system.
 
-## Core Phase 7 loop
+## Core Phase 8 loop
 
-1. The adaptive coach identifies useful practice.
-2. The player recognizes a pattern and writes real Python.
-3. Visible and hidden tests verify the implementation.
-4. Effective mastery and the matching district strengthen.
-5. A new knowledge combination may reveal a hidden discovery.
-6. Knowledge unlocks better infrastructure or a new strategic doctrine.
-7. Weak areas can surface naturally as city engineering incidents.
-8. Civic contracts create short goals; megaprojects create long goals.
-9. Completed landmarks are physically placed in the interactive city.
-10. The city increasingly becomes a map of retained computer-science knowledge.
+1. Practice the highest-value weak or due skill.
+2. Pass the actual Python judge.
+3. Build mastery, city capability, and mentor trust.
+4. Resolve incidents alongside specialists.
+5. Meet real recruiting thresholds.
+6. Enter a fictional company's coding loop.
+7. Pass judged coding rounds and communicate reasoning.
+8. Receive an interview outcome and relationship/city progression.
+9. Use the next weak skill, crisis, discovery, or career opportunity to continue.
+
+## Existing systems retained
+
+Codeopolis still includes:
+
+- 52 fully judged Python problems
+- arrays, hashing, windows, stacks, intervals, graphs, DP, linked lists, trees, BSTs, heaps, tries, and backtracking
+- Pyodide execution in a hard-timeout Web Worker
+- visible and hidden tests
+- adaptive learning and mastery decay
+- spaced recall
+- timed practice and mock interviews
+- Candidate → Principal career progression
+- interactive isometric city placement
+- roads, citizens, traffic, construction, day/night rendering
+- learning-aligned celebrations and Momentum
+- durable Knowledge Index
+- hidden discoveries
+- strategic compute doctrines
+- learning-driven crises
+- civic contracts and megaprojects
 
 ## Run locally
 
-Serve over HTTP so Web Workers and Pyodide behave consistently:
+Serve the repository over HTTP:
 
 ```bash
 python3 -m http.server 8000
@@ -213,27 +149,23 @@ The default Scriptable launcher points to:
 
 ## Validation
 
-`.github/workflows/validate.yml` recursively syntax-checks every JavaScript file and verifies that every local asset referenced from `index.html` exists. This automatically covers the new Phase 7 modules.
+`.github/workflows/validate.yml` recursively runs JavaScript syntax checks and verifies local assets referenced by `index.html`. It automatically covers all Phase 8 modules.
 
 ## Next game-quality milestone
 
-### Phase 8 — characters, narrative, and interview encounters
+### Phase 9 — AI interviewer, debugging, and deeper engineering simulation
 
-The strongest next step is to give the systems emotional context:
+The next major learning leap should make interviews and incidents less scripted:
 
-- persistent engineering characters with specialties and progression
-- characters who react to discoveries, crises, promotions, and megaprojects
-- multi-step story missions
-- fictional companies and recruiting messages
-- interview boss encounters presented as in-world opportunities
-- algorithm crises with richer multi-stage event chains
-- debugging incidents
-- behavioral and eventually system-design rounds
-
-The AI interviewer should follow after that foundation so conversation and communication scoring have a world and cast to attach to.
+- AI interviewer conversation with reasoning evaluation
+- progressive interviewer hints rather than solution dumping
+- communication scoring from freeform explanations
+- debugging incidents using intentionally broken production-style code
+- performance/complexity follow-ups
+- richer behavioral rounds
+- beginning of visual system-design simulations
+- character-generated missions driven by current weak skills
 
 ## Design principle
 
-**The most exciting action available to the player should also be a useful learning action.**
-
-Currency is satisfying, but knowledge is power. A skyline upgrade should represent retained mastery, a discovery should represent concepts becoming connected, and a crisis should point toward exactly the skill the player most benefits from practicing next.
+**The most emotionally rewarding events should still require useful learning.** Characters provide attachment and context, but relationships, recruiting, story progression, and city advancement should continue to be earned primarily by demonstrated skill rather than passive interaction.
