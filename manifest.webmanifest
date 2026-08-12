@@ -1,0 +1,13 @@
+{
+  "name": "Codeopolis — Python Interview Civilization",
+  "short_name": "Codeopolis",
+  "description": "A mastery-powered Python interview game where solving real engineering problems grows a civilization.",
+  "start_url": "./index.html?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#09111f",
+  "theme_color": "#09111f",
+  "orientation": "any",
+  "categories": ["education", "games", "developer"],
+  "icons": []
+}
