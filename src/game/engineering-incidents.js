@@ -1,0 +1,22 @@
+(function(C){
+  'use strict';
+  const INCIDENTS=[
+    {id:'latency-regression',icon:'📉',title:'Search Latency Regression',mentor:'theo',district:'search',stages:['diagnose','repair','scale','postmortem'],challengeHint:'search',reward:{money:520,research:90}},
+    {id:'routing-meltdown',icon:'🚦',title:'Routing Meltdown',mentor:'jin',district:'graphs',stages:['diagnose','repair','architecture','postmortem'],challengeHint:'graphs',reward:{money:620,research:110}},
+    {id:'planner-thrash',icon:'🧠',title:'Planner Thrash',mentor:'luna',district:'dp',stages:['diagnose','repair','scale','postmortem'],challengeHint:'dp',reward:{money:580,research:120}}
+  ];
+  class EngineeringIncidentSystem{
+    constructor(state,economy,characters){this.state=state;this.economy=economy;this.characters=characters;this.data=this.ensure()}
+    ensure(){const old=this.state.engineeringIncidents||{};return this.state.engineeringIncidents={version:1,active:old.active||null,history:old.history||[],lastStartedAt:old.lastStartedAt||0}}
+    definition(id){return INCIDENTS.find(x=>x.id===id)}
+    pickChallenge(district){const pool=(typeof CHALLENGES!=='undefined'?CHALLENGES:[]).filter(c=>c.district===district&&(typeof unlocked!=='function'||unlocked(c)));pool.sort((a,b)=>this.economy.challengeStrength(a)-this.economy.challengeStrength(b));return pool[0]||null}
+    start(id){if(this.data.active)return false;const def=this.definition(id);if(!def)return false;const c=this.pickChallenge(def.district);if(!c)return false;this.data.active={id:def.id,title:def.title,icon:def.icon,mentor:def.mentor,district:def.district,stage:0,challengeId:c.id,diagnosis:'',scaleAnswer:'',architectureAnswer:'',postmortem:'',startedAt:Date.now(),status:'active'};this.data.lastStartedAt=Date.now();C.events.emit('incident:started',{incident:this.data.active,challenge:c});return true}
+    current(){return this.data.active?.status==='active'?this.data.active:null}
+    submitDiagnosis(text){const a=this.current();if(!a||a.stage!==0)return null;const t=String(text||'').toLowerCase();const score=Math.min(100,(t.length>80?30:10)+(t.match(/invariant|boundary|complex|repeat|cache|queue|graph|state|lookup/g)||[]).length*10);a.diagnosis=text;a.diagnosisScore=score;if(score>=45)a.stage=1;C.events.emit('incident:diagnosed',{incident:a,score});return score}
+    openRepair(){const a=this.current();if(!a||a.stage!==1)return false;const c=CHALLENGES.find(x=>x.id===a.challengeId);if(!c)return false;state.current=c.id;persist(false);if(typeof switchTab==='function')switchTab('challenge');C.events.emit('incident:repair-opened',{incident:a,challenge:c});return true}
+    onMastered(e){const a=this.current();if(!a||a.stage!==1||a.challengeId!==e.challenge?.id)return false;a.stage=2;a.repairedAt=Date.now();C.events.emit('incident:repaired',{incident:a,challenge:e.challenge});return true}
+    submitEngineeringAnswer(text){const a=this.current();if(!a||a.stage!==2)return null;const t=String(text||'').toLowerCase(),def=this.definition(a.id);const terms=def.stages.includes('architecture')?['cache','queue','replica','partition','retry','fail','load','shard']:['complex','memory','cpu','latency','throughput','monitor','cache','batch'];const hits=terms.filter(x=>t.includes(x)).length;const score=Math.min(100,20+hits*12+Math.min(20,Math.floor(t.length/40)));if(def.stages.includes('architecture'))a.architectureAnswer=text;else a.scaleAnswer=text;a.engineeringScore=score;if(score>=50)a.stage=3;C.events.emit('incident:engineering-reviewed',{incident:a,score});return score}
+    finish(postmortem){const a=this.current();if(!a||a.stage!==3)return null;const text=String(postmortem||''),quality=Math.min(100,(text.length>100?35:15)+(text.toLowerCase().match(/root cause|impact|detect|prevent|monitor|action|owner/g)||[]).length*9);a.postmortem=text;a.postmortemScore=quality;a.status='completed';a.completedAt=Date.now();const def=this.definition(a.id);const total=Math.round(((a.diagnosisScore||0)+(a.engineeringScore||0)+quality)/3);a.score=total;this.state.money=(this.state.money||0)+def.reward.money;this.state.research=(this.state.research||0)+def.reward.research;this.characters.award?.(a.mentor,total>=75?16:9,'engineering incident');this.data.history.unshift({...a});this.data.history=this.data.history.slice(0,20);this.data.active=null;C.events.emit('incident:completed',{incident:a,score:total});return a}
+  }
+  EngineeringIncidentSystem.INCIDENTS=INCIDENTS;C.register('EngineeringIncidentSystem',EngineeringIncidentSystem);
+})(window.Codeopolis);
