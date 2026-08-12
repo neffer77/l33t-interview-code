@@ -7,7 +7,7 @@
     vector:['Security Engineer','Senior Security Engineer','Staff Security Engineer','Principal Security Engineer'],
     orbital:['Systems Engineer','Senior Distributed Systems Engineer','Staff Distributed Systems Engineer','Principal Distributed Systems Engineer']
   };
-  const clamp=n=>Math.max(0,Math.min(100,Math.round(Number(n)||0));
+  const clamp=n=>Math.max(0,Math.min(100,Math.round(Number(n)||0)));
   class PerformanceReview{
     constructor(state,game,projects,team){this.state=state;this.game=game;this.projects=projects;this.team=team;this.data=this.ensure()}
     ensure(){const old=this.state.companyPerformance||{};return this.state.companyPerformance={version:1,reviews:old.reviews||[],lastProjectCount:old.lastProjectCount||0,promotions:old.promotions||[]}}
