@@ -1,0 +1,17 @@
+(function(C){
+  'use strict';
+  const LOADS=[100,1000,10000,100000,1000000];
+  class SystemDesignSimulator{
+    constructor(state,design,characters){this.state=state;this.design=design;this.characters=characters;this.data=this.ensure()}
+    ensure(){const old=this.state.designSim||{};return this.state.designSim={version:1,active:old.active||null,history:old.history||[]}}
+    start(id){const scenario=this.design.scenario(id);if(!scenario)return false;this.design.start(id);this.data.active={id,loadIndex:0,links:[],failures:[],metrics:{latency:40,errorRate:0,throughput:100},events:[],status:'active'};C.events.emit('designsim:started',{scenario,sim:this.data.active});return true}
+    active(){return this.data.active?.status==='active'?this.data.active:null}
+    toggle(component){this.design.toggle(component);this.recalculate()}
+    connect(from,to){const a=this.active();if(!a||from===to)return;const key=`${from}->${to}`;const idx=a.links.indexOf(key);if(idx>=0)a.links.splice(idx,1);else a.links.push(key);this.recalculate()}
+    increaseLoad(){const a=this.active();if(!a)return null;a.loadIndex=Math.min(LOADS.length-1,a.loadIndex+1);this.injectFailure();this.recalculate();C.events.emit('designsim:load',{rps:LOADS[a.loadIndex],sim:a});return a.metrics}
+    injectFailure(){const a=this.active(),scenario=this.design.scenario(a.id),sel=new Set(this.design.data.active?.selected||[]);if(!a||!scenario)return;const rps=LOADS[a.loadIndex];let f=null;if(rps>=10000&&!sel.has('Cache'))f='hot reads saturating the database';else if(rps>=100000&&!sel.has('Queue')&&!sel.has('Durable Queue'))f='bursty writes overwhelming synchronous workers';else if(rps>=100000&&!a.links.length)f='single-path dependency with no explicit flow';else if(rps>=1000000&&!sel.has('Metrics'))f='no observability during overload';if(f&&!a.failures.includes(f)){a.failures.push(f);a.events.unshift({at:Date.now(),text:f});C.events.emit('designsim:failure',{failure:f,sim:a})}}
+    recalculate(){const a=this.active();if(!a)return;const sel=new Set(this.design.data.active?.selected||[]),rps=LOADS[a.loadIndex],scenario=this.design.scenario(a.id);let capacity=700;capacity+=sel.has('Cache')?12000:0;capacity+=(sel.has('Queue')||sel.has('Durable Queue'))?18000:0;capacity+=sel.has('CDN')?30000:0;capacity+=sel.has('Worker Pool')?20000:0;capacity+=a.links.length*900;const requiredMissing=scenario.required.filter(x=>!sel.has(x)).length;const overload=Math.max(0,rps-capacity);a.metrics.throughput=Math.min(rps,capacity);a.metrics.latency=Math.round(35+requiredMissing*90+overload/Math.max(20,capacity)*800);a.metrics.errorRate=Math.min(99,Math.round(requiredMissing*8+overload/Math.max(1,rps)*100));C.events.emit('designsim:metrics',{sim:a})}
+    finish(explanation){const a=this.active();if(!a)return null;const base=this.design.submit(explanation);const resilience=Math.max(0,30-a.failures.length*6)+(a.links.length>=3?10:0);const score=Math.min(100,Math.round((base?.score||0)*.8+resilience*.2));const record={id:a.id,score,baseScore:base?.score||0,maxRps:LOADS[a.loadIndex],failures:[...a.failures],links:[...a.links],at:new Date().toISOString()};a.status='complete';this.data.history.unshift(record);this.data.history=this.data.history.slice(0,20);this.data.active=null;if(score>=75){this.state.research=(this.state.research||0)+40;this.characters.award?.('jin',10,'load simulation')}C.events.emit('designsim:finished',{record});return record}
+  }
+  SystemDesignSimulator.LOADS=LOADS;C.register('SystemDesignSimulator',SystemDesignSimulator);
+})(window.Codeopolis);
