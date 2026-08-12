@@ -1,0 +1,1 @@
+.p13-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.p13-path{display:block;width:100%;text-align:left;margin:6px 0}.p13-path span,.p13-org small{display:block;color:var(--muted)}.p13-org{display:grid;grid-template-columns:1fr auto;gap:4px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}.p13-org small{grid-column:1/-1}
