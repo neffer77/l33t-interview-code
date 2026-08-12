@@ -1,137 +1,130 @@
 # Codeopolis
 
-A mobile-first civilization/city-building game for learning Python coding-interview patterns. Real judged interview problems power a living city, retained mastery controls civilization growth, and Phase 8 gives that progression a cast, narrative context, and in-world recruiting loop.
+A mobile-first civilization/city-building game for learning Python interview engineering. Real judged code powers a living city; retained mastery controls civilization growth; mentors, recruiting, debugging, communication, and system design turn interview preparation into an engineering game.
 
-## Phase 8 — People & Possibility
+## Phase 9 — Engineering Simulator
 
-Phase 8 adds characters, relationships, recruiting, narrative reactions, richer crisis follow-ups, and interview encounters without replacing the existing learning engine. The 52-problem Python bank, timeout-isolated judge, adaptive scheduling, mocks, mastery economy, interactive city, discoveries, doctrines, civic contracts, and megaprojects remain intact.
+Phase 9 expands the game beyond whether the final code passes. It trains the work that surrounds a strong interview solution: explaining an approach, identifying assumptions and invariants, debugging broken production code, defending performance, communicating impact, and reasoning about larger systems.
 
-### Engineering team
+Phase 9 is stacked on the Phase 8 branch because Phase 8 has not yet landed on `main`. It preserves the 52-problem bank, timeout-isolated Pyodide judge, adaptive learning, mastery economy, living city, characters, recruiting, and company interview loops.
 
-Six persistent characters now inhabit Codeopolis:
+### Local adaptive interviewer
 
-- 🧠 Maya Chen — Staff Algorithms Engineer
-- 🛠️ Theo Brooks — Infrastructure Engineer
-- 🔬 Luna Alvarez — Research Scientist
-- 🎙️ Marcus Reed — Engineering Manager
-- 🏗️ Jin Park — Systems Architect
-- 🚀 Ada Vale — Founder
+The first interviewer implementation is deliberately local-first. It does not require an API key or external AI service, so it works in a hosted webpage or Scriptable WebView.
 
-Characters have specialties, relationship XP, levels, unlock conditions, and a persistent interaction log. Relationship progress is earned through relevant mastery, crisis work, and interview practice rather than dialogue clicking.
+A rubric/NLP evaluator scores freeform explanations across:
 
-### Narrative reactions
+- approach selection
+- assumptions and constraints
+- invariants
+- edge cases
+- time/space complexity
+- tradeoffs
 
-The story layer reacts to meaningful game events:
+The interviewer identifies missing dimensions and generates an adaptive follow-up. After the relevant coding problem passes the real hidden-test judge, it asks a performance/scaling follow-up and records a combined reasoning score.
 
-- first-time and repeated mastery
-- career progression
-- city engineering incidents
-- crisis resolution
-- recruiting messages
-- interview starts and outcomes
+The system is architected so a future LLM-backed interviewer can replace or augment the local evaluator without changing the gameplay contract.
 
-Mentor reactions are short and skill-oriented. They are intended to make progress emotionally legible without turning the app into a visual novel.
+### Production debugging incidents
 
-### Recruiting world
+Phase 9 adds challenge-compatible debugging missions that run through the same Python worker and hidden tests as normal problems.
 
-Five fictional companies can now contact the player when real readiness thresholds are met:
+Current incidents include:
 
-- 🤖 Nova Robotics
-- ☁️ Atlas Cloud
-- 🧬 Helix AI
-- 🛡️ Vector Security
-- 🛰️ Orbital Systems
+- duplicate-index bug in a hash-map lookup
+- binary-search boundary/infinite-loop defects
+- quadratic repeated-work performance bug in a sliding-window service
 
-Each company has a different skill profile and requires a combination of retained Knowledge Index, solved-problem breadth, and career rank before it can reach out.
+Players start from intentionally broken code, diagnose the violated invariant or repeated work, repair it, and pass hidden tests. Debugging completions award city/research resources and relationship progress with the infrastructure mentor.
 
-Recruiting messages therefore represent demonstrated readiness, not random loot or passive timers.
+### Performance and complexity defense
 
-### Interview encounters
+Passing code is no longer always the end of an interviewer session. The local interviewer can ask the player to justify the target complexity, explain which operation drives it, discuss memory-vs-CPU tradeoffs, or identify the practical bottleneck at 100× input size.
 
-Company interviews are three-round coding encounters. The coding problem for each round is selected from the existing judged challenge bank with preference for the company's technical focus.
+### Behavioral interviews
 
-A round only advances after the relevant problem passes the real hidden-test judge. After a successful coding round, the player receives a short communication follow-up covering skills such as:
+A behavioral practice system scores freeform stories for:
 
-- stating assumptions and invariants
-- explaining failed edge cases
-- discussing time/space tradeoffs
-- comparing competing approaches
-- justifying complexity
+- Situation/context
+- Task/ownership
+- personal Actions
+- Result
+- measurable Evidence
+- Reflection/learning
 
-The communication component contributes to the final interview score, but it cannot replace working code.
+It encourages concise STAR-style answers with explicit ownership and quantified impact rather than memorized multiple-choice responses.
 
-Successful company loops award city resources and become persistent recruiting history. Completed companies are removed from the active inbox so they cannot be farmed repeatedly.
+### Visual system-design lab
 
-### Crisis chains
+Phase 9 introduces the first visual architecture exercises:
 
-Phase 7 incidents now have narrative aftermath. Solving incidents such as a transit partition, cache stampede, planning deadlock, or scheduler overload can produce follow-up engineering reviews with the relevant specialist.
+- Social Timeline
+- URL Shortener
+- Distributed Job Runner
 
-These aftermath beats reinforce the broader lesson behind the code—for example, moving from restoring graph connectivity to thinking about traffic concentration and resilience.
+Players select architecture components on a visual board, then explain scaling and failure-handling decisions. Designs are scored on required components, useful optional infrastructure, and reasoning concepts such as caching, queues, partitioning, retries, idempotency, availability, and backpressure.
 
-### Team UI
+Passing designs grant research and relationship progress with the systems-architecture mentor.
 
-Phase 8 adds a **👥 Team** surface with:
+### Engineering tab
 
-- character roster and relationship levels
-- mentor specialties
-- recruiting inbox
-- active interview round tracker
-- story feed
-- communication follow-up overlays
-- interview result reports
+A new **🧰 Engineer** surface combines:
 
-Mission Control also surfaces the most recent team/recruiting development and active interview status.
+- freeform reasoning interviewer
+- debugging incidents
+- visual system-design scenarios
+- behavioral interview practice
+- persistent best scores and completion progress
 
-## Phase 8 architecture
+The existing Challenge, Learn, Mock, Team, Strategy, City, and career systems remain available.
 
-Phase 8 continues the modular `/src` migration:
+## Phase 9 architecture
 
 ```text
 src/
-  story/
-    characters.js             roster + relationships
-    recruiting.js             company readiness + offers
-    narrative.js              milestone/reaction feed
-    interview-encounters.js   coding + communication round controller
-    crisis-chains.js          post-incident narrative chains
-    phase8-ui.js              team/recruiting/story surfaces
-    phase8-bootstrap.js       integration with verified learning events
+  interview/
+    reasoning-evaluator.js   local freeform rubric evaluator
+    ai-interviewer.js        adaptive reasoning + performance sessions
+    behavioral.js            STAR/ownership/evidence scoring
+    phase9-ui.js              engineering practice surface
+    phase9-bootstrap.js       integration with verified mastery events
+
+  game/
+    debugging-system.js      broken-code production incidents
+    system-design.js         visual architecture scenarios + scoring
 ```
 
-The existing learning stack remains the source of truth. Phase 8 listens to `learning:mastered`, crisis, career, and other established events instead of inventing a parallel correctness system.
+The existing Python judge remains the source of truth for coding correctness. Phase 9 listens to `learning:mastered` and only advances coding-dependent interview flows after a verified pass.
 
-## Core Phase 8 loop
+## Core Phase 9 loop
 
-1. Practice the highest-value weak or due skill.
-2. Pass the actual Python judge.
-3. Build mastery, city capability, and mentor trust.
-4. Resolve incidents alongside specialists.
-5. Meet real recruiting thresholds.
-6. Enter a fictional company's coding loop.
-7. Pass judged coding rounds and communicate reasoning.
-8. Receive an interview outcome and relationship/city progression.
-9. Use the next weak skill, crisis, discovery, or career opportunity to continue.
+1. Explain your intended approach before coding.
+2. Receive an adaptive follow-up on missing reasoning.
+3. Implement the solution in real Python.
+4. Pass visible and hidden tests.
+5. Defend runtime, memory, and scaling behavior.
+6. Practice repairing intentionally broken production code.
+7. Design larger systems and explain tradeoffs.
+8. Practice behavioral communication with measurable evidence.
+9. Feed stronger engineering judgment back into mentor, career, city, and recruiting progression.
 
 ## Existing systems retained
 
 Codeopolis still includes:
 
-- 52 fully judged Python problems
-- arrays, hashing, windows, stacks, intervals, graphs, DP, linked lists, trees, BSTs, heaps, tries, and backtracking
+- 52+ fully judged Python challenges plus Phase 9 debugging incidents
 - Pyodide execution in a hard-timeout Web Worker
-- visible and hidden tests
-- adaptive learning and mastery decay
-- spaced recall
-- timed practice and mock interviews
+- adaptive practice, spaced recall, and mastery decay
+- timed mocks and company interview encounters
 - Candidate → Principal career progression
-- interactive isometric city placement
-- roads, citizens, traffic, construction, day/night rendering
+- interactive isometric city with roads, citizens, traffic, construction, and day/night rendering
 - learning-aligned celebrations and Momentum
-- durable Knowledge Index
-- hidden discoveries
-- strategic compute doctrines
-- learning-driven crises
+- durable Knowledge Index and mastery-gated buildings
+- hidden discoveries and strategic compute doctrines
+- learning-driven city crises
 - civic contracts and megaprojects
+- persistent engineering mentors and relationships
+- fictional recruiting companies and narrative events
 
 ## Run locally
 
@@ -149,23 +142,12 @@ The default Scriptable launcher points to:
 
 ## Validation
 
-`.github/workflows/validate.yml` recursively runs JavaScript syntax checks and verifies local assets referenced by `index.html`. It automatically covers all Phase 8 modules.
+`.github/workflows/validate.yml` recursively syntax-checks every JavaScript file and verifies local assets referenced by `index.html`. It automatically covers the modular Phase 9 files.
 
-## Next game-quality milestone
+## Next milestone
 
-### Phase 9 — AI interviewer, debugging, and deeper engineering simulation
-
-The next major learning leap should make interviews and incidents less scripted:
-
-- AI interviewer conversation with reasoning evaluation
-- progressive interviewer hints rather than solution dumping
-- communication scoring from freeform explanations
-- debugging incidents using intentionally broken production-style code
-- performance/complexity follow-ups
-- richer behavioral rounds
-- beginning of visual system-design simulations
-- character-generated missions driven by current weak skills
+The next interview-quality step should add an optional real LLM interviewer adapter, spoken responses where platform APIs permit, richer debugging scenarios, load/failure simulation in system design, and integrated full interview loops mixing coding, debugging, behavioral, and system-design rounds.
 
 ## Design principle
 
-**The most emotionally rewarding events should still require useful learning.** Characters provide attachment and context, but relationships, recruiting, story progression, and city advancement should continue to be earned primarily by demonstrated skill rather than passive interaction.
+**The most emotionally rewarding actions should also train transferable engineering skill.** Passing code matters, but great interview performance also requires reasoning, debugging, communication, tradeoff analysis, and system thinking.
