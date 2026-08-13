@@ -144,6 +144,22 @@ The default Scriptable launcher points to:
 
 `.github/workflows/validate.yml` recursively syntax-checks every JavaScript file and verifies local assets referenced by `index.html`. It automatically covers the modular Phase 9 files.
 
+## Deployment
+
+Every push to `main` publishes to https://neffer77.github.io/l33t-interview-code/ via `.github/workflows/pages.yml`:
+
+1. **validate** — reuses `validate.yml`, so a commit that fails syntax, asset, or smoke checks never reaches the live site.
+2. **build** — runs `scripts/build-site.sh`, which stages the runtime site into `_site/` (excluding `.github/`, `tests/`, and `scripts/`), adds `.nojekyll`, writes `build-info.json`, and stamps the `sw.js` cache name with the commit SHA.
+3. **deploy** — uploads the artifact and publishes it to GitHub Pages.
+
+The service worker is cache-first for same-origin requests, so the SHA stamp is what makes a new release actually reach returning players instead of serving the previous shell forever. The build fails loudly if the `CACHE` constant in `sw.js` can no longer be found.
+
+Reproduce a deploy locally:
+
+```
+./scripts/build-site.sh && python3 -m http.server -d _site 8000
+```
+
 ## Next milestone
 
 The next interview-quality step should add an optional real LLM interviewer adapter, spoken responses where platform APIs permit, richer debugging scenarios, load/failure simulation in system design, and integrated full interview loops mixing coding, debugging, behavioral, and system-design rounds.

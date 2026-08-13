@@ -12,20 +12,41 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # Never cancel a deploy that is already publishing - a cancelled deploy can
+  # leave the live site on a half-uploaded artifact.
+  cancel-in-progress: false
 
 jobs:
+  # Same checks that guard every branch. A commit that fails validation
+  # must not reach the live site.
+  validate:
+    uses: ./.github/workflows/validate.yml
+
+  build:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/configure-pages@v5
+        with:
+          # Turn Pages on for the repo if it is not already enabled.
+          enablement: true
+      - name: Build site
+        run: ./scripts/build-site.sh
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
   deploy:
+    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
