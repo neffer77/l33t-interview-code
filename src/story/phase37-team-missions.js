@@ -1,0 +1,21 @@
+(function(C){'use strict';
+const MISSIONS=[
+{id:'algo-pair',title:'Pair on a Hot Path',icon:'🧠',npc:'maya',signal:'mastery',activity:'challenge',brief:'A latency-sensitive path is failing scale tests. Agree on invariants, then implement the fix.',choices:[['you-drive','You drive, Maya challenges invariants'],['pair-split','Split reasoning and implementation']]},
+{id:'incident-pair',title:'Production Pair Response',icon:'🛠️',npc:'theo',signal:'incident',activity:'incident',brief:'A production regression is spreading. Decide how to divide triage and containment.',choices:[['triage-first','You own diagnosis; Theo owns rollback readiness'],['contain-first','You own containment; Theo audits hypotheses']]},
+{id:'architecture-pair',title:'Architecture Review Council',icon:'🏗️',npc:'jin',signal:'design',activity:'design',brief:'A new service boundary is under review. Coordinate tradeoff analysis before presenting the design.',choices:[['interfaces','You own interfaces; Jin attacks failure modes'],['failure-modes','You own failure modes; Jin pressure-tests interfaces']]},
+{id:'project-pair',title:'Ship the Automation',icon:'🔬',npc:'luna',signal:'project',activity:'project',brief:'Turn a prototype into a measurable engineering deliverable with a clear experiment and rollout story.',choices:[['experiment','You own implementation; Luna owns experiment framing'],['rollout','You own rollout; Luna challenges assumptions']]},
+{id:'review-pair',title:'Repository Review Rotation',icon:'🛠️',npc:'theo',signal:'review',activity:'review',brief:'Review a risky change as a team. Divide correctness, maintainability, and failure-mode analysis.',choices:[['correctness','You lead correctness; Theo hunts operational risk'],['operations','You lead operational risk; Theo hunts code-quality issues']]},
+{id:'leadership-pair',title:'Stakeholder Alignment Drill',icon:'🎙️',npc:'marcus',signal:'behavioral',activity:'behavioral',brief:'A cross-team initiative is stalled. Coordinate the technical and people story before presenting it.',choices:[['ownership','You lead ownership narrative; Marcus challenges tradeoffs'],['tradeoffs','You lead tradeoffs; Marcus challenges ownership clarity']]}
+];
+class TeamMissions{
+ constructor(game,network){this.game=game;this.network=network;this.key='codeopolis-phase37-team-missions-v1';this.data=this.load();if(!this.data.active)this.next()}
+ load(){try{return Object.assign({active:null,history:[]},JSON.parse(localStorage.getItem(this.key)||'{}'))}catch{return{active:null,history:[]}}}
+ save(){localStorage.setItem(this.key,JSON.stringify(this.data))}
+ eligible(){const rel=Object.fromEntries(this.network.snapshot().map(x=>[x.id,x]));return MISSIONS.filter(m=>(rel[m.npc]?.tier?.index||0)>=1)}
+ next(){const pool=this.eligible();if(!pool.length)return null;const i=this.data.history.length%pool.length,m=pool[i];this.data.active={...m,choice:null,startedAt:Date.now(),completed:false};this.save();return this.data.active}
+ choose(id){const m=this.data.active;if(!m||m.completed||!m.choices.some(c=>c[0]===id))return false;m.choice=id;this.save();C.events.emit('team-mission:choice',{mission:m,choice:id});return true}
+ match(signal){const m=this.data.active;if(!m||m.completed||!m.choice||m.signal!==signal)return false;m.completed=true;m.completedAt=Date.now();this.data.history.unshift({...m});this.data.history=this.data.history.slice(0,30);this.save();C.events.emit('team-mission:completed',{mission:m});setTimeout(()=>{this.next();C.events.emit('team-mission:new',{mission:this.data.active})},0);return true}
+ launch(){const m=this.data.active;if(!m)return;const map={challenge:'challenge',incident:'challenge',design:'mock',project:'city',review:'city',behavioral:'mock'};try{switchTab(map[m.activity]||'challenge')}catch{}C.events.emit('team-mission:launched',{mission:m})}
+ snapshot(){return{active:this.data.active,history:this.data.history.slice(0,5),eligible:this.eligible().map(x=>x.id)}}
+}
+C.register('TeamMissions',TeamMissions);})(window.Codeopolis);
