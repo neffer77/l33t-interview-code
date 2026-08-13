@@ -25,7 +25,9 @@ function startJudgeWorker(){
   judgeWorkerStatus='loading';
   pyStatus='loading';
   renderPythonStatus();
-  judgeWorker=new Worker('python-worker.js');
+  // Module worker: Pyodide 314.x is ESM-only, so python-worker.js imports it
+  // rather than using importScripts(). See the comment at the top of that file.
+  judgeWorker=new Worker('python-worker.js',{type:'module'});
   judgeWorker.onmessage=event=>{
     const msg=event.data||{};
     if(msg.type==='ready'){
