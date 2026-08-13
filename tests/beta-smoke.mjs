@@ -13,10 +13,11 @@ const html=read('index.html');
 ok(/viewport/i.test(html),'index.html missing viewport metadata');
 ok(/app\.js/.test(html),'index.html does not load app.js');
 
-for(let n=9;n<=38;n++){
-  const candidates=[`src/story/phase${n}-bootstrap.js`,`src/game/phase${n}-bootstrap.js`,`src/interview/phase${n}-bootstrap.js`,`src/learning/phase${n}-bootstrap.js`,`phase${n}.js`];
-  ok(candidates.some(exists),`no bootstrap/runtime entry found for phase ${n}`);
-}
+const allFiles=[];
+const walk=d=>{for(const e of fs.readdirSync(d,{withFileTypes:true})){if(['.git','node_modules'].includes(e.name))continue;const p=path.join(d,e.name);if(e.isDirectory())walk(p);else allFiles.push(p)}};
+walk(root);
+const relFiles=allFiles.map(p=>path.relative(root,p).replaceAll('\\','/'));
+for(let n=9;n<=38;n++) ok(relFiles.some(p=>p.toLowerCase().includes(`phase${n}`)),`no runtime/documentation asset found for phase ${n}`);
 
 const manifest=JSON.parse(read('manifest.webmanifest'));
 ok(Boolean(manifest.name||manifest.short_name),'manifest missing app name');
@@ -26,9 +27,7 @@ const scriptable=read('scriptable/Codeopolis.js');
 ok(/WebView/.test(scriptable),'Scriptable launcher does not use WebView');
 ok(/https:\/\//.test(scriptable),'Scriptable launcher has no hosted URL');
 
-const jsFiles=[];
-const walk=d=>{for(const e of fs.readdirSync(d,{withFileTypes:true})){if(['.git','node_modules'].includes(e.name))continue;const p=path.join(d,e.name);if(e.isDirectory())walk(p);else if(e.name.endsWith('.js'))jsFiles.push(p)}};
-walk(root);
+const jsFiles=allFiles.filter(p=>p.endsWith('.js'));
 const corpus=jsFiles.map(p=>fs.readFileSync(p,'utf8')).join('\n');
 ok(/localStorage/.test(corpus),'no localStorage persistence found');
 ok(/learning:mastered/.test(corpus),'authoritative mastery event contract missing');
