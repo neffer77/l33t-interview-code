@@ -1,11 +1,9 @@
 // Phase 43 — true single-window routing for major standalone systems.
 (() => {
-  if (!document.querySelector('link[href="phase43-core-viewport.css"]')) {
-    const shellCss = document.createElement('link');
-    shellCss.rel = 'stylesheet';
-    shellCss.href = 'phase43-core-viewport.css';
-    document.head.appendChild(shellCss);
-  }
+  function css(href, marker){ if(document.querySelector(`link[href="${href}"]`)) return; const l=document.createElement('link'); l.rel='stylesheet'; l.href=href; if(marker) l.dataset[marker]='1'; document.head.appendChild(l); }
+  function script(src, marker){ if(document.querySelector(`script[src="${src}"]`)) return; const s=document.createElement('script'); s.src=src; s.defer=true; if(marker) s.dataset[marker]='1'; document.body.appendChild(s); }
+  css('phase43-core-viewport.css');
+  if (matchMedia('(max-width: 899px)').matches) { css('phase43-ionic.css'); script('src/platform/ionic-shell.js','codeopolisIonicShell'); }
 
   const root = window.Codeopolis = window.Codeopolis || {};
   const app = document.querySelector('main.app');
