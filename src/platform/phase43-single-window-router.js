@@ -1,5 +1,12 @@
 // Phase 43 — true single-window routing for major standalone systems.
 (() => {
+  if (!document.querySelector('link[href="phase43-core-viewport.css"]')) {
+    const shellCss = document.createElement('link');
+    shellCss.rel = 'stylesheet';
+    shellCss.href = 'phase43-core-viewport.css';
+    document.head.appendChild(shellCss);
+  }
+
   const root = window.Codeopolis = window.Codeopolis || {};
   const app = document.querySelector('main.app');
   if (!app || document.querySelector('.phase43-workspace-host')) return;
