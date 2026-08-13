@@ -29,3 +29,5 @@ jobs:
               raise SystemExit('Missing local assets: ' + ', '.join(missing))
           print('Validated local assets:', ', '.join(local))
           PY
+      - name: Run beta readiness smoke suite
+        run: node tests/beta-smoke.mjs
