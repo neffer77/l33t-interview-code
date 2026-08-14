@@ -16,6 +16,7 @@
   const SCENE_URL='src/civilization/phaser/city-scene.js';
   const TIER_VISUALS_URL='src/civilization/phaser/building-tier-visuals.js';
   const ADJ_VISUALS_URL='src/civilization/phaser/adjacency-visuals.js';
+  const SERVICE_VISUALS_URL='src/civilization/phaser/service-visuals.js';
   function loadScript(src,key){
     if(key&&window[key])return Promise.resolve();
     const existing=document.querySelector(`script[data-phase44-src="${src}"]`);if(existing)return new Promise((resolve,reject)=>{if(existing.dataset.loaded==='1')resolve();else{existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true})}});
@@ -42,6 +43,8 @@
     C.BuildingTierVisuals?.install?.();
     if(!C.AdjacencyVisuals)await loadScript(ADJ_VISUALS_URL);
     C.AdjacencyVisuals?.install?.();
+    if(!C.ServiceVisuals)await loadScript(SERVICE_VISUALS_URL);
+    C.ServiceVisuals?.install?.();
     if(!C.PlacementController)await loadScript(PLACEMENT_CONTROLLER_URL);
     if(!C.RoadPlannerUI)await loadScript(ROAD_UI_URL);
     if(!window.Phaser||!C.PhaserCityScene||!C.Phase44Assets||!C.PlacementController||!C.BuildingCatalogUI||!C.BuildingManagementUI||!C.RoadPlannerUI||!C.CityServicesUI)throw new Error('Phaser city runtime failed to load');
