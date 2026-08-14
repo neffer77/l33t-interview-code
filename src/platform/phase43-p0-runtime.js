@@ -103,9 +103,19 @@
     });
   }
 
+  function loadIonicStateController(){
+    if (!matchMedia('(max-width: 899px)').matches || document.querySelector('script[data-ionic-view-state]')) return;
+    const script=document.createElement('script');
+    script.src='src/platform/ionic-view-state.js';
+    script.defer=true;
+    script.dataset.ionicViewState='1';
+    document.body.appendChild(script);
+  }
+
   const observer=new MutationObserver(scanEditors);
   function boot() {
     scanEditors(); observer.observe(document.body,{childList:true,subtree:true});
+    loadIonicStateController();
     if (isScriptable || typeof Worker !== 'function') enableFallback(isScriptable?'Scriptable WebView':'Web Workers unsupported');
     else setTimeout(()=>{ if (window.judgeWorkerStatus === 'error') enableFallback('Worker boot failed'); },4500);
   }
