@@ -1,13 +1,19 @@
 (function(C){
   'use strict';
   const PHASER_URL='https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js';
+  const ASSET_URL='src/civilization/phaser/city-assets.js';
   const SCENE_URL='src/civilization/phaser/city-scene.js';
   function loadScript(src,key){
     if(key&&window[key])return Promise.resolve();
     const existing=document.querySelector(`script[data-phase44-src="${src}"]`);if(existing)return new Promise((resolve,reject)=>{if(existing.dataset.loaded==='1')resolve();else{existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true})}});
     return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.dataset.phase44Src=src;s.onload=()=>{s.dataset.loaded='1';resolve()};s.onerror=reject;document.head.appendChild(s)});
   }
-  async function loadRuntime(){await loadScript(PHASER_URL,'Phaser');if(!C.PhaserCityScene)await loadScript(SCENE_URL);if(!window.Phaser||!C.PhaserCityScene)throw new Error('Phaser city runtime failed to load')}
+  async function loadRuntime(){
+    await loadScript(PHASER_URL,'Phaser');
+    if(!C.Phase44Assets)await loadScript(ASSET_URL);
+    if(!C.PhaserCityScene)await loadScript(SCENE_URL);
+    if(!window.Phaser||!C.PhaserCityScene||!C.Phase44Assets)throw new Error('Phaser city runtime failed to load');
+  }
   function setActive(active){
     const p=C.phaserCity;if(!p?.game)return;
     const scene=p.game.scene.getScene('CodeopolisCity');if(!scene)return;
