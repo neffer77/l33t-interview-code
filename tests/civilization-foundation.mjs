@@ -12,7 +12,11 @@ const Codeopolis={
   register(name,value){this.registry.set(name,value)},
   get(name){return this.registry.get(name)}
 };
-const context=vm.createContext({window:{Codeopolis},Codeopolis,console,Date,Math,Number,Object,Array,Map,Set,JSON});
+const BUILDINGS=[
+  {id:'house',name:'Housing Block',icon:'🏠',cost:180,district:'core',population:25,desc:'+25 population'},
+  {id:'transit',name:'Graph Transit Hub',icon:'🚇',cost:650,district:'graphs',requiresTech:'graphs',desc:'+20 population'}
+];
+const context=vm.createContext({window:{Codeopolis},Codeopolis,BUILDINGS,console,Date,Math,Number,Object,Array,Map,Set,JSON});
 const run=p=>vm.runInContext(fs.readFileSync(path.join(root,p),'utf8'),context,{filename:p});
 run('src/game/world.js');
 run('src/civilization/phaser/world-adapter.js');
@@ -49,18 +53,32 @@ const block=world.setRoad(1,1,true);
 ok(block.ok===false,'road placement must reject occupied building tiles');
 ok(world.world.tiles['2,1'].road===before,'unrelated road state should remain stable');
 
-const placementState={buildings:['network-transit'],world:{version:3,width:5,height:5,migrated:true,tiles:{},camera:{zoom:1,panX:0,panY:0},stats:{}}};
-const placementWorld=new WorldSystem(placementState);
-const verdict=placementWorld.canPlaceBuilding('network-transit',1,1);
+const catalogState={money:700,tech:['graphs'],eraLevel:2,buildings:['transit'],world:{version:3,width:5,height:5,migrated:true,tiles:{},camera:{zoom:1,panX:0,panY:0},stats:{}}};
+const placementWorld=new WorldSystem(catalogState);
+const catalog=Codeopolis.BuildingRegistry.catalog(placementWorld,catalogState);
+const transitCard=catalog.find(x=>x.def.id==='transit');
+ok(transitCard&&transitCard.def.cost===650,'catalog should expose building cost metadata');
+ok(transitCard.def.footprint.w===2&&transitCard.def.footprint.h===2,'advanced catalog building should show a 2x2 footprint');
+ok(transitCard.owned===1&&transitCard.canPlace,'catalog should identify owned unplaced buildings');
+
+const verdict=placementWorld.canPlaceBuilding('transit',1,1);
 ok(verdict.ok&&verdict.footprint.w===2&&verdict.footprint.h===2,'advanced building should expose a 2x2 footprint');
-const placed=placementWorld.placeBuilding('network-transit',1,1,{construction:false});
+const placed=placementWorld.placeBuilding('transit',1,1,{construction:false});
 ok(placed.ok,'2x2 building should place on clear terrain');
 ok(placementWorld.tile(2,1)?.occupiedBy==='1,1'&&placementWorld.tile(1,2)?.occupiedBy==='1,1'&&placementWorld.tile(2,2)?.occupiedBy==='1,1','footprint child tiles should point to their anchor');
 ok(placementWorld.setRoad(2,2,true).ok===false,'roads must reject footprint child tiles');
-ok(placementWorld.canPlaceBuilding('network-transit',3,4).ok===false,'footprint placement should reject map-edge overflow');
+ok(placementWorld.canPlaceBuilding('transit',3,4).ok===false,'footprint placement should reject map-edge overflow');
+const placementSnap=new Adapter(placementWorld,catalogState).snapshot();
+const transitRendered=placementSnap.buildings.find(b=>b.id==='transit');
+ok(transitRendered?.footprint?.w===2&&transitRendered?.footprint?.h===2,'renderer snapshot should preserve building footprint metadata');
+ok(placementSnap.terrain[2][2]==='grass','footprint child terrain should render as buildable ground');
 const moved=placementWorld.unplaceBuilding(2,2);
-ok(moved.ok&&moved.id==='network-transit','unplacing from a footprint child should resolve the anchor building');
+ok(moved.ok&&moved.id==='transit','unplacing from a footprint child should resolve the anchor building');
 ok(!placementWorld.tile(1,1)&&!placementWorld.tile(2,2),'unplacing should clear the full building footprint');
 
+const lockedState={money:1000,tech:[],eraLevel:1,buildings:[],world:{version:3,width:4,height:4,migrated:true,tiles:{},camera:{},stats:{}}};
+const lockedWorld=new WorldSystem(lockedState),lockedTransit=Codeopolis.BuildingRegistry.status(lockedWorld,lockedState,'transit');
+ok(Boolean(lockedTransit.locked),'catalog should expose prerequisite lock reasons');
+
 if(failures.length){console.error('\nCIVILIZATION FOUNDATION TESTS FAILED');for(const f of failures)console.error(' - '+f);process.exit(1)}
-console.log(`Civilization foundation passed: schema v${world.world.version}, ${snapA.buildings.length} buildings, ${snapA.roads.length} roads, deterministic ${snapA.width}x${snapA.height} terrain, footprint placement verified.`);
+console.log(`Civilization foundation passed: schema v${world.world.version}, deterministic terrain, footprint placement, renderer metadata, and P1-B catalog rules verified.`);
