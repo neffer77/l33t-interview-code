@@ -32,3 +32,5 @@ jobs:
           PY
       - name: Run beta readiness smoke suite
         run: node tests/beta-smoke.mjs
+      - name: Run civilization foundation suite
+        run: node tests/civilization-foundation.mjs
