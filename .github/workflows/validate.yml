@@ -38,3 +38,5 @@ jobs:
         run: node tests/city-services.mjs
       - name: Run building specialization suite
         run: node tests/building-specializations.mjs
+      - name: Run construction queue suite
+        run: node tests/construction-queue.mjs
