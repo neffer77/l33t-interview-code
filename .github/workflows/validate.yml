@@ -48,3 +48,5 @@ jobs:
         run: node tests/phase1-integration.mjs
       - name: Run concept resource suite
         run: node tests/concept-resources.mjs
+      - name: Run multi-resource economy suite
+        run: node tests/multi-resource-economy.mjs
