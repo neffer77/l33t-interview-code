@@ -1,8 +1,9 @@
 (function(C){
   'use strict';
+  const CAMERA_URL='src/civilization/phaser/mobile-camera-controller.js';
   function activeView(){return document.querySelector('#codeopolisIonicShell')?.dataset.view||document.querySelector('.tabs button.active[data-tab]')?.dataset.tab||'challenge'}
   function syncLifecycle(){
-    const p=C.phaserCity;if(!p)return;const active=activeView()==='city';p.setActive?.(active);p.host.style.visibility=active?'visible':'hidden';p.host.style.pointerEvents=active?'auto':'none';
+    const p=C.phaserCity;if(!p)return;const active=activeView()==='city';p.setActive?.(active);p.host.style.visibility=active?'visible':'hidden';p.host.style.pointerEvents=active?'auto':'none';if(active)requestAnimationFrame(()=>C.get?.('Phase44MobileCamera')?.resize?.());
   }
   function watchViews(){
     const shell=document.querySelector('#codeopolisIonicShell');if(shell)new MutationObserver(syncLifecycle).observe(shell,{attributes:true,attributeFilter:['data-view']});
@@ -10,11 +11,12 @@
     document.addEventListener('click',e=>{if(e.target.closest?.('[data-tab]'))requestAnimationFrame(syncLifecycle)},true);
     document.addEventListener('visibilitychange',()=>{if(document.hidden)C.phaserCity?.setActive?.(false);else syncLifecycle()});
   }
-  function start(){
+  function loadCamera(){return new Promise((resolve,reject)=>{if(C.get?.('Phase44MobileCamera'))return resolve();const old=document.querySelector(`script[data-phase44-camera="1"]`);if(old){old.addEventListener('load',resolve,{once:true});return}const s=document.createElement('script');s.src=CAMERA_URL;s.dataset.phase44Camera='1';s.onload=resolve;s.onerror=reject;document.head.appendChild(s)})}
+  async function start(){
     watchViews();let tries=0;const timer=setInterval(async()=>{
-      tries++;if(C.phaserCity){clearInterval(timer);syncLifecycle();return}
+      tries++;if(C.phaserCity){clearInterval(timer);syncLifecycle();try{await loadCamera();C.get('Phase44MobileCamera')?.install?.()}catch(e){console.warn('Phase 44 mobile camera unavailable',e)}return}
       const boot=C.get?.('PhaserCivilizationBootstrap'),world=C.game?.world;
-      if(boot&&world&&typeof state!=='undefined'){clearInterval(timer);const ok=await boot.start(world,state);if(ok)syncLifecycle();return}
+      if(boot&&world&&typeof state!=='undefined'){clearInterval(timer);const ok=await boot.start(world,state);if(ok){syncLifecycle();try{await loadCamera();C.get('Phase44MobileCamera')?.install?.()}catch(e){console.warn('Phase 44 mobile camera unavailable',e)}}return}
       if(tries>80)clearInterval(timer);
     },125);
   }
