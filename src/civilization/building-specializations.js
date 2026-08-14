@@ -1,0 +1,51 @@
+(function(C){
+  'use strict';
+  const BY_DISTRICT={
+    core:[
+      {id:'commerce',name:'Commerce Hub',icon:'💱',desc:'+35% money output',effects:{moneyRate:1.35}},
+      {id:'community',name:'Community Campus',icon:'🏘️',desc:'+30% population and happiness',effects:{population:1.30,happiness:1.30}}
+    ],
+    graphs:[
+      {id:'throughput',name:'Throughput Routing',icon:'⚡',desc:'+35% research output',effects:{researchRate:1.35}},
+      {id:'efficient-routing',name:'Efficient Routing',icon:'🧭',desc:'-30% power and worker demand',service:{powerDemand:.70,workerDemand:.70}}
+    ],
+    dp:[
+      {id:'optimizer-lab',name:'Optimizer Lab',icon:'📈',desc:'+35% research output',effects:{researchRate:1.35}},
+      {id:'compute-efficiency',name:'Compute Efficiency',icon:'♻️',desc:'-35% power demand',service:{powerDemand:.65}}
+    ],
+    systems:[
+      {id:'scale-out',name:'Scale-Out Systems',icon:'🕸️',desc:'+25% money and research',effects:{moneyRate:1.25,researchRate:1.25}},
+      {id:'utility-backbone',name:'Utility Backbone',icon:'🔌',desc:'+45% power supply',service:{powerSupply:1.45}}
+    ],
+    reliability:[
+      {id:'fault-tolerant',name:'Fault-Tolerant Core',icon:'🛡️',desc:'+25% research and happiness',effects:{researchRate:1.25,happiness:1.25}},
+      {id:'lean-operations',name:'Lean Operations',icon:'🧰',desc:'-25% worker and power demand',service:{powerDemand:.75,workerDemand:.75}}
+    ],
+    infrastructure:[
+      {id:'grid-expansion',name:'Grid Expansion',icon:'⚡',desc:'+50% power supply',service:{powerSupply:1.50}},
+      {id:'compact-ops',name:'Compact Operations',icon:'🏗️',desc:'-30% worker demand',service:{workerDemand:.70}}
+    ],
+    network:[
+      {id:'high-capacity',name:'High-Capacity Network',icon:'📡',desc:'+30% money and research',effects:{moneyRate:1.30,researchRate:1.30}},
+      {id:'low-power-fabric',name:'Low-Power Fabric',icon:'🌐',desc:'-35% power demand',service:{powerDemand:.65}}
+    ]
+  };
+  const DEFAULTS=[
+    {id:'productivity',name:'Productivity Center',icon:'📊',desc:'+30% money output',effects:{moneyRate:1.30}},
+    {id:'learning',name:'Learning Center',icon:'🧠',desc:'+30% research output',effects:{researchRate:1.30}}
+  ];
+  function optionsFor(world,x,y){const a=world.anchorFor?.(x,y)||{x,y},t=world.tile(a.x,a.y);if(!t?.buildingId)return[];const def=C.BuildingRegistry?.definition?.(world,t.buildingId)||world.buildingDef(t.buildingId)||{},district=String(def.district||'core').toLowerCase();return (BY_DISTRICT[district]||DEFAULTS).map(v=>({...v,effects:{...(v.effects||{})},service:{...(v.service||{})}}))}
+  function install(){
+    const World=C.get?.('WorldSystem');if(!World||World.prototype.__p1fSpecializationsInstalled)return false;
+    const p=World.prototype;p.__p1fSpecializationsInstalled=true;
+    const previousEffects=p.buildingEffects,previousProfile=p.serviceProfile,previousNormalize=p.normalize;
+    p.specializationOptions=function(x,y){return optionsFor(this,x,y)};
+    p.buildingSpecialization=function(x,y){const a=this.anchorFor?.(x,y)||{x,y},t=this.tile(a.x,a.y);if(!t?.specialization)return null;return this.specializationOptions(a.x,a.y).find(v=>v.id===t.specialization)||null};
+    p.chooseSpecialization=function(x,y,id){const a=this.anchorFor?.(x,y)||{x,y},t=this.tile(a.x,a.y);if(!t?.buildingId)return{ok:false,reason:'No building selected'};if((this.buildingLevel?.(a.x,a.y)||1)<2)return{ok:false,reason:'Reach level 2 before specializing'};if(t.specialization)return{ok:false,reason:'Specialization is already locked in'};const choice=this.specializationOptions(a.x,a.y).find(v=>v.id===id);if(!choice)return{ok:false,reason:'Unknown specialization'};t.specialization=id;t.specializedAt=Date.now();C.events.emit('world:building-specialized',{id:t.buildingId,x:a.x,y:a.y,specialization:id,name:choice.name});C.events.emit('world:selected',this.world.selected);return{ok:true,x:a.x,y:a.y,id:t.buildingId,specialization:id,choice}};
+    p.buildingEffects=function(x,y){const fx=previousEffects?.call(this,x,y);if(!fx)return fx;const spec=this.buildingSpecialization(x,y);if(!spec)return{...fx,specialization:null};const e=spec.effects||{};return{...fx,specialization:spec,population:Math.round((fx.population||0)*(e.population||1)),energy:Math.round((fx.energy||0)*(e.energy||1)),happiness:Math.round((fx.happiness||0)*(e.happiness||1)),moneyRate:Number(((fx.moneyRate||0)*(e.moneyRate||1)).toFixed(1)),researchRate:Number(((fx.researchRate||0)*(e.researchRate||1)).toFixed(1))}};
+    if(previousProfile)p.serviceProfile=function(x,y){const profile=previousProfile.call(this,x,y);if(!profile)return profile;const spec=this.buildingSpecialization(x,y),s=spec?.service||{};return{...profile,specialization:spec,powerSupply:Number((profile.powerSupply*(s.powerSupply||1)).toFixed(1)),powerDemand:Number((profile.powerDemand*(s.powerDemand||1)).toFixed(1)),workerDemand:Number((profile.workerDemand*(s.workerDemand||1)).toFixed(1)),housingCapacity:Number((profile.housingCapacity*(s.housingCapacity||1)).toFixed(1))}};
+    p.normalize=function(world){previousNormalize.call(this,world);for(const t of Object.values(world.tiles||{})){if(!t?.buildingId||!t.specialization)continue;const valid=(BY_DISTRICT[String(this.districtFor?.(t.buildingId)||'core').toLowerCase()]||DEFAULTS).some(v=>v.id===t.specialization);if(!valid)delete t.specialization;if(t.specializedAt&&!Number.isFinite(Number(t.specializedAt)))delete t.specializedAt}};
+    return true;
+  }
+  C.register('BuildingSpecializations',{install,optionsFor,BY_DISTRICT,DEFAULTS});
+})(window.Codeopolis);
