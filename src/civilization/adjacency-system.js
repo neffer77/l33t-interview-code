@@ -14,7 +14,9 @@
       return{roadConnected,adjacentRoads:roads.size,sameDistrict,adjacentBuildings:neighbors.size,district,roadBonus,districtBonus,multiplier};
     };
     p.buildingEffects=function(x,y){const fx=originalEffects.call(this,x,y);if(!fx)return fx;const adj=this.adjacencyStatus(x,y),m=adj?.multiplier||1;return{...fx,adjacency:adj,totalMultiplier:Number((fx.multiplier*m).toFixed(3)),population:Math.round(fx.population*m),energy:Math.round(fx.energy*m),happiness:Math.round(fx.happiness*m),moneyRate:Number((fx.moneyRate*m).toFixed(1)),researchRate:Number((fx.researchRate*m).toFixed(1))}};
-    p.cityAdjacencySummary=function(){let connected=0,clustered=0,total=0;for(const b of this.placedBuildings()){total++;const s=this.adjacencyStatus(b.x,b.y);if(s?.roadConnected)connected++;if(s?.sameDistrict)clustered++}return{total,connected,clustered,roadCoverage:total?connected/total:0}};
+    p.cityAdjacencySummary=function(){let connected=0,clustered=0,total=0,weighted=0;for(const b of this.placedBuildings()){total++;const s=this.adjacencyStatus(b.x,b.y);if(s?.roadConnected)connected++;if(s?.sameDistrict)clustered++;weighted+=s?.multiplier||1}return{total,connected,clustered,roadCoverage:total?connected/total:0,averageMultiplier:total?weighted/total:1}};
+    p.cityProductionMultiplier=function(){const s=this.cityAdjacencySummary();return Number(Math.max(1,s.averageMultiplier||1).toFixed(3))};
+    if(typeof window!=='undefined'&&typeof window.productionRates==='function'&&!window.productionRates.__p1dAdjacencyWrapped){const legacy=window.productionRates,worldFor=()=>C.game?.world;const wrapped=function(){const r=legacy.apply(this,arguments),w=worldFor(),m=w?.cityProductionMultiplier?.()||1;if(Number.isFinite(r?.moneyRate))r.moneyRate*=m;if(Number.isFinite(r?.researchRate))r.researchRate*=m;return r};wrapped.__p1dAdjacencyWrapped=true;window.productionRates=wrapped}
     return true;
   }
   C.register('AdjacencySystem',{install});
