@@ -46,3 +46,5 @@ jobs:
         run: node tests/city-editing.mjs
       - name: Run Phase 1 integration suite
         run: node tests/phase1-integration.mjs
+      - name: Run concept resource suite
+        run: node tests/concept-resources.mjs

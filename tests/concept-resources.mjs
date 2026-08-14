@@ -1,0 +1,16 @@
+import fs from 'node:fs';import vm from 'node:vm';import path from 'node:path';
+const root=process.cwd(),failures=[],ok=(v,m)=>{if(!v)failures.push(m)};const handlers={};
+const Codeopolis={events:{on(e,f){(handlers[e]||(handlers[e]=[])).push(f)},emit(e,p){for(const f of handlers[e]||[])f(p)}}};
+const state={};const context=vm.createContext({window:{Codeopolis,state},Codeopolis,state,console,Date,Math,Number,Object,Array,Map,Set,JSON});vm.runInContext(fs.readFileSync(path.join(root,'src/progression/concept-resources.js'),'utf8'),context);
+const R=Codeopolis.ConceptResources;
+ok(R.conceptKey({district:'arrays'})==='materials','arrays should map to materials');
+ok(R.conceptKey({district:'hash'})==='trade','hash should map to trade');
+ok(R.conceptKey({district:'graphs'})==='research','graphs should map to research');
+ok(R.conceptKey({district:'dp'})==='compute','dp should map to compute');
+ok(R.conceptKey({pattern:'Distributed Systems'})==='infrastructure','systems keywords should map to infrastructure');
+ok(R.conceptKey({pattern:'Fault Tolerant Debugging'})==='stability','reliability/debugging should map to stability');
+ok(R.conceptKey({pattern:'mystery topic'})==='materials','unknown concepts should safely fall back to materials');
+const easy=R.rewardFor({district:'graphs',diff:'Easy'}),medium=R.rewardFor({district:'graphs',diff:'Medium'}),hard=R.rewardFor({district:'graphs',diff:'Hard'});ok(easy.amount<medium.amount&&medium.amount<hard.amount,'difficulty should scale resource rewards');const repeat=R.rewardFor({district:'graphs',diff:'Medium',repeat:true});ok(repeat.amount<medium.amount,'repeat solves should earn reduced resources');
+let a=R.award(state,{challenge:{id:'course-schedule',district:'graphs',pattern:'Topological Sort',diff:'Medium'}});ok(a.resourceId==='research'&&state.learningResources.balances.research===a.amount,'award should persist research balance');R.award(state,{challenge:{id:'house-robber',district:'dp',diff:'Medium'}});ok(state.learningResources.balances.compute>0,'dp award should persist compute');const saved=JSON.parse(JSON.stringify(state));const restored={learningResources:saved.learningResources};R.ensure(restored);ok(restored.learningResources.balances.research===state.learningResources.balances.research,'resource balances should survive save/reload');ok(Object.keys(restored.learningResources.balances).length===6,'all canonical balances should exist after normalization');
+const before=restored.learningResources.balances.trade;R.award(restored,{challenge:{district:'hash',diff:'Easy'}});ok(restored.learningResources.balances.trade>before,'direct award API should support existing challenge metadata');
+if(failures.length){console.error('CONCEPT RESOURCE TESTS FAILED');for(const f of failures)console.error(' - '+f);process.exit(1)}console.log('Concept resources passed: taxonomy, curriculum mapping, difficulty/repeat scaling, awards, fallback, and persistence verified.');
