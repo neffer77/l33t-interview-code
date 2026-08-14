@@ -25,6 +25,8 @@ run('src/civilization/placement-model.js');
 Codeopolis.get('PlacementModel').install();
 run('src/civilization/building-management.js');
 Codeopolis.get('BuildingManagement').install();
+run('src/civilization/adjacency-system.js');
+Codeopolis.get('AdjacencySystem').install();
 const WorldSystem=Codeopolis.get('WorldSystem');
 const Adapter=Codeopolis.get('CivilizationWorldAdapter');
 
@@ -56,23 +58,36 @@ const block=world.setRoad(1,1,true);
 ok(block.ok===false,'road placement must reject occupied building tiles');
 ok(world.world.tiles['2,1'].road===before,'unrelated road state should remain stable');
 
-const catalogState={money:3000,tech:['graphs'],eraLevel:2,buildings:['transit'],world:{version:3,width:5,height:5,migrated:true,tiles:{},camera:{zoom:1,panX:0,panY:0},stats:{}}};
+const catalogState={money:5000,tech:['graphs'],eraLevel:2,buildings:['transit','transit'],world:{version:3,width:7,height:6,migrated:true,tiles:{},camera:{zoom:1,panX:0,panY:0},stats:{}}};
 const placementWorld=new WorldSystem(catalogState);
 const catalog=Codeopolis.BuildingRegistry.catalog(placementWorld,catalogState);
 const transitCard=catalog.find(x=>x.def.id==='transit');
 ok(transitCard&&transitCard.def.cost===650,'catalog should expose building cost metadata');
 ok(transitCard.def.footprint.w===2&&transitCard.def.footprint.h===2,'advanced catalog building should show a 2x2 footprint');
-ok(transitCard.owned===1&&transitCard.canPlace,'catalog should identify owned unplaced buildings');
+ok(transitCard.owned===2&&transitCard.canPlace,'catalog should identify owned unplaced buildings');
 
 const placed=placementWorld.placeBuilding('transit',1,1,{construction:false});
 ok(placed.ok,'2x2 building should place on clear terrain');
 ok(placementWorld.tile(2,1)?.occupiedBy==='1,1'&&placementWorld.tile(2,2)?.occupiedBy==='1,1','footprint child tiles should point to their anchor');
 ok(placementWorld.setRoad(2,2,true).ok===false,'roads must reject footprint child tiles');
+const second=placementWorld.placeBuilding('transit',3,1,{construction:false});
+ok(second.ok,'second same-district building should place beside the first footprint');
+let adj=placementWorld.adjacencyStatus(1,1);
+ok(adj.sameDistrict===1&&adj.districtBonus===.05,'same-district adjacency should grant a 5 percent bonus');
+ok(!adj.roadConnected,'building should begin without road access');
+ok(placementWorld.setRoad(1,3,true).ok,'road should place beside a building footprint');
+adj=placementWorld.adjacencyStatus(1,1);
+ok(adj.roadConnected&&adj.roadBonus===.10,'adjacent road should grant a 10 percent bonus');
+ok(Math.abs(adj.multiplier-1.15)<1e-9,'road and one district neighbor should combine to a 15 percent planning bonus');
+const summary=placementWorld.cityAdjacencySummary();
+ok(summary.total===2&&summary.connected===1&&summary.clustered===2,'city adjacency summary should count road access and district clusters');
+ok(placementWorld.cityProductionMultiplier()>1,'city planning should raise the passive production multiplier');
+
 const initialEffects=placementWorld.buildingEffects(1,1);
-ok(initialEffects.level===1&&initialEffects.population===20,'level 1 effects should equal base building effects');
+ok(initialEffects.level===1&&initialEffects.population===23,'level 1 effects should include the 15 percent planning bonus');
 const upgrade1=placementWorld.upgradeBuilding(2,2,catalogState);
 ok(upgrade1.ok&&upgrade1.level===2,'upgrade should resolve child tile to anchor and reach level 2');
-ok(placementWorld.buildingEffects(1,1).population===30,'level 2 should scale base effects by 50 percent');
+ok(placementWorld.buildingEffects(1,1).population===35,'level 2 output should include tier and planning multipliers');
 const moneyAfterFirst=catalogState.money;
 const upgrade2=placementWorld.upgradeBuilding(1,1,catalogState);
 ok(upgrade2.ok&&upgrade2.level===3,'second upgrade should reach max level');
@@ -80,19 +95,20 @@ ok(catalogState.money<moneyAfterFirst,'upgrades should spend money');
 ok(placementWorld.upgradeCost(1,1)===null,'max-level building should have no upgrade cost');
 ok(placementWorld.upgradeBuilding(1,1,catalogState).ok===false,'max-level building should reject further upgrades');
 const placementSnap=new Adapter(placementWorld,catalogState).snapshot();
-const transitRendered=placementSnap.buildings.find(b=>b.id==='transit');
+const transitRendered=placementSnap.buildings.find(b=>b.id==='transit'&&b.x===1);
 ok(transitRendered?.footprint?.w===2&&transitRendered?.level===3,'renderer snapshot should preserve footprint and upgrade tier');
-ok(transitRendered?.effects?.population===40,'renderer snapshot should expose scaled effects');
+ok(transitRendered?.adjacency?.roadConnected&&transitRendered?.adjacency?.sameDistrict===1,'renderer snapshot should expose road and district adjacency metadata');
+ok(placementSnap.adjacencySummary?.connected===1,'renderer snapshot should expose city planning summary');
 ok(placementSnap.terrain[2][2]==='grass','footprint child terrain should render as buildable ground');
 
 const demo=placementWorld.demolishBuilding(2,2);
 ok(demo.ok&&demo.refund>0,'demolishing an upgraded building should return a partial refund');
 ok(!placementWorld.tile(1,1)&&!placementWorld.tile(2,2),'demolition should clear the full footprint');
-ok(!catalogState.buildings.includes('transit'),'demolition should remove one owned building instance');
+ok(catalogState.buildings.filter(x=>x==='transit').length===1,'demolition should remove exactly one owned building instance');
 
 const lockedState={money:1000,tech:[],eraLevel:1,buildings:[],world:{version:3,width:4,height:4,migrated:true,tiles:{},camera:{},stats:{}}};
 const lockedWorld=new WorldSystem(lockedState),lockedTransit=Codeopolis.BuildingRegistry.status(lockedWorld,lockedState,'transit');
 ok(Boolean(lockedTransit.locked),'catalog should expose prerequisite lock reasons');
 
 if(failures.length){console.error('\nCIVILIZATION FOUNDATION TESTS FAILED');for(const f of failures)console.error(' - '+f);process.exit(1)}
-console.log(`Civilization foundation passed: deterministic terrain, catalog, footprints, P1-C upgrades, management, refunds, and renderer tier metadata verified.`);
+console.log(`Civilization foundation passed: deterministic terrain, catalog, footprints, upgrades, roads, adjacency bonuses, district clustering, and planning metadata verified.`);
