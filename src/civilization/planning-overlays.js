@@ -12,7 +12,7 @@
       const roadSet=new Set(this.roadTiles().map(r=>`${r.x},${r.y}`));
       const push=(x,y,value,label,kind='neutral',extra={})=>cells.push({x,y,value:clamp01(value),label,kind,...extra});
       if(mode==='roads'){
-        for(let y=0;y<height;y++)for(let x=0;x<width;x++){const road=roadSet.has(`${x},${y}`),t=this.tile(x,y),anchor=t?.buildingId?{x,y}:t?.occupiedBy?this.anchorFor(x,y):null;let connected=false;if(anchor){const a=this.adjacencyStatus?.(anchor.x,anchor.y);connected=!!a?.roadConnected}push(x,y,road?1:connected?.8:0,road?'Road':connected?'Road served':'No road access',road?'road':connected?'good':'bad')}
+        for(let y=0;y<height;y++)for(let x=0;x<width;x++){const road=roadSet.has(`${x},${y}`),t=this.tile(x,y),anchor=t?.buildingId?{x,y}:t?.occupiedBy?this.anchorFor(x,y):null;let connected=false;if(anchor){const a=this.adjacencyStatus?.(anchor.x,anchor.y);connected=!!a?.roadConnected}push(x,y,road?1:(connected?.8:0),road?'Road':connected?'Road served':'No road access',road?'road':connected?'good':'bad')}
       }else if(mode==='districts'){
         for(const b of buildings){const a=this.adjacencyStatus?.(b.x,b.y),bonus=Math.min(.2,Number(a?.districtBonus)||0),fp=b.footprint||{w:1,h:1};for(let dy=0;dy<fp.h;dy++)for(let dx=0;dx<fp.w;dx++)push(b.x+dx,b.y+dy,bonus/.2,bonus?`+${Math.round(bonus*100)}% district bonus`:'No district cluster',bonus>=.1?'good':bonus>0?'warn':'bad',{district:b.def?.district||'core',buildingId:b.id})}
       }else if(mode==='construction'){
