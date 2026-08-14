@@ -42,3 +42,5 @@ jobs:
         run: node tests/construction-queue.mjs
       - name: Run planning overlay suite
         run: node tests/planning-overlays.mjs
+      - name: Run city editing suite
+        run: node tests/city-editing.mjs
