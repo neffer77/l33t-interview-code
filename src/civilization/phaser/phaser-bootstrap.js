@@ -4,6 +4,8 @@
   const DIAGNOSTICS_URL='src/civilization/phaser/map-diagnostics.js';
   const REGISTRY_URL='src/civilization/building-registry.js';
   const CATALOG_UI_URL='src/civilization/building-catalog-ui.js';
+  const LIFECYCLE_URL='src/civilization/building-lifecycle.js';
+  const LIFECYCLE_UI_URL='src/civilization/building-lifecycle-ui.js';
   const PLACEMENT_MODEL_URL='src/civilization/placement-model.js';
   const PLACEMENT_CONTROLLER_URL='src/civilization/phaser/placement-controller.js';
   const ASSET_URL='src/civilization/phaser/city-assets.js';
@@ -19,11 +21,14 @@
     if(!C.BuildingCatalogUI)await loadScript(CATALOG_UI_URL);
     if(!C.get?.('PlacementModel'))await loadScript(PLACEMENT_MODEL_URL);
     C.get?.('PlacementModel')?.install?.();
+    if(!C.BuildingLifecycle)await loadScript(LIFECYCLE_URL);
+    C.BuildingLifecycle?.install?.();
+    if(!C.BuildingLifecycleUI)await loadScript(LIFECYCLE_UI_URL);
     await loadScript(PHASER_URL,'Phaser');
     if(!C.Phase44Assets)await loadScript(ASSET_URL);
     if(!C.PhaserCityScene)await loadScript(SCENE_URL);
     if(!C.PlacementController)await loadScript(PLACEMENT_CONTROLLER_URL);
-    if(!window.Phaser||!C.PhaserCityScene||!C.Phase44Assets||!C.PlacementController||!C.BuildingCatalogUI)throw new Error('Phaser city runtime failed to load');
+    if(!window.Phaser||!C.PhaserCityScene||!C.Phase44Assets||!C.PlacementController||!C.BuildingCatalogUI||!C.BuildingLifecycleUI)throw new Error('Phaser city runtime failed to load');
   }
   function fallback(reason){
     const p=C.phaserCity,canvas=p?.legacyCanvas||document.getElementById('cityCanvas');
@@ -37,7 +42,7 @@
   function setActive(active){
     const p=C.phaserCity;if(!p?.game)return;
     const scene=p.game.scene.getScene('CodeopolisCity');if(!scene)return;
-    if(active){if(scene.scene.isSleeping())scene.scene.wake();if(scene.scene.isPaused())scene.scene.resume();p.game.loop.wake();p.resize?.();p.catalog?.render?.()}
+    if(active){if(scene.scene.isSleeping())scene.scene.wake();if(scene.scene.isPaused())scene.scene.resume();p.game.loop.wake();p.resize?.();p.catalog?.render?.();p.lifecycle?.render?.()}
     else{if(scene.scene.isActive())scene.scene.sleep();p.game.loop.sleep()}
     p.active=!!active;
   }
@@ -48,12 +53,12 @@
       const Adapter=C.get('CivilizationWorldAdapter'),adapter=new Adapter(world,state),host=document.createElement('div');host.id='phaserCityHost';host.className='phaser-city-host';canvas.insertAdjacentElement('afterend',host);canvas.style.display='none';
       const game=new Phaser.Game({type:Phaser.AUTO,parent:host,backgroundColor:'#132c31',pixelArt:true,roundPixels:true,antialias:false,scale:{mode:Phaser.Scale.RESIZE,width:'100%',height:'100%'},scene:[]});
       game.scene.add('CodeopolisCity',C.PhaserCityScene,false);game.scene.start('CodeopolisCity',{adapter,world});
-      const scene=game.scene.getScene('CodeopolisCity'),placement=new C.PlacementController(scene,world),catalog=new C.BuildingCatalogUI(host,world,state);
-      C.phaserCity={game,adapter,placement,catalog,host,legacyCanvas:canvas,active:true,resize:()=>{if(host.clientWidth&&host.clientHeight)game.scale.resize(host.clientWidth,host.clientHeight)},setActive};
+      const scene=game.scene.getScene('CodeopolisCity'),placement=new C.PlacementController(scene,world),catalog=new C.BuildingCatalogUI(host,world,state),lifecycle=new C.BuildingLifecycleUI(host,world,state);
+      C.phaserCity={game,adapter,placement,catalog,lifecycle,host,legacyCanvas:canvas,active:true,resize:()=>{if(host.clientWidth&&host.clientHeight)game.scale.resize(host.clientWidth,host.clientHeight)},setActive};
       const renderCanvas=game.canvas;renderCanvas?.addEventListener?.('webglcontextlost',e=>{e.preventDefault?.();fallback(new Error('WebGL context lost'))},{once:true});
       new ResizeObserver(()=>C.phaserCity?.resize()).observe(host);
       setTimeout(()=>{const p=C.phaserCity;if(!p?.game)return;const current=p.game.scene.getScene('CodeopolisCity');if(!current||!current.sys?.isActive?.())fallback(new Error('Phaser City scene failed health check'));else C.Phase44Diagnostics?.installControls?.(host)},1800);
-      C.events.emit('civilization:phaser-ready',{renderer:'phaser',version:Phaser.VERSION,placement:true,catalog:true});return true;
+      C.events.emit('civilization:phaser-ready',{renderer:'phaser',version:Phaser.VERSION,placement:true,catalog:true,lifecycle:true});return true;
     }catch(err){fallback(err);return false}
   }
   C.register('PhaserCivilizationBootstrap',{start,setActive,fallback});
