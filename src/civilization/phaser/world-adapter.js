@@ -26,10 +26,10 @@
       const w=this.world.world,roads=this.world.roadTiles().filter(r=>this.world.inside(r.x,r.y)),roadSet=new Set(roads.map(r=>`${r.x},${r.y}`));
       const buildings=this.world.placedBuildings().filter(b=>this.world.inside(b.x,b.y)).map(b=>({
         x:b.x,y:b.y,id:b.id,name:b.def?.name||b.id,icon:b.def?.icon||'🏗️',district:b.def?.district||'core',known:!!b.def,
-        footprint:b.footprint||b.tile?.footprint||{w:1,h:1},
+        footprint:b.footprint||b.tile?.footprint||{w:1,h:1},level:this.world.buildingLevel?this.world.buildingLevel(b.x,b.y):Math.max(1,Number(b.tile?.level)||1),outputMultiplier:this.world.buildingOutputMultiplier?this.world.buildingOutputMultiplier(b.x,b.y):1,
         progress:this.world.constructionProgress(b.tile,now),placedAt:b.tile?.placedAt||null,constructionMs:b.tile?.constructionMs||0
       }));
-      return{version:3,width:w.width,height:w.height,seed:w.seed||1337,dayPhase:w.dayPhase||0,camera:{...w.camera},selected:w.selected?{...w.selected}:null,
+      return{version:4,width:w.width,height:w.height,seed:w.seed||1337,dayPhase:w.dayPhase||0,camera:{...w.camera},selected:w.selected?{...w.selected}:null,
         roads:roads.map(r=>({x:r.x,y:r.y,mask:this.roadMask(r.x,r.y,roadSet)})),buildings,
         terrain:Array.from({length:w.height},(_,y)=>Array.from({length:w.width},(_,x)=>this.terrainAt(x,y))),diagnostics:this.diagnostics()};
     }
