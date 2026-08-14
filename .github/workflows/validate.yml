@@ -50,3 +50,5 @@ jobs:
         run: node tests/concept-resources.mjs
       - name: Run multi-resource economy suite
         run: node tests/multi-resource-economy.mjs
+      - name: Run coding reward pipeline suite
+        run: node tests/coding-reward-pipeline.mjs
