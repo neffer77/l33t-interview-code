@@ -22,7 +22,17 @@
     return true;
   }
 
+  function loadHomeNav(){
+    if(document.querySelector('script[data-codeopolis-home-nav]')) return;
+    const script=document.createElement('script');
+    script.src='src/platform/ionic-home-nav.js';
+    script.defer=true;
+    script.dataset.codeopolisHomeNav='1';
+    document.body.appendChild(script);
+  }
+
   function boot(){
+    loadHomeNav();
     let tries=0;
     const timer=setInterval(()=>{
       if(apply() || ++tries>60) clearInterval(timer);
