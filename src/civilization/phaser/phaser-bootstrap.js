@@ -10,6 +10,7 @@
   const PLACEMENT_CONTROLLER_URL='src/civilization/phaser/placement-controller.js';
   const ASSET_URL='src/civilization/phaser/city-assets.js';
   const SCENE_URL='src/civilization/phaser/city-scene.js';
+  const TIER_VISUALS_URL='src/civilization/phaser/building-tier-visuals.js';
   function loadScript(src,key){
     if(key&&window[key])return Promise.resolve();
     const existing=document.querySelector(`script[data-phase44-src="${src}"]`);if(existing)return new Promise((resolve,reject)=>{if(existing.dataset.loaded==='1')resolve();else{existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true})}});
@@ -27,6 +28,8 @@
     await loadScript(PHASER_URL,'Phaser');
     if(!C.Phase44Assets)await loadScript(ASSET_URL);
     if(!C.PhaserCityScene)await loadScript(SCENE_URL);
+    if(!C.BuildingTierVisuals)await loadScript(TIER_VISUALS_URL);
+    C.BuildingTierVisuals?.install?.();
     if(!C.PlacementController)await loadScript(PLACEMENT_CONTROLLER_URL);
     if(!window.Phaser||!C.PhaserCityScene||!C.Phase44Assets||!C.PlacementController||!C.BuildingCatalogUI||!C.BuildingManagementUI)throw new Error('Phaser city runtime failed to load');
   }
@@ -58,7 +61,7 @@
       const renderCanvas=game.canvas;renderCanvas?.addEventListener?.('webglcontextlost',e=>{e.preventDefault?.();fallback(new Error('WebGL context lost'))},{once:true});
       new ResizeObserver(()=>C.phaserCity?.resize()).observe(host);
       setTimeout(()=>{const p=C.phaserCity;if(!p?.game)return;const current=p.game.scene.getScene('CodeopolisCity');if(!current||!current.sys?.isActive?.())fallback(new Error('Phaser City scene failed health check'));else C.Phase44Diagnostics?.installControls?.(host)},1800);
-      C.events.emit('civilization:phaser-ready',{renderer:'phaser',version:Phaser.VERSION,placement:true,catalog:true,management:true});return true;
+      C.events.emit('civilization:phaser-ready',{renderer:'phaser',version:Phaser.VERSION,placement:true,catalog:true,management:true,tiers:true});return true;
     }catch(err){fallback(err);return false}
   }
   C.register('PhaserCivilizationBootstrap',{start,setActive,fallback});
