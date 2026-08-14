@@ -1,0 +1,17 @@
+(function(C){
+  'use strict';
+  C.Phase44Assets={
+    tileSize:32,
+    terrain:{
+      grass:{base:0x4f8a50,dark:0x3d7141,light:0x72aa62,accent:0x91bf70},
+      dirt:{base:0x956b45,dark:0x735039,light:0xb9895a,accent:0xd2a46d},
+      water:{base:0x397ea3,dark:0x2c6387,light:0x64abd0,accent:0x8ccbe5},
+      forest:{base:0x3c7845,dark:0x285735,light:0x5d9957,accent:0x88b967}
+    },
+    roads:{base:0x6b6c67,edge:0x4a4d4d,line:0xd6c276},
+    buildings:{
+      core:[0x61718a,0x42506a,0xc9b16b],arrays:[0xb96839,0x814426,0xe3a25d],hash:[0xa97943,0x72512f,0xe8c477],structures:[0x7660a4,0x51406f,0xb7a5df],search:[0x4383a7,0x2c5b78,0x80c9e9],graphs:[0x358479,0x285f58,0x78c9b9],dp:[0x99537f,0x683a59,0xe19bc8]
+    },
+    variants:{grass:4,dirt:3,water:2,forest:3}
+  };
+})(window.Codeopolis);
