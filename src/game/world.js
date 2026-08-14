@@ -5,7 +5,7 @@
     constructor(gameState){this.state=gameState;this.world=this.ensure(gameState)}
     ensure(gameState){
       const old=gameState.world||{};
-      const world=gameState.world={version:3,width:old.width||12,height:old.height||8,tiles:old.tiles||{},camera:Object.assign({panX:0,panY:-30,zoom:1},old.camera||{}),tool:Object.assign({mode:'inspect',buildingId:null},old.tool||{}),selected:old.selected||null,dayPhase:Number.isFinite(old.dayPhase)?old.dayPhase:.3,audioMuted:!!old.audioMuted,migrated:!!old.migrated,stats:Object.assign({roadsBuilt:0,buildingsPlaced:0,buildingsMoved:0},old.stats||{})};
+      const world=gameState.world={version:3,width:old.width||12,height:old.height||8,tiles:old.tiles||{},camera:Object.assign({panX:0,panY:-30,zoom:1},old.camera||{}),tool:Object.assign({mode:'inspect',buildingId:null},old.tool||{}),selected:old.selected||null,dayPhase:Number.isFinite(old.dayPhase)?old.dayPhase:.3,audioMuted:!!old.audioMuted,migrated:!!old.migrated,construction:old.construction||null,stats:Object.assign({roadsBuilt:0,buildingsPlaced:0,buildingsMoved:0},old.stats||{})};
       if(!world.migrated)this.migrateLegacy(gameState,world);this.normalize(world);return world;
     }
     normalize(world){
