@@ -44,3 +44,5 @@ jobs:
         run: node tests/planning-overlays.mjs
       - name: Run city editing suite
         run: node tests/city-editing.mjs
+      - name: Run Phase 1 integration suite
+        run: node tests/phase1-integration.mjs
