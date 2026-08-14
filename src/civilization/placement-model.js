@@ -1,0 +1,33 @@
+(function(C){
+  'use strict';
+  const registry=()=>C.BuildingRegistry;
+  function install(){
+    const World=C.get?.('WorldSystem');if(!World||World.prototype.__p1PlacementInstalled)return false;
+    const p=World.prototype;p.__p1PlacementInstalled=true;
+    const originalNormalize=p.normalize,originalPlaced=p.placedBuildings,originalSelected=p.selectedTile;
+    p.footprintFor=function(id,x,y){const def=registry().definition(this,id);return{def,cells:registry().cells(def,x,y)}};
+    p.anchorFor=function(x,y){const t=this.tile(x,y);if(!t)return{x,y};if(t.occupiedBy){const [ax,ay]=String(t.occupiedBy).split(',').map(Number);if(this.inside(ax,ay))return{x:ax,y:ay}}return{x,y}};
+    p.canPlaceBuilding=function(id,x,y){
+      const available=this.inventory().find(v=>v.id===id)?.count||0;if(!available)return{ok:false,reason:'Build or unplace this structure first'};
+      const fp=this.footprintFor(id,x,y);
+      for(const c of fp.cells){if(!this.inside(c.x,c.y))return{ok:false,reason:`${fp.def.name} needs ${fp.def.footprint.w}×${fp.def.footprint.h} open tiles`};const t=this.tile(c.x,c.y);if(t?.buildingId||t?.occupiedBy)return{ok:false,reason:'Another building occupies part of this footprint'};if(t?.road)return{ok:false,reason:'A road crosses this building footprint'}}
+      return{ok:true,footprint:fp.def.footprint,cells:fp.cells,def:fp.def};
+    };
+    p.placeBuilding=function(id,x,y,{construction=true}={}){
+      const verdict=this.canPlaceBuilding(id,x,y);if(!verdict.ok)return verdict;
+      const anchor=`${x},${y}`,now=Date.now();for(const c of verdict.cells){const t=this.ensureTile(c.x,c.y);t.road=false;if(c.anchor){t.buildingId=id;t.placedAt=now;t.constructionMs=construction?4200:0;t.footprint={...verdict.footprint}}else{delete t.buildingId;t.occupiedBy=anchor}}
+      this.world.stats.buildingsPlaced++;this.world.selected={x,y};C.events.emit('world:building-placed',{id,x,y,def:this.buildingDef(id),construction,footprint:verdict.footprint});return{ok:true,footprint:verdict.footprint};
+    };
+    p.unplaceBuilding=function(x,y){
+      const a=this.anchorFor(x,y),t=this.tile(a.x,a.y);if(!t?.buildingId||t.buildingId==='camp')return{ok:false,reason:'This building cannot be moved'};
+      const id=t.buildingId,fp=t.footprint||{w:1,h:1};for(let dy=0;dy<fp.h;dy++)for(let dx=0;dx<fp.w;dx++){const k=C.util.key(a.x+dx,a.y+dy),cell=this.world.tiles[k];if(!cell)continue;delete cell.buildingId;delete cell.occupiedBy;delete cell.placedAt;delete cell.constructionMs;delete cell.footprint;if(!cell.road)delete this.world.tiles[k]}
+      this.world.stats.buildingsMoved++;this.world.selected=null;C.events.emit('world:building-unplaced',{id,x:a.x,y:a.y,footprint:fp});return{ok:true,id};
+    };
+    p.setRoad=function(x,y,value=true){if(!this.inside(x,y))return{ok:false,reason:'Outside city limits'};const t=this.ensureTile(x,y);if(t.buildingId||t.occupiedBy)return{ok:false,reason:'A building occupies this tile'};const changed=!!t.road!==!!value;t.road=!!value;if(changed&&value)this.world.stats.roadsBuilt++;C.events.emit('world:road-changed',{x,y,value:!!value});return{ok:true,changed}};
+    p.selectedTile=function(){const s=this.world.selected;if(!s)return null;const a=this.anchorFor(s.x,s.y),base=originalSelected.call(this);if(a.x===s.x&&a.y===s.y)return base;return Object.assign({x:s.x,y:s.y,anchorX:a.x,anchorY:a.y},this.tile(a.x,a.y)||{}, {occupiedBy:`${a.x},${a.y}`})};
+    p.normalize=function(world){originalNormalize.call(this,world);for(const [k,t] of Object.entries(world.tiles||{})){if(!t?.buildingId||!t.footprint)continue;const [x,y]=k.split(',').map(Number),w=Math.max(1,Number(t.footprint.w)||1),h=Math.max(1,Number(t.footprint.h)||1);t.footprint={w,h};for(let dy=0;dy<h;dy++)for(let dx=0;dx<w;dx++){if(dx===0&&dy===0)continue;const cx=x+dx,cy=y+dy;if(!this.coordsInside(world,cx,cy))continue;const ck=C.util.key(cx,cy),child=world.tiles[ck]||{};if(!child.buildingId&&!child.road){child.occupiedBy=k;world.tiles[ck]=child}}}};
+    p.placedBuildings=function(){return originalPlaced.call(this).map(b=>({ ...b, footprint:b.tile?.footprint||{w:1,h:1} }))};
+    return true;
+  }
+  C.register('PlacementModel',{install});
+})(window.Codeopolis);
