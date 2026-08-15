@@ -62,3 +62,5 @@ jobs:
         run: node tests/age-progression.mjs
       - name: Run technology tree suite
         run: node tests/technology-tree.mjs
+      - name: Run adaptive challenge selection suite
+        run: node tests/adaptive-challenge-selection.mjs
