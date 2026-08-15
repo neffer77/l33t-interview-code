@@ -1,6 +1,6 @@
 (function(C){
   'use strict';
-  const VERSION=1;
+  const VERSION=1,UI_URL='src/progression/concept-mastery-ui.js';
   const LEVELS=Object.freeze([
     {level:0,id:'unseen',name:'Unseen',xp:0,solves:0},
     {level:1,id:'introduced',name:'Introduced',xp:1,solves:1},
@@ -22,6 +22,7 @@
   function status(state,id){const m=ensure(state),row=m.concepts[id];if(!row)return{concept:null,level:LEVELS[0],next:LEVELS[1],progress:0};const level=levelFor(row.xp,row.solves),next=nextLevel(row.xp,row.solves);let progress=1;if(next){const xpSpan=Math.max(1,next.xp-level.xp),solveSpan=Math.max(1,next.solves-level.solves),xpP=(row.xp-level.xp)/xpSpan,solveP=(row.solves-level.solves)/solveSpan;progress=Math.max(0,Math.min(1,Math.min(xpP,solveP)))}return{concept:{...row},level,next,progress}}
   function all(state){const m=ensure(state);return Object.keys(m.concepts).map(id=>status(state,id)).sort((a,b)=>b.level.level-a.level.level||(b.concept?.xp||0)-(a.concept?.xp||0)||a.concept.name.localeCompare(b.concept.name))}
   function summary(state){const rows=all(state),counts={unseen:0,introduced:0,practicing:0,competent:0,proficient:0,mastered:0};for(const r of rows)counts[r.level.id]=(counts[r.level.id]||0)+1;return{total:rows.length,counts,mastered:counts.mastered||0,proficientOrBetter:(counts.proficient||0)+(counts.mastered||0),rows}}
-  function install(state){if(state)ensure(state);if(install._done)return true;install._done=true;C.events?.on?.('coding:rewarded',reward=>{const s=C.game?.state||window.state||state;if(s)record(s,reward||{})});return true}
-  C.ConceptMastery={VERSION,LEVELS,concept,ensure,levelFor,nextLevel,xpFor,record,status,all,summary,install};
+  function attachUI(state){const host=C.phaserCity?.host;if(!host||C.phaserCity?.mastery)return false;if(C.ConceptMasteryUI){C.phaserCity.mastery=new C.ConceptMasteryUI(host,state);return true}if(typeof document==='undefined')return false;const existing=document.querySelector(`script[data-p2f-mastery-ui="1"]`);if(existing)return false;const s=document.createElement('script');s.src=UI_URL;s.dataset.p2fMasteryUi='1';s.onload=()=>attachUI(state);document.head.appendChild(s);return false}
+  function install(state){if(state)ensure(state);if(install._done){attachUI(state);return true}install._done=true;C.events?.on?.('coding:rewarded',reward=>{const s=C.game?.state||window.state||state;if(s){record(s,reward||{});C.phaserCity?.mastery?.render?.()}});C.events?.on?.('civilization:phaser-ready',()=>attachUI(C.game?.state||window.state||state));setTimeout?.(()=>attachUI(C.game?.state||window.state||state),0);return true}
+  C.ConceptMastery={VERSION,LEVELS,concept,ensure,levelFor,nextLevel,xpFor,record,status,all,summary,attachUI,install};
 })(window.Codeopolis);
