@@ -1,6 +1,6 @@
 (function(C){
   'use strict';
-  const CAMERA_URL='src/civilization/phaser/mobile-camera-controller.js',AGE_URL='src/progression/age-progression.js';
+  const CAMERA_URL='src/civilization/phaser/mobile-camera-controller.js',AGE_URL='src/progression/age-progression.js',TECH_URL='src/progression/technology-tree.js';
   function activeView(){return document.querySelector('#codeopolisIonicShell')?.dataset.view||document.querySelector('.tabs button.active[data-tab]')?.dataset.tab||'challenge'}
   function syncLifecycle(){
     const p=C.phaserCity;if(!p)return;const active=activeView()==='city';p.setActive?.(active);p.host.style.visibility=active?'visible':'hidden';p.host.style.pointerEvents=active?'auto':'none';if(active)requestAnimationFrame(()=>C.get?.('Phase44MobileCamera')?.resize?.());
@@ -11,9 +11,11 @@
     document.addEventListener('click',e=>{if(e.target.closest?.('[data-tab]'))requestAnimationFrame(syncLifecycle)},true);
     document.addEventListener('visibilitychange',()=>{if(document.hidden)C.phaserCity?.setActive?.(false);else syncLifecycle()});
   }
-  function loadCamera(){return new Promise((resolve,reject)=>{if(C.get?.('Phase44MobileCamera'))return resolve();const old=document.querySelector(`script[data-phase44-camera="1"]`);if(old){old.addEventListener('load',resolve,{once:true});return}const s=document.createElement('script');s.src=CAMERA_URL;s.dataset.phase44Camera='1';s.onload=resolve;s.onerror=reject;document.head.appendChild(s)})}
-  function loadAge(){return new Promise((resolve,reject)=>{if(C.AgeProgression)return resolve();const old=document.querySelector(`script[data-phase44-age="1"]`);if(old){old.addEventListener('load',resolve,{once:true});return}const s=document.createElement('script');s.src=AGE_URL;s.dataset.phase44Age='1';s.onload=resolve;s.onerror=reject;document.head.appendChild(s)})}
-  async function installExtras(world,state){try{await loadCamera();C.get('Phase44MobileCamera')?.install?.()}catch(e){console.warn('Phase 44 mobile camera unavailable',e)}try{await loadAge();C.AgeProgression?.install?.(state,world)}catch(e){console.warn('Phase 44 age progression unavailable',e)}}
+  function loadScript(src,flag,ready){return new Promise((resolve,reject)=>{if(ready())return resolve();const old=document.querySelector(`script[data-${flag}="1"]`);if(old){if(ready())return resolve();old.addEventListener('load',resolve,{once:true});old.addEventListener('error',reject,{once:true});return}const s=document.createElement('script');s.src=src;s.dataset[flag.replace(/-([a-z])/g,(_,c)=>c.toUpperCase())]='1';s.onload=resolve;s.onerror=reject;document.head.appendChild(s)})}
+  const loadCamera=()=>loadScript(CAMERA_URL,'phase44-camera',()=>!!C.get?.('Phase44MobileCamera'));
+  const loadAge=()=>loadScript(AGE_URL,'phase44-age',()=>!!C.AgeProgression);
+  const loadTech=()=>loadScript(TECH_URL,'phase44-tech',()=>!!C.TechnologyTree);
+  async function installExtras(world,state){try{await loadCamera();C.get('Phase44MobileCamera')?.install?.()}catch(e){console.warn('Phase 44 mobile camera unavailable',e)}try{await loadAge();C.AgeProgression?.install?.(state,world)}catch(e){console.warn('Phase 44 age progression unavailable',e)}try{await loadTech();C.TechnologyTree?.install?.(state)}catch(e){console.warn('Phase 44 technology tree unavailable',e)}}
   async function start(){
     watchViews();let tries=0;const timer=setInterval(async()=>{
       tries++;if(C.phaserCity){clearInterval(timer);syncLifecycle();await installExtras(C.game?.world,typeof state!=='undefined'?state:C.game?.state);return}
