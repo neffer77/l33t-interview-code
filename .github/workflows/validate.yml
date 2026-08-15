@@ -64,3 +64,5 @@ jobs:
         run: node tests/technology-tree.mjs
       - name: Run adaptive challenge selection suite
         run: node tests/adaptive-challenge-selection.mjs
+      - name: Run learning objectives suite
+        run: node tests/learning-objectives.mjs
