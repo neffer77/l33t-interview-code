@@ -1,6 +1,6 @@
 (function(C){
   'use strict';
-  const VERSION=1,EVENTS=['challenge:solved','problem:solved','coding:solved'];
+  const VERSION=1,EVENTS=['challenge:solved','problem:solved','coding:solved'],MASTERY_URL='src/progression/concept-mastery.js';
   function num(v,f=0){v=Number(v);return Number.isFinite(v)?v:f}
   function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
   function challengeOf(p={}){return p.challenge||p.problem||p.item||{}}
@@ -21,6 +21,7 @@
     const award=C.ConceptResources?.award?.(state,{...payload,firstSolve:true,repeat:false,rewardOverride:{resourceId:result.resourceId,amount:result.amount}});
     const granted=award?.amount??0,entry={resourceId:result.resourceId,requested:result.amount,granted,quality:Number(result.quality.multiplier.toFixed(3)),firstSolve:result.normalized.firstSolve,hintsUsed:result.normalized.hintsUsed,attempts:result.normalized.attempts,elapsedSeconds:result.normalized.elapsedSeconds,streak:result.normalized.streak,at:Date.now()};ledger.solves++;ledger.totalBase+=result.baseReward.amount;ledger.totalGranted+=granted;ledger.history.push(entry);if(ledger.history.length>50)ledger.history.shift();C.events?.emit?.('coding:rewarded',{...result,granted,entry});return{...result,granted,entry}
   }
-  function install(state){if(state)ensure(state);if(install._done)return true;install._done=true;for(const evt of EVENTS)C.events?.on?.(evt,payload=>{if(payload?.__rewardPipelineHandled)return;const s=C.game?.state||window.state||state;if(s)process(s,{...(payload||{}),__rewardPipelineHandled:true})});return true}
-  C.CodingRewardPipeline={VERSION,EVENTS,normalize,quality,ensure,evaluate,process,install};
+  function loadMastery(state){if(C.ConceptMastery){C.ConceptMastery.install(state);return}if(typeof document==='undefined'||document.querySelector(`script[data-p2f-mastery="1"]`))return;const s=document.createElement('script');s.src=MASTERY_URL;s.dataset.p2fMastery='1';s.onload=()=>C.ConceptMastery?.install?.(state);document.head.appendChild(s)}
+  function install(state){if(state)ensure(state);loadMastery(state);if(install._done)return true;install._done=true;for(const evt of EVENTS)C.events?.on?.(evt,payload=>{if(payload?.__rewardPipelineHandled)return;const s=C.game?.state||window.state||state;if(s)process(s,{...(payload||{}),__rewardPipelineHandled:true})});return true}
+  C.CodingRewardPipeline={VERSION,EVENTS,normalize,quality,ensure,evaluate,process,loadMastery,install};
 })(window.Codeopolis);

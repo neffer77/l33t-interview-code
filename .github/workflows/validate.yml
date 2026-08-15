@@ -56,3 +56,5 @@ jobs:
         run: node tests/curriculum-districts.mjs
       - name: Run resource-gated building suite
         run: node tests/resource-gated-buildings.mjs
+      - name: Run concept mastery suite
+        run: node tests/concept-mastery.mjs
