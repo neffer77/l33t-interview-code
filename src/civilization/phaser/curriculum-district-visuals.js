@@ -1,0 +1,5 @@
+(function(C){
+  'use strict';
+  function install(){const Scene=C.PhaserCityScene;if(!Scene||Scene.prototype.__p2dDistrictVisuals)return false;Scene.prototype.__p2dDistrictVisuals=true;const original=Scene.prototype.renderWorld;Scene.prototype.renderWorld=function(){original.apply(this,arguments);const t=this.tile||32,A=this.assets||C.Phase44Assets,defs=C.CurriculumDistricts?.DISTRICTS||{};for(const b of this.snapshot?.buildings||[]){const id=b.curriculumDistrict||'materials',def=defs[id],color=A?.districtGround?.[id]||def?.accent||0xffffff,w=b.footprint?.w||1,h=b.footprint?.h||1;this.add.rectangle(b.x*t+w*t/2,b.y*t+h*t/2,w*t-4,h*t-4,color,.13).setStrokeStyle(1,color,.48).setDepth(1.5);const ref=this.buildingRefs?.get?.(`${b.x},${b.y}`);ref?.image?.setTint?.(0xffffff);if(def)this.add.text(b.x*t+4,b.y*t+4,`${def.icon} ${b.districtMaturity?.level||1}`,{fontFamily:'monospace',fontSize:'9px',color:'#ffffff',backgroundColor:'#14212dcc',padding:{x:3,y:2}}).setOrigin(0,0).setDepth(28)}return this};return true}
+  C.CurriculumDistrictVisuals={install};
+})(window.Codeopolis);
