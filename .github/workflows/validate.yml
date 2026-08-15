@@ -54,3 +54,5 @@ jobs:
         run: node tests/coding-reward-pipeline.mjs
       - name: Run curriculum district suite
         run: node tests/curriculum-districts.mjs
+      - name: Run resource-gated building suite
+        run: node tests/resource-gated-buildings.mjs
