@@ -58,3 +58,5 @@ jobs:
         run: node tests/resource-gated-buildings.mjs
       - name: Run concept mastery suite
         run: node tests/concept-mastery.mjs
+      - name: Run age progression suite
+        run: node tests/age-progression.mjs
