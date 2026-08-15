@@ -66,3 +66,5 @@ jobs:
         run: node tests/adaptive-challenge-selection.mjs
       - name: Run learning objectives suite
         run: node tests/learning-objectives.mjs
+      - name: Run problem quality and anti-grind suite
+        run: node tests/anti-grind.mjs
