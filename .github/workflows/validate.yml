@@ -1,13 +1,13 @@
 name: Validate Codeopolis
 
 on:
-  push:
-    branches: ['**']
   pull_request:
   workflow_call:
+  workflow_dispatch:
 
 jobs:
-  javascript-syntax:
+  syntax-and-assets:
+    name: Syntax & local assets
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,93 +30,14 @@ jobs:
               raise SystemExit('Missing local assets: ' + ', '.join(missing))
           print('Validated local assets:', ', '.join(local))
           PY
-      - name: Run beta readiness smoke suite
-        run: node tests/beta-smoke.mjs
-      - name: Run civilization foundation suite
-        run: node tests/civilization-foundation.mjs
-      - name: Run city services suite
-        run: node tests/city-services.mjs
-      - name: Run building specialization suite
-        run: node tests/building-specializations.mjs
-      - name: Run construction queue suite
-        run: node tests/construction-queue.mjs
-      - name: Run planning overlay suite
-        run: node tests/planning-overlays.mjs
-      - name: Run city editing suite
-        run: node tests/city-editing.mjs
-      - name: Run Phase 1 integration suite
-        run: node tests/phase1-integration.mjs
-      - name: Run concept resource suite
-        run: node tests/concept-resources.mjs
-      - name: Run multi-resource economy suite
-        run: node tests/multi-resource-economy.mjs
-      - name: Run coding reward pipeline suite
-        run: node tests/coding-reward-pipeline.mjs
-      - name: Run curriculum district suite
-        run: node tests/curriculum-districts.mjs
-      - name: Run resource-gated building suite
-        run: node tests/resource-gated-buildings.mjs
-      - name: Run concept mastery suite
-        run: node tests/concept-mastery.mjs
-      - name: Run age progression suite
-        run: node tests/age-progression.mjs
-      - name: Run P4-A age curriculum pool suite
-        run: node tests/age-curriculum-pools.mjs
-      - name: Run P4-B Town Center advancement suite
-        run: node tests/town-center-advancement.mjs
-      - name: Run P4-C age visual evolution suite
-        run: node tests/age-visual-evolution.mjs
-      - name: Run P4-D district age evolution suite
-        run: node tests/district-age-evolution.mjs
-      - name: Run P4-E age unlock landmarks suite
-        run: node tests/age-unlock-landmarks.mjs
-      - name: Run P4-F age transition reveal suite
-        run: node tests/age-transition-reveal.mjs
-      - name: Run P4-G Phase 4 integration and balance suite
-        run: node tests/p4-integration.mjs
-      - name: Run P5-A citizens and NPC pathing suite
-        run: node tests/living-city-citizens.mjs
-      - name: Run P5-B citizen schedules and building activity suite
-        run: node tests/citizen-schedules.mjs
-      - name: Run P5-C ambient city activity and particles suite
-        run: node tests/ambient-city-activity.mjs
-      - name: Run P5-D city events and citizen reactions suite
-        run: node tests/city-event-reactions.mjs
-      - name: Run technology tree suite
-        run: node tests/technology-tree.mjs
-      - name: Run adaptive challenge selection suite
-        run: node tests/adaptive-challenge-selection.mjs
-      - name: Run learning objectives suite
-        run: node tests/learning-objectives.mjs
-      - name: Run problem quality and anti-grind suite
-        run: node tests/anti-grind.mjs
-      - name: Run knowledge retention suite
-        run: node tests/knowledge-retention.mjs
-      - name: Run transfer and generalization suite
-        run: node tests/transfer-generalization.mjs
-      - name: Run interleaved practice suite
-        run: node tests/interleaved-practice.mjs
-      - name: Run interview readiness suite
-        run: node tests/interview-readiness.mjs
-      - name: Run Phase 2 integration and balance suite
-        run: node tests/p2-integration.mjs
-      - name: Run original P2-M Learning Analytics suite
-        run: node tests/learning-analytics.mjs
-      - name: Run original P2-N Civilization Specialization suite
-        run: node tests/civilization-specialization.mjs
-      - name: Run original P2-O Integration & Balance suite
-        run: node tests/original-p2-o-integration.mjs
-      - name: Run P3 Learning City Loop suite
-        run: node tests/learning-city-loop.mjs
-      - name: Run P3-D mastery building gate suite
-        run: node tests/mastery-building-gates.mjs
-      - name: Run P3-E concept-specific city mission suite
-        run: node tests/concept-specific-city-missions.mjs
-      - name: Run P3-F city learning navigator suite
-        run: node tests/city-learning-navigator.mjs
-      - name: Run P3-G map learning beacon suite
-        run: node tests/city-learning-map-beacon.mjs
-      - name: Run P3-H persistent city goal suite
-        run: node tests/persistent-city-goals.mjs
-      - name: Run P3-I goal completion build flow suite
-        run: node tests/goal-completion-build-flow.mjs
+
+  regression-tests:
+    name: Regression test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Codeopolis regression suites
+        run: node scripts/run-validation-tests.mjs
