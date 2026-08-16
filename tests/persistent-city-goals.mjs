@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+const fail=[];const ok=(v,m)=>{if(!v)fail.push(m)};const emitted=[];
+const state={};
+const C={events:{on(){},emit:(n,p)=>emitted.push([n,p])},phaserCity:{learningNavigator:{render(){}}},ConceptResources:{RESOURCE_DEFS:{research:{name:'Research'}}},AdaptiveChallengeSelector:{conceptCandidates:c=>[c.district],ranked:()=>[{challenge:{id:'graph-one',title:'Number of Islands',district:'graphs'},score:90,resourceId:'research',reasons:['weak concept']}],startChallenge:()=>true},ResourceGatedBuildings:{status:()=>({missing:[]})},MasteryBuildingGates:{missing:(s,def)=>s.done?null:{type:'mastery',id:def.district,need:1,target:3,current:2,text:'Reach Competent mastery in graphs'}},BuildingRegistry:{status:(w,s,id)=>({def:{id,name:id==='graph-lab'?'Graph Lab':'Array Hall',district:id==='graph-lab'?'graphs':'arrays'},locked:s.done?null:'mastery',owned:0,canAcquire:false,resourceGate:{missing:[]}}),catalog:(w,s)=>['graph-lab'].map(id=>C.BuildingRegistry.status(w,s,id))}};
+const context=vm.createContext({window:{Codeopolis:C},Codeopolis:C,console,Date,Math,Number,Object,Array,Set,JSON,setTimeout:fn=>fn()});
+vm.runInContext(fs.readFileSync('src/progression/learning-city-loop.js','utf8'),context);
+const L=C.LearningCityLoop,world={};
+const pin=L.pinGoal(state,world,'graph-lab','player');
+ok(pin.ok&&state.learningCity.goal?.buildingId==='graph-lab','pinning should persist the building goal in save state');
+const nav=L.navigator(state,world);
+ok(nav.pinned&&nav.target?.buildingId==='graph-lab','navigator should prefer the persisted goal over recalculating a new target');
+L.train(state,world,'graph-lab');
+ok(state.learningCity.goal?.buildingId==='graph-lab','starting training should preserve/establish the city goal');
+const serialized=JSON.parse(JSON.stringify(state));
+const navAfterReload=L.navigator(serialized,world);
+ok(navAfterReload.pinned&&navAfterReload.target?.buildingId==='graph-lab','city goal should survive save serialization/reload');
+serialized.done=true;
+L.navigator(serialized,world);
+ok(!serialized.learningCity.goal,'completed goals should clear automatically when no longer locked');
+ok(emitted.some(([n])=>n==='learning-city:goal-pinned'),'pinning should emit a goal event');
+ok(emitted.some(([n])=>n==='learning-city:goal-cleared'),'completion should emit a goal-cleared event');
+if(fail.length){console.error('PERSISTENT CITY GOALS FAILED');for(const f of fail)console.error(' - '+f);process.exit(1)}
+console.log('Persistent city goals passed: pinned learning-driven construction targets survive navigation/save state and clear on completion.');
