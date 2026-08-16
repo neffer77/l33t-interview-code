@@ -34,6 +34,7 @@ const suites = [
   ['P6-B career and interview city consequences', 'tests/career-city-consequences.mjs'],
   ['P6-C company and leadership city consequences', 'tests/company-city-consequences.mjs'],
   ['P6-D social team city consequences', 'tests/social-team-city-consequences.mjs'],
+  ['P6-E world story city consequences', 'tests/world-story-city-consequences.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
