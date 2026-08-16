@@ -1,0 +1,6 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const C={};const ctx={window:{Codeopolis:C}};vm.createContext(ctx);vm.runInContext(fs.readFileSync('src/civilization/phaser/citizen-schedules.js','utf8'),ctx);const S=C.CitizenSchedules;
+assert.equal(S.phase(.10).id,'morning');assert.equal(S.phase(.40).id,'workday');assert.equal(S.phase(.80).id,'evening');assert.equal(S.phase(.95).id,'night');
+const snapshot={buildings:[{id:'home',x:0,y:0,progress:1,district:'materials'},{id:'lab',x:4,y:0,progress:1,district:'research'},{id:'shop',x:2,y:2,progress:1,district:'trade'}]};const citizen={home:snapshot.buildings[0],from:snapshot.buildings[0],indexSeed:1,workDistrict:'research'};
+const work=S.schedule(snapshot,citizen,.4),night=S.schedule(snapshot,citizen,.95),evening=S.schedule(snapshot,citizen,.8);assert.equal(work.period,'workday');assert.equal(work.destination.id,'lab');assert.ok(['study','research'].includes(work.activity));assert.equal(night.activity,'resting');assert.equal(night.destination.id,'home');assert.equal(evening.activity,'socializing');
+console.log('P5-B citizen schedules: ok');
