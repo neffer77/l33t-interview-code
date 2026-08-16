@@ -76,6 +76,8 @@ jobs:
         run: node tests/p4-integration.mjs
       - name: Run P5-A citizens and NPC pathing suite
         run: node tests/living-city-citizens.mjs
+      - name: Run P5-B citizen schedules and building activity suite
+        run: node tests/citizen-schedules.mjs
       - name: Run technology tree suite
         run: node tests/technology-tree.mjs
       - name: Run adaptive challenge selection suite
