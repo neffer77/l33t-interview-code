@@ -32,6 +32,7 @@ const suites = [
   ['P5-G Living City integration and balance', 'tests/p5-integration.mjs'],
   ['P6-A existing systems registry and event bridge', 'tests/existing-systems-bridge.mjs'],
   ['P6-B career and interview city consequences', 'tests/career-city-consequences.mjs'],
+  ['P6-C company and leadership city consequences', 'tests/company-city-consequences.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
