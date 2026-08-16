@@ -70,3 +70,5 @@ jobs:
         run: node tests/anti-grind.mjs
       - name: Run knowledge retention suite
         run: node tests/knowledge-retention.mjs
+      - name: Run transfer and generalization suite
+        run: node tests/transfer-generalization.mjs
