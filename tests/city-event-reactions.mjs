@@ -1,0 +1,5 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const emitted=[];const C={events:{emit:(n,p)=>emitted.push([n,p])}};const ctx={window:{Codeopolis:C},setTimeout:()=>0};vm.createContext(ctx);vm.runInContext(fs.readFileSync('src/civilization/phaser/city-event-reactions.js','utf8'),ctx);const R=C.CityEventReactions;
+const solve=R.normalize('coding:rewarded',{challengeId:'two-sum'});assert.equal(solve.kind,'solve');assert.equal(solve.mood,'celebrate');assert.equal(R.normalize('age:advanced',{}).audience,1);assert.equal(R.normalize('incident:started',{}).mood,'alert');assert.equal(R.normalize('unknown:event',{}),null);assert.equal(R.citizenCount(10,solve),5);
+const citizens=Array.from({length:6},(_,i)=>({id:`c${i}`}));const a=R.citizenIds(citizens,solve),b=R.citizenIds(citizens,solve);assert.equal(a.length,3);assert.equal(JSON.stringify(a),JSON.stringify(b));assert.equal(new Set(a).size,a.length);
+console.log('P5-D city events and citizen reactions: ok');
