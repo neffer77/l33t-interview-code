@@ -72,6 +72,8 @@ jobs:
         run: node tests/age-unlock-landmarks.mjs
       - name: Run P4-F age transition reveal suite
         run: node tests/age-transition-reveal.mjs
+      - name: Run P4-G Phase 4 integration and balance suite
+        run: node tests/p4-integration.mjs
       - name: Run technology tree suite
         run: node tests/technology-tree.mjs
       - name: Run adaptive challenge selection suite
