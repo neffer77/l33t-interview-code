@@ -1,0 +1,10 @@
+(function(C){
+  'use strict';
+  const VERSION=1;
+  function ensure(state){const x=state.townCenterAdvancement||(state.townCenterAdvancement={version:VERSION,lastCeremony:null,history:[]});x.version=VERSION;x.history=Array.isArray(x.history)?x.history.slice(-19):[];return x}
+  function status(state,world){const age=C.AgeProgression?.snapshot?.(state,world);if(!age)return null;const x=ensure(state),ready=!!age.next&&!!age.readiness?.ready;return{version:VERSION,current:age.current,next:age.next,readiness:age.readiness,ready,maxed:age.maxed,lastCeremony:x.lastCeremony};}
+  function advance(state,world){const before=status(state,world);if(!before?.next)return{ok:false,reason:'Your civilization has reached its current maximum age.',status:before};if(!before.ready)return{ok:false,reason:(before.readiness?.missing||[]).map(C.AgeProgression?.formatMissing||String).join(' · ')||'Town Center requirements are incomplete.',status:before};const result=C.AgeProgression.advance(state,world);if(!result?.ok)return result;const x=ensure(state),ceremony={from:result.from,to:result.to,level:result.to.level,at:Date.now(),title:`${result.to.icon} ${result.to.short} reached`,subtitle:`Town Center advanced to Age ${result.to.level}`};x.lastCeremony=ceremony;x.history.push(ceremony);if(x.history.length>20)x.history.shift();C.events?.emit?.('town-center:advanced',{...result,ceremony});C.events?.emit?.('town-center:ceremony',ceremony);try{typeof persist==='function'&&persist(false)}catch{}return{...result,ceremony,status:status(state,world)};}
+  function clearCeremony(state){ensure(state).lastCeremony=null}
+  function install(state,world){ensure(state);if(install._done)return true;install._done=true;for(const evt of['mastery:updated','learning:resource-earned','world:building-upgraded','world:building-placed','age:advanced'])C.events?.on?.(evt,()=>C.phaserCity?.ages?.render?.());return true}
+  C.TownCenterAdvancement={VERSION,ensure,status,advance,clearCeremony,install};
+})(window.Codeopolis);
