@@ -78,3 +78,5 @@ jobs:
         run: node tests/interview-readiness.mjs
       - name: Run Phase 2 integration and balance suite
         run: node tests/p2-integration.mjs
+      - name: Run original P2-M Learning Analytics suite
+        run: node tests/learning-analytics.mjs
