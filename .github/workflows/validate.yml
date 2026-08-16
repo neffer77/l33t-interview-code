@@ -62,6 +62,8 @@ jobs:
         run: node tests/age-progression.mjs
       - name: Run P4-A age curriculum pool suite
         run: node tests/age-curriculum-pools.mjs
+      - name: Run P4-B Town Center advancement suite
+        run: node tests/town-center-advancement.mjs
       - name: Run technology tree suite
         run: node tests/technology-tree.mjs
       - name: Run adaptive challenge selection suite
