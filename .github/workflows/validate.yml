@@ -78,6 +78,8 @@ jobs:
         run: node tests/living-city-citizens.mjs
       - name: Run P5-B citizen schedules and building activity suite
         run: node tests/citizen-schedules.mjs
+      - name: Run P5-C ambient city activity and particles suite
+        run: node tests/ambient-city-activity.mjs
       - name: Run technology tree suite
         run: node tests/technology-tree.mjs
       - name: Run adaptive challenge selection suite
