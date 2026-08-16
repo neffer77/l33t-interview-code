@@ -36,6 +36,7 @@ const suites = [
   ['P6-D social team city consequences', 'tests/social-team-city-consequences.mjs'],
   ['P6-E world story city consequences', 'tests/world-story-city-consequences.mjs'],
   ['P6-F unified civilization status dashboard', 'tests/civilization-status-dashboard.mjs'],
+  ['P6-G city visual state projection and integration', 'tests/city-visual-state-projection.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
