@@ -92,3 +92,5 @@ jobs:
         run: node tests/concept-specific-city-missions.mjs
       - name: Run P3-F city learning navigator suite
         run: node tests/city-learning-navigator.mjs
+      - name: Run P3-G map learning beacon suite
+        run: node tests/city-learning-map-beacon.mjs
