@@ -1,0 +1,6 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const C={AgeProgression:{current:s=>({level:s.eraLevel||1})}};const ctx={window:{Codeopolis:C}};vm.createContext(ctx);vm.runInContext(fs.readFileSync('src/progression/age-curriculum-pools.js','utf8'),ctx);const P=C.AgeCurriculumPools;
+const easyArray={id:'two_sum',difficulty:'Easy',pattern:'arrays',district:'arrays'},mediumTree={id:'tree_levels',difficulty:'Medium',pattern:'trees',district:'trees'},mediumGraph={id:'graph_search',difficulty:'Medium',pattern:'graphs',district:'graphs'},hardSystem={id:'system_scale',difficulty:'Hard',pattern:'system_design',district:'systems'};
+assert.equal(P.eligibility({eraLevel:1},easyArray).eligible,true);assert.equal(P.eligibility({eraLevel:1},mediumTree).eligible,false);assert.equal(P.eligibility({eraLevel:2},mediumTree).eligible,true);assert.equal(P.eligibility({eraLevel:2},mediumGraph).eligible,false);assert.equal(P.eligibility({eraLevel:3},mediumGraph).eligible,true);assert.equal(P.eligibility({eraLevel:3},hardSystem).eligible,false);assert.equal(P.eligibility({eraLevel:4},hardSystem).eligible,true);
+const s=P.snapshot({eraLevel:2},[easyArray,mediumTree,mediumGraph,hardSystem]);assert.equal(s.level,2);assert.equal(s.eligible,2);assert.equal(s.pool.id,'data_structures');
+console.log('P4-A age curriculum pools: ok');
