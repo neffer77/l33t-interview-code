@@ -74,3 +74,5 @@ jobs:
         run: node tests/transfer-generalization.mjs
       - name: Run interleaved practice suite
         run: node tests/interleaved-practice.mjs
+      - name: Run interview readiness suite
+        run: node tests/interview-readiness.mjs
