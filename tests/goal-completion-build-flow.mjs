@@ -1,0 +1,9 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const events={h:{},on(n,f){(this.h[n]??=[]).push(f)},emit(n,p){for(const f of this.h[n]||[])f(p)}};
+const state={learningCity:{}};let purchased=0,placed=null;const world={canPlaceBuilding(){return{ok:true}},placeBuilding(id,x,y){placed={id,x,y};return{ok:true}},inventory(){return[]}};
+const C={events,LearningCityLoop:{ensure:s=>s.learningCity||(s.learningCity={}),feedbackModel:()=>({})},CityLearningMapBeacon:{suggestedSite:()=>({x:4,y:5}),clear(){}},BuildingRegistry:{status:()=>({locked:null,owned:0}),definition:()=>({id:'graph_lab',name:'Graph Lab'})},MultiResourceEconomy:{purchaseBuilding(){purchased++;return{ok:true}}},phaserCity:{game:{scene:{getScene:()=>({adapter:{snapshot:()=>({width:10,height:10,terrain:Array.from({length:10},()=>Array(10).fill('grass')),buildings:[],roads:[]})}})}},catalog:{close(){}},learningNavigator:{render(){}}}};
+const ctx={window:{Codeopolis:C},console,setTimeout};vm.createContext(ctx);vm.runInContext(fs.readFileSync('src/progression/goal-completion-build-flow.js','utf8'),ctx);
+const F=C.GoalCompletionBuildFlow;F.install(state,world);const result={buildingId:'graph_lab',building:{id:'graph_lab',name:'Graph Lab'},contract:{requirements:[]},feedback:{},unlocked:false};events.emit('learning-city:visible-consequence',result);
+const ready=F.ready(state,'graph_lab');assert.equal(ready.buildingId,'graph_lab');assert.equal(ready.site.x,4);assert.equal(ready.site.y,5);assert.equal(result.feedback.buildReady,true);assert.equal(result.feedback.percent,100);assert.equal(result.unlocked,true);
+const built=F.buildNow(state,world,'graph_lab');assert.equal(built.ok,true);assert.equal(purchased,1);assert.equal(placed.id,'graph_lab');assert.equal(placed.x,4);assert.equal(placed.y,5);assert.equal(F.ready(state),null);
+console.log('P3-I goal completion build flow: ok');

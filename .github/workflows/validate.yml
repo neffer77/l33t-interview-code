@@ -96,3 +96,5 @@ jobs:
         run: node tests/city-learning-map-beacon.mjs
       - name: Run P3-H persistent city goal suite
         run: node tests/persistent-city-goals.mjs
+      - name: Run P3-I goal completion build flow suite
+        run: node tests/goal-completion-build-flow.mjs
