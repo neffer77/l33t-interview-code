@@ -1,0 +1,15 @@
+import fs from'node:fs';import vm from'node:vm';import path from'node:path';
+const root=process.cwd(),fail=[],ok=(v,m)=>{if(!v)fail.push(m)},events={on(){},emit(){}};
+let now=1_700_000_000_000;class FakeDate extends Date{static now(){return now}}
+const C={events,ConceptMastery:{concept:({challenge,normalized})=>{const q=normalized?.challenge||challenge||{};return{id:String(q.pattern||q.district||'foundations').toLowerCase().replace(/[^a-z0-9]+/g,'_')}}}};
+const ctx=vm.createContext({window:{Codeopolis:C},Codeopolis:C,console,Date:FakeDate,Math,Number,Object,Array,Set,Map,JSON});
+vm.runInContext(fs.readFileSync(path.join(root,'src/progression/knowledge-retention.js'),'utf8'),ctx);
+const R=C.KnowledgeRetention,state={},challenge={id:'bfs-1',pattern:'Graph Traversal',diff:'Medium'};
+const reward=(extra={})=>({normalized:{challenge,correct:true,hintsUsed:0,attempts:1},quality:{multiplier:1},...extra});
+let x=R.record(state,reward(),now),s=R.status(state,'graph_traversal',now);
+ok(x.outcome==='scheduled','first successful practice should schedule retention');ok(s.intervalDays===1,'first retention interval should be one day');ok(!s.due,'new retention card should not be immediately due');ok(s.strength===1,'fresh practice should have full memory strength');
+now+=86_400_000+1;s=R.status(state,'graph_traversal',now);ok(s.due,'concept should become due after first interval');ok(s.strength<1&&s.strength>0,'memory strength should decay continuously over time');let c=R.context(state,{challenge},now);ok(c.spacedReview===true,'due concept should automatically be recognized as spaced review');ok(R.need(state,{challenge},now)>0,'due concept should expose positive retention need');
+x=R.record(state,{...reward(),retention:c},now);s=R.status(state,'graph_traversal',now);ok(x.outcome==='review-pass','clean due recall should pass retention review');ok(s.stage===1&&s.intervalDays===3,'passed recall should expand interval from one to three days');ok(state.knowledgeRetention.reviewsPassed===1,'passed review should be persisted');
+now+=3*86_400_000+1;c=R.context(state,{challenge},now);x=R.record(state,{...reward({normalized:{challenge,correct:true,hintsUsed:2,attempts:3},quality:{multiplier:.5}}),retention:c},now);s=R.status(state,'graph_traversal',now);ok(x.outcome==='review-retry','weak recall should require another review');ok(s.stage===0&&s.intervalDays===1,'failed recall should shorten the interval');ok(state.knowledgeRetention.reviewsFailed===1,'failed review should be persisted');
+const snap=R.snapshot(state,now);ok(snap.tracked===1,'retention snapshot should report tracked concepts');ok(Array.isArray(state.knowledgeRetention.history)&&state.knowledgeRetention.history.length===3,'practice/review history should persist for future curriculum logic');
+if(fail.length){console.error('KNOWLEDGE RETENTION FAILED');for(const f of fail)console.error(' - '+f);process.exit(1)}console.log('Knowledge retention passed: decay, due-review detection, interval expansion, retry contraction, strength, and persistence verified.');
