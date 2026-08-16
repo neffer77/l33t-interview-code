@@ -18,11 +18,12 @@
     try{if(typeof buildingLockedReason==='function'){const r=buildingLockedReason(baseFor({buildingDef:()=>def},def.id));if(r)return String(r)}}catch{}
     if(def.requiresTech&&!(state.tech||[]).includes(def.requiresTech))return `Research ${def.requiresTech} first`;
     if(def.requiresEra&&(state.eraLevel||1)<def.requiresEra)return `Requires Age ${def.requiresEra}`;
+    const mastery=C.MasteryBuildingGates?.status?.(state,def);if(mastery?.required&&!mastery.met)return mastery.text;
     return null;
   }
   function status(world,state,id){
-    const def=definition(world,id),locked=lockReason(state,def),owned=world.inventory().find(v=>v.id===id)?.count||0,economyCost=C.MultiResourceEconomy?.buildCost?.(def)||{money:def.cost,resources:{}},affordable=C.MultiResourceEconomy?.canAfford?.(state,economyCost)??((state.money||0)>=def.cost),missing=C.MultiResourceEconomy?.missing?.(state,economyCost)||{};
-    return{def,locked,owned,economyCost,missing,affordable,canAcquire:!locked&&affordable,canPlace:owned>0};
+    const def=definition(world,id),masteryGate=C.MasteryBuildingGates?.status?.(state,def)||null,locked=lockReason(state,def),owned=world.inventory().find(v=>v.id===id)?.count||0,economyCost=C.MultiResourceEconomy?.buildCost?.(def)||{money:def.cost,resources:{}},affordable=C.MultiResourceEconomy?.canAfford?.(state,economyCost)??((state.money||0)>=def.cost),missing=C.MultiResourceEconomy?.missing?.(state,economyCost)||{};
+    return{def,locked,masteryGate,owned,economyCost,missing,affordable,canAcquire:!locked&&affordable,canPlace:owned>0};
   }
   function catalog(world,state){return (typeof BUILDINGS==='undefined'?[]:BUILDINGS).map(b=>status(world,state,b.id))}
   C.BuildingRegistry={definition,cells,status,catalog,lockReason};

@@ -86,3 +86,5 @@ jobs:
         run: node tests/original-p2-o-integration.mjs
       - name: Run P3 Learning City Loop suite
         run: node tests/learning-city-loop.mjs
+      - name: Run P3-D mastery building gate suite
+        run: node tests/mastery-building-gates.mjs
