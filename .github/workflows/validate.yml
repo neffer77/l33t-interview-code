@@ -60,6 +60,8 @@ jobs:
         run: node tests/concept-mastery.mjs
       - name: Run age progression suite
         run: node tests/age-progression.mjs
+      - name: Run P4-A age curriculum pool suite
+        run: node tests/age-curriculum-pools.mjs
       - name: Run technology tree suite
         run: node tests/technology-tree.mjs
       - name: Run adaptive challenge selection suite
