@@ -94,3 +94,5 @@ jobs:
         run: node tests/city-learning-navigator.mjs
       - name: Run P3-G map learning beacon suite
         run: node tests/city-learning-map-beacon.mjs
+      - name: Run P3-H persistent city goal suite
+        run: node tests/persistent-city-goals.mjs
