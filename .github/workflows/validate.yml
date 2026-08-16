@@ -72,3 +72,5 @@ jobs:
         run: node tests/knowledge-retention.mjs
       - name: Run transfer and generalization suite
         run: node tests/transfer-generalization.mjs
+      - name: Run interleaved practice suite
+        run: node tests/interleaved-practice.mjs
