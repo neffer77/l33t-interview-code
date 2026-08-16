@@ -1,13 +1,22 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 const fail=[]; const ok=(v,m)=>{if(!v)fail.push(m)};
-const C={events:{on(){},emit(){}},ConceptResources:{RESOURCE_DEFS:{research:{name:'Research'}}},ResourceGatedBuildings:{status:()=>({locked:true,missing:[{type:'earned',id:'research',need:20,target:40}]})},BuildingRegistry:{status:(w,s,id)=>({def:{id,name:'Graph Lab'},locked:'Learn more first',owned:0,canAcquire:false,resourceGate:{missing:[{type:'earned',id:'research',need:20,target:40}]}}),catalog:(w,s)=>[C.BuildingRegistry.status(w,s,'lab')]},AdaptiveChallengeSelector:{ranked:()=>[{challenge:{id:'graph-one',title:'Number of Islands',diff:'Medium'},score:90,resourceId:'research',reasons:['weak concept']}],startChallenge:id=>(C.started=id,true)}};
-const context=vm.createContext({window:{Codeopolis:C},Codeopolis:C,console,Date,Math,Number,Object,Array,Set,JSON});
+const emitted=[];
+const C={events:{on(){},emit:(n,p)=>emitted.push([n,p])},phaserCity:{catalog:{render(){},notify(){},open(){}}},ConceptResources:{RESOURCE_DEFS:{research:{name:'Research'}}},ResourceGatedBuildings:{status:(state)=>({locked:!state.unlocked,missing:state.unlocked?[]:[{type:'earned',id:'research',need:20,target:40}]})},BuildingRegistry:{status:(w,s,id)=>({def:{id,name:'Graph Lab'},locked:s.unlocked?null:'Learn more first',owned:0,canAcquire:!!s.unlocked,resourceGate:{missing:s.unlocked?[]:[{type:'earned',id:'research',need:20,target:40}]}}),catalog:(w,s)=>[C.BuildingRegistry.status(w,s,'lab')]},AdaptiveChallengeSelector:{ranked:()=>[{challenge:{id:'graph-one',title:'Number of Islands',diff:'Medium'},score:90,resourceId:'research',reasons:['weak concept']}],startChallenge:id=>(C.started=id,true)}};
+const context=vm.createContext({window:{Codeopolis:C},Codeopolis:C,console,Date,Math,Number,Object,Array,Set,JSON,setTimeout:fn=>fn()});
 vm.runInContext(fs.readFileSync('src/progression/learning-city-loop.js','utf8'),context);
-const L=C.LearningCityLoop, contract=L.contract({}, {}, 'lab');
+const L=C.LearningCityLoop,state={unlocked:false},world={};
+const contract=L.contract(state,world,'lab');
 ok(contract.locked,'locked building should expose a contract');
 ok(/20 more Research/.test(contract.next.text),'contract should explain exact missing evidence');
 ok(contract.next.recommendation.challenge.id==='graph-one','mission should align to missing resource');
-const run=L.train({}, {}, 'lab'); ok(run.ok&&C.started==='graph-one','train should launch recommended challenge');
+const run=L.train(state,world,'lab'); ok(run.ok&&C.started==='graph-one','train should launch recommended challenge');
+ok(state.learningCity.active?.buildingId==='lab','training target should persist across challenge navigation');
+state.unlocked=true;
+const result=L.completeTraining(state,world,{normalized:{correct:true,challenge:{id:'graph-one'}},granted:20});
+ok(result?.unlocked,'matching successful solve should detect the building becoming unlocked');
+ok(state.learningCity.pending?.buildingId==='lab','city consequence should be persisted for UI feedback');
+ok(emitted.some(([n])=>n==='learning-city:building-unlocked'),'unlock should emit a city-facing event');
+ok(!state.learningCity.active,'completed training target should clear active contract');
 if(fail.length){console.error('LEARNING CITY LOOP FAILED');for(const f of fail)console.error(' - '+f);process.exit(1)}
-console.log('Learning city loop passed: exact building prerequisites and direct training mission launch verified.');
+console.log('Learning city loop passed: prerequisites, direct training, persisted target, solve feedback, and building unlock consequence verified.');
