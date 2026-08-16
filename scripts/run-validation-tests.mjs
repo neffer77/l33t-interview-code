@@ -35,6 +35,7 @@ const suites = [
   ['P6-C company and leadership city consequences', 'tests/company-city-consequences.mjs'],
   ['P6-D social team city consequences', 'tests/social-team-city-consequences.mjs'],
   ['P6-E world story city consequences', 'tests/world-story-city-consequences.mjs'],
+  ['P6-F unified civilization status dashboard', 'tests/civilization-status-dashboard.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
@@ -49,10 +50,10 @@ const suites = [
   ['original P2-O Integration & Balance', 'tests/original-p2-o-integration.mjs'],
   ['P3 Learning City Loop', 'tests/learning-city-loop.mjs'],
   ['P3-D mastery building gates', 'tests/mastery-building-gates.mjs'],
-  ['P3-E concept-specific city missions', 'tests/concept-specific-city-missions.mjs'],
+  ['P3-E concept-specific city mission', 'tests/concept-specific-city-missions.mjs'],
   ['P3-F city learning navigator', 'tests/city-learning-navigator.mjs'],
   ['P3-G map learning beacon', 'tests/city-learning-map-beacon.mjs'],
-  ['P3-H persistent city goals', 'tests/persistent-city-goals.mjs'],
+  ['P3-H persistent city goal', 'tests/persistent-city-goals.mjs'],
   ['P3-I goal completion build flow', 'tests/goal-completion-build-flow.mjs'],
 ];
 
