@@ -39,6 +39,7 @@ const suites = [
   ['P6-G city visual state projection and integration', 'tests/city-visual-state-projection.mjs'],
   ['P6-H playable settlement bootstrap', 'tests/playable-settlement-bootstrap.mjs'],
   ['P6-I SimCity construction and growth loop', 'tests/simcity-growth-loop.mjs'],
+  ['P6-J Stardew-style NPC and world interactions', 'tests/world-interactions.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
