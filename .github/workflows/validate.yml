@@ -68,6 +68,8 @@ jobs:
         run: node tests/age-visual-evolution.mjs
       - name: Run P4-D district age evolution suite
         run: node tests/district-age-evolution.mjs
+      - name: Run P4-E age unlock landmarks suite
+        run: node tests/age-unlock-landmarks.mjs
       - name: Run technology tree suite
         run: node tests/technology-tree.mjs
       - name: Run adaptive challenge selection suite
