@@ -74,6 +74,8 @@ jobs:
         run: node tests/age-transition-reveal.mjs
       - name: Run P4-G Phase 4 integration and balance suite
         run: node tests/p4-integration.mjs
+      - name: Run P5-A citizens and NPC pathing suite
+        run: node tests/living-city-citizens.mjs
       - name: Run technology tree suite
         run: node tests/technology-tree.mjs
       - name: Run adaptive challenge selection suite
