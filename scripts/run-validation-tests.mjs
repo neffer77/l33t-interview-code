@@ -29,6 +29,7 @@ const suites = [
   ['P5-D city events and citizen reactions', 'tests/city-event-reactions.mjs'],
   ['P5-E named citizens roles and relationships', 'tests/citizen-identities.mjs'],
   ['P5-F citizen dialogue mentorship', 'tests/citizen-dialogue-mentorship.mjs'],
+  ['P5-G Living City integration and balance', 'tests/p5-integration.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
