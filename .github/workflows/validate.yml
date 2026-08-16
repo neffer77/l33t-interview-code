@@ -84,5 +84,5 @@ jobs:
         run: node tests/civilization-specialization.mjs
       - name: Run original P2-O Integration & Balance suite
         run: node tests/original-p2-o-integration.mjs
-      - name: Run P3-A Building Learning Contracts suite
+      - name: Run P3 Learning City Loop suite
         run: node tests/learning-city-loop.mjs
