@@ -38,6 +38,7 @@ const suites = [
   ['P6-F unified civilization status dashboard', 'tests/civilization-status-dashboard.mjs'],
   ['P6-G city visual state projection and integration', 'tests/city-visual-state-projection.mjs'],
   ['P6-H playable settlement bootstrap', 'tests/playable-settlement-bootstrap.mjs'],
+  ['P6-I SimCity construction and growth loop', 'tests/simcity-growth-loop.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
