@@ -68,3 +68,13 @@ jobs:
         run: node tests/learning-objectives.mjs
       - name: Run problem quality and anti-grind suite
         run: node tests/anti-grind.mjs
+      - name: Run knowledge retention suite
+        run: node tests/knowledge-retention.mjs
+      - name: Run transfer and generalization suite
+        run: node tests/transfer-generalization.mjs
+      - name: Run interleaved practice suite
+        run: node tests/interleaved-practice.mjs
+      - name: Run interview readiness suite
+        run: node tests/interview-readiness.mjs
+      - name: Run Phase 2 integration and balance suite
+        run: node tests/p2-integration.mjs

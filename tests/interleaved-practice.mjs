@@ -1,0 +1,12 @@
+import fs from'node:fs';import vm from'node:vm';import path from'node:path';
+const root=process.cwd(),fail=[],ok=(v,m)=>{if(!v)fail.push(m)},listeners={},events={on(e,f){(listeners[e]||(listeners[e]=[])).push(f)},emit(e,p){for(const f of listeners[e]||[])f(p)}};
+const C={events,TransferGeneralization:{conceptFor:p=>String((p.normalized?.challenge||p.challenge||{}).pattern||'foundations').toLowerCase().replace(/[^a-z0-9]+/g,'_')}};
+const ctx=vm.createContext({window:{Codeopolis:C},Codeopolis:C,console,Date,Math,Number,Object,Array,Set,Map,JSON});vm.runInContext(fs.readFileSync(path.join(root,'src/progression/interleaved-practice.js'),'utf8'),ctx);const I=C.InterleavedPractice;
+const reward=(pattern,id)=>({normalized:{correct:true,challenge:{id,pattern}},antiGrind:{progressionBlocked:false}}),state={};
+I.record(state,reward('Arrays','a1'),1);I.record(state,reward('Arrays','a2'),2);I.record(state,reward('Arrays','a3'),3);
+let e=I.evaluate(state,{challenge:{id:'b1',pattern:'BFS'}});ok(e.switching&&e.underused&&e.discriminationNeed>=.8,'switching to an underused concept should have high discrimination value');ok(e.rewardMultiplier>1,'productive concept switch should receive a bounded reward bonus');
+I.record(state,reward('BFS','b1'),4);let s=I.snapshot(state);ok(s.distinctRecent===2&&s.totalSwitches===1,'snapshot should track distinct concepts and concept switches');
+e=I.evaluate(state,{challenge:{id:'b2',pattern:'BFS'}});ok(!e.switching,'same concept should not count as an interleaving switch');
+const before=I.snapshot(state).recent.length;I.record(state,{normalized:{correct:false,challenge:{id:'x',pattern:'DP'}},antiGrind:{progressionBlocked:false}},5);ok(I.snapshot(state).recent.length===before,'failed solves must not alter interleaving history');I.record(state,{normalized:{correct:true,challenge:{id:'x',pattern:'DP'}},antiGrind:{progressionBlocked:true}},6);ok(I.snapshot(state).recent.length===before,'anti-grind blocked solves must not alter interleaving history');
+const saved=JSON.parse(JSON.stringify(state)),restored=I.ensure(saved);ok(restored.recent.length===state.interleavedPractice.recent.length,'interleaving history should persist through save reconstruction');
+if(fail.length){console.error('INTERLEAVED PRACTICE FAILED');for(const f of fail)console.error(' - '+f);process.exit(1)}console.log('Interleaved practice passed: switching, discrimination need, reward bonus, blocked practice, failure protection, and persistence verified.');
