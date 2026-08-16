@@ -82,3 +82,5 @@ jobs:
         run: node tests/learning-analytics.mjs
       - name: Run original P2-N Civilization Specialization suite
         run: node tests/civilization-specialization.mjs
+      - name: Run original P2-O Integration & Balance suite
+        run: node tests/original-p2-o-integration.mjs
