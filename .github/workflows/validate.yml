@@ -88,3 +88,5 @@ jobs:
         run: node tests/learning-city-loop.mjs
       - name: Run P3-D mastery building gate suite
         run: node tests/mastery-building-gates.mjs
+      - name: Run P3-E concept-specific city mission suite
+        run: node tests/concept-specific-city-missions.mjs
