@@ -10,7 +10,6 @@
   });
   const ORDER=['grid_cascade','transit_gridlock','maintenance_cascade','supply_breakdown','budget_emergency'];
   function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
-  function key(x,y){return `${x},${y}`}
   function ensure(state){
     const d=state.cityCrises||(state.cityCrises={version:VERSION,active:null,history:[],pressureStreak:{},lastScanAt:0,lastResolvedAt:0,migratedLegacy:false});
     d.version=VERSION;d.history=Array.isArray(d.history)?d.history.slice(-29):[];d.pressureStreak=d.pressureStreak&&typeof d.pressureStreak==='object'?d.pressureStreak:{};
@@ -23,15 +22,15 @@
     return{infra,pop,ops,supply,buildings,roads,population,roadCapacity,congestion,powerRatio,unpowered};
   }
   function pressure(state,world){
-    const s=summaries(state,world),n=Math.max(1,s.buildings.length),supplyFailures=(s.supply.shortage||0)+(s.supply.disconnected||0)+(s.supply.budget||0),negativeNet=Math.max(0,-Number(s.supply.budget?.net||0));
+    const s=summaries(state,world),n=Math.max(1,s.buildings.length),rows=Array.isArray(s.supply.rows)?s.supply.rows:[],budgetBlocked=rows.filter(r=>r?.state==='budget').length,supplyFailures=(Number(s.supply.shortage)||0)+(Number(s.supply.disconnected)||0)+budgetBlocked,negativeNet=Math.max(0,-Number(s.supply.budget?.net||0));
     const scores={
       grid_cascade:clamp((1-s.powerRatio)*115+(s.unpowered/n)*55,0,100),
-      transit_gridlock:clamp((s.congestion-0.75)*95+(s.pop.jobDemand||0)*.15,0,100),
-      maintenance_cascade:clamp(((s.ops.outages||0)*34+(s.ops.degraded||0)*18+(s.ops.maintenance||0)*7)/n*3,0,100),
-      supply_breakdown:clamp((supplyFailures/n)*62+(s.supply.running===0&&s.supply.rows?.length?25:0),0,100),
-      budget_emergency:clamp((Number(state.money)<25?45:0)+(Number(state.money)<10?25:0)+negativeNet*8+(s.supply.budget||0)*12,0,100)
+      transit_gridlock:clamp((s.congestion-0.75)*95+(Number(s.pop.jobDemand)||0)*.15,0,100),
+      maintenance_cascade:clamp(((Number(s.ops.outages)||0)*34+(Number(s.ops.degraded)||0)*18+(Number(s.ops.maintenance)||0)*7)/n*3,0,100),
+      supply_breakdown:clamp((supplyFailures/n)*62+(Number(s.supply.running)===0&&rows.length?25:0),0,100),
+      budget_emergency:clamp((Number(state.money)<25?45:0)+(Number(state.money)<10?25:0)+negativeNet*8+budgetBlocked*12,0,100)
     };
-    return{...s,scores,ranked:ORDER.map(id=>({id,score:Number(scores[id].toFixed(1)),definition:DEFINITIONS[id]})).sort((a,b)=>b.score-a.score)};
+    return{...s,budgetBlocked,supplyFailures,scores,ranked:ORDER.map(id=>({id,score:Number(scores[id].toFixed(1)),definition:DEFINITIONS[id]})).sort((a,b)=>b.score-a.score)};
   }
   function desiredConcepts(challenge){
     if(C.LearningCityLoop?.challengeConcepts)return C.LearningCityLoop.challengeConcepts(challenge).map(v=>String(v).toLowerCase().replace(/[^a-z0-9]+/g,'_'));
@@ -74,7 +73,7 @@
   function switchView(name){if(typeof document==='undefined')return;document.querySelector(`[data-tab="${name}"],[data-view="${name}"]`)?.click?.()}
   function startResolution(state,world){
     const data=ensure(state),a=data.active;if(!a)return{ok:false,reason:'No active city crisis.'};let challenge=a.challengeId&&(typeof CHALLENGES!=='undefined'?CHALLENGES.find(c=>c.id===a.challengeId):null);challenge=challenge||chooseChallenge(state,world,a.type);if(!challenge?.id)return{ok:false,reason:'No adaptive interview challenge is available.'};a.challengeId=challenge.id;a.respondingAt=Date.now();
-    const model={kind:'crisis',id:a.origin?.id||a.type,name:a.origin?.name||a.title,title:`${a.icon} ${a.title}`,district:world?.buildingDef?.(a.origin?.id)?.district||'core',challengeId:challenge.id,requirement:`Contain a level ${a.severity} city crisis`,body:`${a.description} Solve the selected interview problem to restore city throughput.`};C.WorldOriginMissions?.begin?.(state,model,a.origin?.id||a.type);C.events?.emit?.('city-crisis:responding',{crisis:{...a},challenge});switchView('challenge');const ok=!!C.AdaptiveChallengeSelector?.startChallenge?.(challenge.id);if(!ok&&typeof state!=='undefined')state.current=challenge.id;return{ok:ok||!!challenge,challenge,crisis:a};
+    const model={kind:'crisis',id:a.origin?.id||a.type,name:a.origin?.name||a.title,title:`${a.icon} ${a.title}`,district:world?.buildingDef?.(a.origin?.id)?.district||'core',challengeId:challenge.id,requirement:`Contain a level ${a.severity} city crisis`,body:`${a.description} Solve the selected interview problem to restore city throughput.`};C.WorldOriginMissions?.begin?.(state,model,a.origin?.id||a.type);C.events?.emit?.('city-crisis:responding',{crisis:{...a},challenge});switchView('challenge');const ok=!!C.AdaptiveChallengeSelector?.startChallenge?.(challenge.id);if(!ok)state.current=challenge.id;return{ok:ok||!!challenge,challenge,crisis:a};
   }
   function resolve(state,world,payload={}){
     const data=ensure(state),a=data.active;if(!a)return null;const id=challengeId(payload);if(id&&a.challengeId&&id!==a.challengeId)return null;if(payload.normalized?.correct===false||payload.progressionEligible===false)return null;
