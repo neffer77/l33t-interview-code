@@ -50,6 +50,7 @@ const suites = [
   ['R4 manual SimCity construction loop', 'tests/r4-manual-construction-loop.mjs'],
   ['R5 roads and infrastructure', 'tests/r5-roads-infrastructure.mjs'],
   ['R6 population simulation embodiment', 'tests/r6-population-simulation-embodiment.mjs'],
+  ['R7 operational buildings and maintenance', 'tests/r7-operational-buildings-maintenance.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
