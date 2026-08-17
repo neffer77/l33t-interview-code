@@ -41,3 +41,5 @@ jobs:
           node-version: '22'
       - name: Run Codeopolis regression suites
         run: node scripts/run-validation-tests.mjs
+      - name: Run R9 deep economy regression
+        run: node tests/r9-deep-economy-supply-chains.mjs
