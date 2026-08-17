@@ -44,6 +44,7 @@ const suites = [
   ['P6-L existing systems become world venues', 'tests/existing-system-world-venues.mjs'],
   ['P6-M visual and sensory game feel', 'tests/city-game-feel.mjs'],
   ['P6-N world-first UX and player-experience acceptance', 'tests/world-first-ux-acceptance.mjs'],
+  ['P7-A release readiness and full-loop playtest gate', 'tests/p7-release-readiness.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
