@@ -20,7 +20,8 @@
       const resolved=crises.onMastered(e);
       quests.onMastered(e);
       const found=discoveries.evaluate();
-      if(!resolved)crises.maybeTrigger(e);
+      // R11 replaces random mastery-triggered crises with systemic city-state crises.
+      if(!resolved&&!C.CityCrisisSystem)crises.maybeTrigger(e);
       if(found.length||resolved){persist(false);render()}else{persist(false);ui.refresh()}
     });
     C.events.on('reward:micro',()=>{quests.onRecall();discoveries.evaluate();persist(false);ui.refresh()});
