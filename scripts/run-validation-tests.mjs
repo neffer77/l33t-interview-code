@@ -41,6 +41,7 @@ const suites = [
   ['P6-I SimCity construction and growth loop', 'tests/simcity-growth-loop.mjs'],
   ['P6-J Stardew-style NPC and world interactions', 'tests/world-interactions.mjs'],
   ['P6-K world-origin missions', 'tests/world-origin-missions.mjs'],
+  ['P6-L existing systems become world venues', 'tests/existing-system-world-venues.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
