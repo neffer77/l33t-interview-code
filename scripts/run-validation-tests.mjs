@@ -55,6 +55,7 @@ const suites = [
   ['R10 technology and age visual transformation', 'tests/r10-technology-age-visual-transformation.mjs'],
   ['R11 crises and disasters', 'tests/r11-crises-disasters.mjs'],
   ['R12 world expansion and customization', 'tests/r12-world-expansion-customization.mjs'],
+  ['R13 interview campaign integration', 'tests/r13-interview-campaign-integration.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
