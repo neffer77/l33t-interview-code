@@ -1,21 +1,12 @@
 (function(C){
   'use strict';
+  if(!C.PixelWorldProjection){const TILE_W=64,TILE_H=32,PAD_X=72,PAD_Y=74;const layout=(width=12,height=8)=>({tileW:TILE_W,tileH:TILE_H,originX:PAD_X+(Math.max(1,height)-1)*TILE_W/2,originY:PAD_Y,width,height,worldWidth:PAD_X*2+(Math.max(1,width)+Math.max(1,height))*TILE_W/2,worldHeight:PAD_Y*2+(Math.max(1,width)+Math.max(1,height))*TILE_H/2});const toWorld=(x,y,l=layout())=>({x:l.originX+(x-y)*l.tileW/2,y:l.originY+(x+y)*l.tileH/2});const fromWorld=(wx,wy,l=layout())=>{const dx=(wx-l.originX)/(l.tileW/2),dy=(wy-l.originY)/(l.tileH/2);return{x:Math.round((dx+dy)/2),y:Math.round((dy-dx)/2)}};const corners=(x,y,l=layout())=>{const p=toWorld(x,y,l),hw=l.tileW/2,hh=l.tileH/2;return[{x:p.x,y:p.y-hh},{x:p.x+hw,y:p.y},{x:p.x,y:p.y+hh},{x:p.x-hw,y:p.y}]};const depth=(x,y,layer=0)=>(x+y)*100+x+layer;const footprintCells=(def,x,y)=>{const w=Math.max(1,Number(def?.footprint?.w)||1),h=Math.max(1,Number(def?.footprint?.h)||1),out=[];for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++)out.push({x:x+xx,y:y+yy});return out};const footprintCenter=(def,x,y,l)=>{const pts=footprintCells(def,x,y).map(c=>toWorld(c.x,c.y,l));return{x:pts.reduce((n,p)=>n+p.x,0)/pts.length,y:pts.reduce((n,p)=>n+p.y,0)/pts.length}};C.PixelWorldProjection={VERSION:1,TILE_W,TILE_H,PAD_X,PAD_Y,layout,toWorld,fromWorld,corners,depth,footprintCells,footprintCenter}}
   C.Phase44Assets={
-    version:2,
-    projection:'iso-pixel-v1',
-    tileWidth:64,
-    tileHeight:32,
-    terrain:{
-      grass:{base:0x6f9f55,dark:0x426c3e,light:0x9bc46b,accent:0xd8d27a,edge:0x355f38},
-      dirt:{base:0xb88958,dark:0x7a563d,light:0xd7ad72,accent:0xe7c58c,edge:0x654a39},
-      water:{base:0x4d95b7,dark:0x2f6f91,light:0x78bdd2,accent:0xb7e1dd,edge:0x295b79},
-      forest:{base:0x5e8f4a,dark:0x315d38,light:0x82b75c,accent:0xb9cd72,edge:0x294f34}
-    },
+    version:2,projection:'iso-pixel-v1',tileWidth:64,tileHeight:32,
+    terrain:{grass:{base:0x6f9f55,dark:0x426c3e,light:0x9bc46b,accent:0xd8d27a,edge:0x355f38},dirt:{base:0xb88958,dark:0x7a563d,light:0xd7ad72,accent:0xe7c58c,edge:0x654a39},water:{base:0x4d95b7,dark:0x2f6f91,light:0x78bdd2,accent:0xb7e1dd,edge:0x295b79},forest:{base:0x5e8f4a,dark:0x315d38,light:0x82b75c,accent:0xb9cd72,edge:0x294f34}},
     roads:{base:0x9a8871,dark:0x756655,edge:0x574e46,line:0xd9c69a,grassEdge:0xb6ad78},
     props:{treeTrunk:0x76503a,treeDark:0x315b3b,treeMid:0x4f7f47,treeLight:0x80aa55,stone:0x7f8581,stoneLight:0xaeb4a5,flowerA:0xf0c96b,flowerB:0xe8899c,fence:0xa8764f},
     buildings:{core:[0x7f8b91,0x59636a,0xc9a86b],arrays:[0xbf7046,0x84482d,0xe4a365],hash:[0xb58b4e,0x775b36,0xe5c477],structures:[0x7d6ba8,0x51436e,0xb8a8dd],search:[0x4f86a5,0x315d78,0x83c4da],graphs:[0x4c8d75,0x2e6153,0x7fc4a0],dp:[0xa05b82,0x6a3e5b,0xdf9bb9],materials:[0xbf7046,0x84482d,0xe4a365],trade:[0xb58b4e,0x775b36,0xe5c477],research:[0x4c8d75,0x2e6153,0x7fc4a0],compute:[0xa05b82,0x6a3e5b,0xdf9bb9],infrastructure:[0x5d7fa8,0x3a5574,0x91b6d8],stability:[0x9a665e,0x653f3b,0xd79b8e]},
-    districtGround:{materials:0xc27b4a,trade:0xc7a554,research:0x579b82,compute:0xaa6d94,infrastructure:0x6788ae,stability:0xa16d66},
-    variants:{grass:6,dirt:4,water:3,forest:5},
-    worldDecor:{flowers:0.075,stones:0.045,tufts:0.11,fences:0.02}
+    districtGround:{materials:0xc27b4a,trade:0xc7a554,research:0x579b82,compute:0xaa6d94,infrastructure:0x6788ae,stability:0xa16d66},variants:{grass:6,dirt:4,water:3,forest:5},worldDecor:{flowers:.075,stones:.045,tufts:.11,fences:.02}
   };
 })(window.Codeopolis);
