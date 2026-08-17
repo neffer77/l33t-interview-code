@@ -52,6 +52,7 @@ const suites = [
   ['R6 population simulation embodiment', 'tests/r6-population-simulation-embodiment.mjs'],
   ['R7 operational buildings and maintenance', 'tests/r7-operational-buildings-maintenance.mjs'],
   ['R8 districts and zoning', 'tests/r8-districts-zoning.mjs'],
+  ['R10 technology and age visual transformation', 'tests/r10-technology-age-visual-transformation.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
