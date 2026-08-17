@@ -48,6 +48,7 @@ const suites = [
   ['R2 pixel-art world renderer', 'tests/r2-pixel-art-world-renderer.mjs'],
   ['R3 building asset system', 'tests/r3-building-asset-system.mjs'],
   ['R4 manual SimCity construction loop', 'tests/r4-manual-construction-loop.mjs'],
+  ['R5 roads and infrastructure', 'tests/r5-roads-infrastructure.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
