@@ -46,6 +46,7 @@ const suites = [
   ['P6-N world-first UX and player-experience acceptance', 'tests/world-first-ux-acceptance.mjs'],
   ['R1 production and runtime audit', 'tests/r1-production-audit.mjs'],
   ['R2 pixel-art world renderer', 'tests/r2-pixel-art-world-renderer.mjs'],
+  ['R3 building asset system', 'tests/r3-building-asset-system.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
