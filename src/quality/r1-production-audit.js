@@ -1,0 +1,24 @@
+(function(C){
+  'use strict';
+  const VERSION=1;
+  const MODULES={
+    p2:['ConceptResources','MultiResourceEconomy','CodingRewardPipeline','CurriculumDistricts','ResourceGatedBuildings','ConceptMastery','TechnologyTree','AdaptiveChallengeSelector','LearningObjectives','KnowledgeRetention','TransferGeneralization','InterleavedPractice','InterviewReadiness','LearningAnalytics','CivilizationSpecialization','P2Integration'],
+    p3:['LearningCityLoop','MasteryBuildingGates','CityLearningMapBeacon','GoalCompletionBuildFlow'],
+    p4:['AgeProgression','AgeCurriculumPools','TownCenterAdvancement','AgeVisualEvolution','DistrictAgeEvolution','AgeUnlockLandmarks','P4Integration'],
+    p5:['LivingCityCitizens','CitizenSchedules','AmbientCityActivity','CityEventReactions','CitizenIdentities','CitizenDialogueMentorship','P5Integration'],
+    p6:['ExistingSystemsBridge','CareerCityConsequences','CompanyCityConsequences','SocialTeamCityConsequences','WorldStoryCityConsequences','CivilizationStatusDashboard','CityVisualStateProjection','PlayableSettlementBootstrap','SimCityGrowthLoop','WorldInteractions','WorldOriginMissions','ExistingSystemWorldVenues','CityGameFeel','WorldFirstUX']
+  };
+  const runtime={startedAt:Date.now(),renderer:'pending',fallbackReason:null,phaserReady:false,loadEvents:[]};
+  function present(name){return !!C[name]||!!C.get?.(name)}
+  function moduleSnapshot(){const out={};for(const [phase,names] of Object.entries(MODULES)){const available=names.filter(present);out[phase]={available,total:names.length,missing:names.filter(n=>!present(n)),percent:Math.round(available.length/names.length*100)}}return out}
+  function worldSnapshot(){const state=C.game?.state||(typeof window!=='undefined'?window.state:null),world=C.game?.world,placed=world?.placedBuildings?.()||[],roads=world?.roadTiles?.()||[];return{stateOwnedBuildings:Array.isArray(state?.buildings)?state.buildings.length:null,placedBuildings:placed.length,roads:roads.length,population:Number(state?.population)||0,worldVersion:world?.world?.version||null,migrated:world?.world?.migrated??null}}
+  function rendererSnapshot(){const canvas=typeof document!=='undefined'?document.getElementById('cityCanvas'):null,host=typeof document!=='undefined'?document.getElementById('phaserCityHost'):null;const phaser=!!C.phaserCity?.game&&host&&host.isConnected,legacyVisible=!!canvas&&getComputedStyle(canvas).display!=='none';return{mode:phaser?'phaser':legacyVisible?'legacy-canvas':'pending',phaser,legacyVisible,hostPresent:!!host,fallbackReason:runtime.fallbackReason}}
+  function snapshot(){const renderer=rendererSnapshot(),world=worldSnapshot(),modules=moduleSnapshot(),warnings=[];if(renderer.mode==='legacy-canvas')warnings.push('Legacy Canvas2D renderer active: Phaser-only P4-P6 visuals are unavailable.');if(world.population>0&&world.placedBuildings===0)warnings.push('Population exists without placed buildings.');if(world.stateOwnedBuildings!==null&&world.placedBuildings!==world.stateOwnedBuildings)warnings.push('Owned-building inventory and physical-world building counts differ.');for(const [phase,row] of Object.entries(modules))if(row.missing.length)warnings.push(`${phase.toUpperCase()} missing ${row.missing.length} runtime module(s).`);return{version:VERSION,at:Date.now(),renderer,world,modules,warnings,loadEvents:runtime.loadEvents.slice(-80)}}
+  function overlay(){if(typeof document==='undefined'||new URLSearchParams(location.search).get('audit')!=='1')return false;let el=document.getElementById('r1ProductionAudit');if(!el){el=document.createElement('pre');el.id='r1ProductionAudit';Object.assign(el.style,{position:'fixed',left:'8px',right:'8px',bottom:'8px',maxHeight:'42vh',overflow:'auto',zIndex:99999,margin:0,padding:'10px',background:'#07111fee',color:'#d9f3ff',border:'1px solid #6fa9d8',borderRadius:'10px',font:'10px/1.35 ui-monospace,monospace',whiteSpace:'pre-wrap'});document.body.appendChild(el)}el.textContent=JSON.stringify(snapshot(),null,2);return true}
+  function record(type,payload={}){runtime.loadEvents.push({type,at:Date.now(),...payload});if(runtime.loadEvents.length>100)runtime.loadEvents.shift();overlay()}
+  C.events?.on?.('civilization:phaser-ready',p=>{runtime.renderer='phaser';runtime.phaserReady=true;record('phaser-ready',p)});
+  C.events?.on?.('civilization:phaser-fallback',p=>{runtime.renderer='legacy-canvas';runtime.fallbackReason=p?.error||'unknown';record('phaser-fallback',{error:runtime.fallbackReason})});
+  C.events?.on?.('civilization:phaser-load',p=>record('phaser-load',p||{}));
+  if(typeof document!=='undefined'){setTimeout(overlay,250);setInterval(()=>{if(document.getElementById('r1ProductionAudit'))overlay()},1500)}
+  C.R1ProductionAudit={VERSION,MODULES,runtime,present,moduleSnapshot,worldSnapshot,rendererSnapshot,snapshot,overlay,record};
+})(window.Codeopolis);
