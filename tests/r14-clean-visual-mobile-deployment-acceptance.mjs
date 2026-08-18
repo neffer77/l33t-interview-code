@@ -5,6 +5,7 @@ const camera=readFileSync('src/civilization/phaser/mobile-camera-controller.js',
 const acceptance=readFileSync('src/quality/r14-player-acceptance.js','utf8');
 const harness=readFileSync('scripts/r14-browser-acceptance.py','utf8');
 const ionicShell=readFileSync('src/platform/ionic-shell.js','utf8');
+const ionicView=readFileSync('src/platform/ionic-view-state.js','utf8');
 const ionicCss=readFileSync('phase43-ionic.css','utf8');
 
 assert.match(camera,/fromWorld/,'mobile double-tap must invert the isometric projection');
@@ -37,6 +38,8 @@ assert.match(ionicShell,/activateCityRenderer/,'mobile City must explicitly wake
 assert.match(ionicShell,/hasGeometry\(city\).*hasGeometry\(host\)/s,'Phaser resize must be gated on nonzero visible City geometry');
 assert.match(ionicShell,/if\(tab==='city'\)scheduleCityActivation\(\)/,'City activation must run after the shell switches to City');
 assert.match(ionicShell,/else root\.phaserCity\?\.setActive\?\.\(false\)/,'non-City views must sleep Phaser without resizing hidden WebGL');
+assert.match(ionicView,/syncRenderer\(active\)/,'legacy tab observer must hand renderer state to the mobile shell');
+assert.match(ionicView,/scheduleCityActivation/,'legacy switchTab City return must schedule visible Phaser activation');
 assert.match(ionicCss,/#phaserCityHost\{[^}]*height:100%!important/s,'mobile Phaser host must receive explicit full-height geometry');
 assert.match(ionicCss,/data-view="city"[^}]*codeopolis-mobile-workspace\{display:none!important/s,'mobile City must not reserve screen space for the old dashboard workspace');
 
