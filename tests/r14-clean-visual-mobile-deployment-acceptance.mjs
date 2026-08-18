@@ -8,6 +8,7 @@ const harness=readFileSync('scripts/r14-browser-acceptance.py','utf8');
 const ionicShell=readFileSync('src/platform/ionic-shell.js','utf8');
 const ionicView=readFileSync('src/platform/ionic-view-state.js','utf8');
 const ionicCss=readFileSync('phase43-ionic.css','utf8');
+const worldFirst=readFileSync('src/integration/world-first-ux.js','utf8');
 
 assert.match(camera,/fromWorld/,'mobile double-tap must invert the isometric projection');
 assert.match(camera,/toWorld/,'mobile focus must use projected world coordinates');
@@ -38,6 +39,7 @@ assert.match(harness,/camera bounds stale after expansion/);
 assert.match(harness,/service_workers='block'/,'acceptance must not pass because of a stale service-worker cache');
 assert.match(harness,/elementFromPoint/,'first-run CTA must be hit-testable, not merely present');
 assert.match(harness,/R4 onboarding covers coding workspace/,'coding workspace must stay unobscured by city onboarding');
+assert.match(harness,/ionicCss/,'browser failures must preserve live Ionic stylesheet diagnostics');
 
 assert.match(ionicShell,/mountLiveCityRenderer/,'mobile shell must explicitly mount the live renderer');
 assert.match(ionicShell,/querySelector\('#phaserCityHost'\)/,'mobile shell must move the Phaser host, not only the legacy canvas');
@@ -55,5 +57,11 @@ assert.match(ionicCss,/#phaserCityHost\{[^}]*height:100%!important/s,'mobile Pha
 assert.match(ionicCss,/data-view="city"[^}]*codeopolis-mobile-workspace\{display:none!important/s,'mobile City must not reserve screen space for the old dashboard workspace');
 assert.match(ionicCss,/data-view="city"[^}]*codeopolis-mobile-city-peek>\.section-title.*display:none!important/s,'mobile City must not spend world space on the migrated legacy title row');
 assert.match(ionicCss,/data-view="city"[^}]*codeopolis-mobile-city-peek>\.city-summary.*display:none!important/s,'mobile City must not spend world space on the migrated legacy stat row');
+
+assert.match(worldFirst,/const VERSION=2/,'P6N world-first bridge must declare the reconstructed mobile presentation contract');
+assert.match(worldFirst,/codeopolis-mobile-city-peek>\.section-title.*codeopolis-mobile-city-peek>\.city-summary.*p6n-manage-city\{display:none!important/s,'legacy P6N title, stat row, and Manage City chrome must remain retired on mobile City');
+assert.match(worldFirst,/#phaserCityHost\{[^}]*grid-row:1!important[^}]*height:100%!important[^}]*min-height:0!important/s,'P6N bridge must yield the full mobile City surface to Phaser');
+assert.doesNotMatch(worldFirst,/min-height:52dvh!important/,'legacy P6N minimum-height split must not return');
+assert.doesNotMatch(worldFirst,/grid-template-rows:auto minmax\(0,1fr\) auto!important/,'legacy P6N three-row City layout must not return');
 
 console.log('R14 clean visual/mobile/deployment acceptance regression passed');
