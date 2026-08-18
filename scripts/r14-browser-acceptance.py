@@ -42,7 +42,7 @@ def run_viewport(browser,base_url,out_dir,name,width,height,deployed=False):
         text=msg.text
         if msg.type=='error' or 'Phaser city unavailable' in text: print(f'CONSOLE {name}: {text}',flush=True)
         if (msg.type=='error' or 'Phaser city unavailable' in text) and any(k in text for k in ('TypeError','ReferenceError','SyntaxError','Phaser city unavailable','Uncaught')): severe_console.append(text)
-    page.on('console',on_console);sep='&' if '?' in base_url else '?';url=f"{base_url}{sep}r14qa=1&audit=1&viewport={name}&t={int(time.time()*1000)}";page.goto(url,wait_until='domcontentloaded',timeout=90000);page.wait_for_selector('body',timeout=15000);switch_city(page);wait_city(page);vp_dir=out_dir/name;vp_dir.mkdir(parents=True,exist_ok=True)
+    page.on('console',on_console);sep='&' if '?' in base_url else '?';url=f"{base_url}{sep}r14qa=1&viewport={name}&t={int(time.time()*1000)}";page.goto(url,wait_until='domcontentloaded',timeout=90000);page.wait_for_selector('body',timeout=15000);switch_city(page);wait_city(page);vp_dir=out_dir/name;vp_dir.mkdir(parents=True,exist_ok=True)
     fresh=audit(page)
     if fresh['mode']!=name: fail(f"{name}: viewport classified as {fresh['mode']}")
     if fresh['renderer']!='phaser' or fresh['legacyVisible']: fail(f"{name}: Phaser does not own city: {fresh}")
