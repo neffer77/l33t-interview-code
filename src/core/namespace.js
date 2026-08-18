@@ -19,7 +19,7 @@
     key:(x,y)=>`${x},${y}`,
     uid:(prefix='id')=>`${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`,
     hash(input){let h=2166136261;const s=String(input);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0},
-    seeded(input){let x=this.hash(input)||1;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296}},
+    seeded(input){let x=C.util.hash(input)||1;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296}},
     formatNumber(v){return Math.abs(v)>=1000000?`${(v/1000000).toFixed(1)}m`:Math.abs(v)>=1000?`${(v/1000).toFixed(1)}k`:Math.round(v).toLocaleString()},
     now:()=>Date.now()
   };
