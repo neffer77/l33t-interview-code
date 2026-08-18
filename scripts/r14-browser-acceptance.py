@@ -12,9 +12,10 @@ def diagnostics(page):
       try{lexicalState={defined:typeof state!=='undefined',truthy:typeof state!=='undefined'&&!!state}}catch(e){lexicalState={defined:false,error:String(e)}}
       const required=['WorldSystem','IsoCamera','CitySimulation','CityRenderer','AudioSystem','RewardEngine','GameUI','PhaserCivilizationBootstrap'];
       return {codeopolis:!!C,game:!!C?.game,gameState:!!C?.game?.state,gameWorld:!!C?.game?.world,bootstrap:C?.GameBootstrapStatus||null,lexicalState,windowState:!!window.state,
-        modules:Object.fromEntries(required.map(k=>[k,!!C?.get?.(k)])),phaserCity:!!C?.phaserCity,host:!!C?.phaserCity?.host,scene:!!s,active:!!s?.sys?.isActive?.(),sleeping:!!s?.scene?.isSleeping?.(),paused:!!s?.scene?.isPaused?.(),
+        modules:Object.fromEntries(required.map(k=>[k,!!C?.get?.(k)])),projection:{present:!!C?.PixelWorldProjection,layout:typeof C?.PixelWorldProjection?.layout,tileW:C?.PixelWorldProjection?.TILE_W||null,tileH:C?.PixelWorldProjection?.TILE_H||null},
+        phaserCity:!!C?.phaserCity,host:!!C?.phaserCity?.host,scene:!!s,active:!!s?.sys?.isActive?.(),sleeping:!!s?.scene?.isSleeping?.(),paused:!!s?.scene?.isPaused?.(),
         r14:!!C?.R14PlayerAcceptance,r14Script:!!document.querySelector('script[data-r14-player-acceptance]'),legacyCanvas:!!document.getElementById('cityCanvas'),legacyDisplay:document.getElementById('cityCanvas')?.style?.display||'',
-        view:document.querySelector('#codeopolisIonicShell')?.dataset?.view||document.querySelector('.tabs button.active[data-tab]')?.dataset?.tab||null,phaser:window.Phaser?.VERSION||null,
+        view:document.querySelector('#codeopolisIonicShell')?.dataset?.view||document.querySelector('.tabs button.active[data-tab]')?.dataset?.tab||null,phaser:window.Phaser?.VERSION||null,capturedWarnings:(window.__r14CapturedWarnings||[]).slice(-6),
         r1:C?.R1ProductionAudit?{renderer:C.R1ProductionAudit.rendererSnapshot?.(),events:C.R1ProductionAudit.runtime?.loadEvents?.slice?.(-8),fallback:C.R1ProductionAudit.runtime?.fallbackReason}:null};
     }""")
 def wait_city(page):
@@ -35,11 +36,12 @@ def seed_operating_city(page):
     return page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state,w=C.game?.world;s.money=Math.max(5000,Number(s.money)||0);s.population=Math.max(12,Number(s.population)||0);s.eraLevel=3;s.ageProgression=Object.assign({},s.ageProgression,{level:3});s.tech=[...new Set([...(s.tech||[]),'arrays','maps','search','energy','graphs'])];s.buildings=[...new Set([...(s.buildings||[]),'market','foundry','solar','park'])];const placements=[['market',8,2],['foundry',2,5],['solar',8,5],['park',5,2]],results=[];for(const[id,x,y]of placements){if(w.tile(x,y)?.buildingId)continue;results.push({id,...w.placeBuilding(id,x,y,{construction:false})})}for(let x=1;x<=10;x++)if(!w.tile(x,4)?.buildingId&&!w.tile(x,4)?.occupiedBy)w.setRoad(x,4,true);for(const[x,y]of[[2,3],[5,3],[8,3],[2,4],[5,4],[8,4]])if(!w.tile(x,y)?.buildingId&&!w.tile(x,y)?.occupiedBy)w.setRoad(x,y,true);C.BuildingOperations?.sync?.(s,w);C.PopulationSimulation?.step?.(s,w,1);C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity')?.refresh?.();C.R14PlayerAcceptance?.sync?.();return{results,placed:w.placedBuildings().length,roads:w.roadTiles().length}}""")
 def run_viewport(browser,base_url,out_dir,name,width,height,deployed=False):
     mobile=name in ('phone_portrait','phone_landscape','tablet');context=browser.new_context(viewport={'width':width,'height':height},device_scale_factor=1,is_mobile=mobile,has_touch=mobile,service_workers='block');page=context.new_page();page_errors=[];severe_console=[]
+    page.add_init_script("""() => {window.__r14CapturedWarnings=[];const original=console.warn.bind(console);console.warn=(...args)=>{try{window.__r14CapturedWarnings.push(args.map(v=>v instanceof Error?(v.stack||String(v)):String(v)).join(' '))}catch{}return original(...args)}}""")
     page.on('pageerror',lambda exc:(page_errors.append(str(exc)),print(f'PAGEERROR {name}: {exc}',flush=True)))
     def on_console(msg):
         text=msg.text
-        if msg.type=='error': print(f'CONSOLE {name}: {text}',flush=True)
-        if msg.type=='error' and any(k in text for k in ('TypeError','ReferenceError','SyntaxError','Phaser city unavailable','Uncaught')): severe_console.append(text)
+        if msg.type=='error' or 'Phaser city unavailable' in text: print(f'CONSOLE {name}: {text}',flush=True)
+        if (msg.type=='error' or 'Phaser city unavailable' in text) and any(k in text for k in ('TypeError','ReferenceError','SyntaxError','Phaser city unavailable','Uncaught')): severe_console.append(text)
     page.on('console',on_console);sep='&' if '?' in base_url else '?';url=f"{base_url}{sep}r14qa=1&audit=1&viewport={name}&t={int(time.time()*1000)}";page.goto(url,wait_until='domcontentloaded',timeout=90000);page.wait_for_selector('body',timeout=15000);switch_city(page);wait_city(page);vp_dir=out_dir/name;vp_dir.mkdir(parents=True,exist_ok=True)
     fresh=audit(page)
     if fresh['mode']!=name: fail(f"{name}: viewport classified as {fresh['mode']}")
