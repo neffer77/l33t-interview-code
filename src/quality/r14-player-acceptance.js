@@ -1,6 +1,6 @@
 (function(C){
   'use strict';
-  const VERSION=5;
+  const VERSION=6;
   const VIEWPORTS=Object.freeze({
     phone_portrait:{width:390,height:844,label:'Phone portrait'},
     phone_landscape:{width:844,height:390,label:'Phone landscape'},
@@ -19,6 +19,8 @@
     .phaser-city-host{position:relative;isolation:isolate;overscroll-behavior:contain;max-width:100%}
     /* Learning/progression logic remains active, but old dashboard cards no longer own the world surface. */
     .phaser-city-host>.p1-guide,.phaser-city-host>.p1-guide-reopen,.phaser-city-host>.p3-city-nav,.phaser-city-host>.phase44-transfer-generalization{display:none!important}
+    /* Primary world actions must remain reachable while a contextual panel is open so players can switch modes naturally. */
+    .phaser-city-host>.r12-custom-fab,.phaser-city-host>.r13-campaign-fab,.phaser-city-host>.p1-build-fab{z-index:120!important}
     /* R4 first five minutes are world-first by construction, not by layering luck. */
     .phaser-city-host.r14-empty-land > :not(canvas){display:none!important}
     .phaser-city-host.r14-build-ready > :not(canvas):not(.p1-catalog){display:none!important}
