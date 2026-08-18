@@ -11,6 +11,8 @@ const ionicShell=readFileSync('src/platform/ionic-shell.js','utf8');
 const ionicView=readFileSync('src/platform/ionic-view-state.js','utf8');
 const ionicCss=readFileSync('phase43-ionic.css','utf8');
 const worldFirst=readFileSync('src/integration/world-first-ux.js','utf8');
+const economyUi=readFileSync('src/civilization/city-economy-ui.js','utf8');
+const customizationUi=readFileSync('src/civilization/world-customization-ui.js','utf8');
 
 assert.match(camera,/fromWorld/,'mobile double-tap must invert the isometric projection');
 assert.match(camera,/toWorld/,'mobile focus must use projected world coordinates');
@@ -24,6 +26,9 @@ assert.match(phase44Runtime,/window\.switchTab=wrapped/,'desktop programmatic ta
 assert.match(phase44Runtime,/phase44-city-active/,'active City state must be exposed to the fixed-height desktop shell');
 assert.match(phase44Runtime,/requestAnimationFrame\(syncLifecycle\)/,'programmatic City return must synchronize Phaser after the tab DOM updates');
 assert.match(phase44Runtime,/C\.Phase44Lifecycle=/,'renderer lifecycle must be observable for QA and integration');
+assert.match(coreViewport,/body\.phase44-city-active main\.app\{max-width:none!important;width:100%!important/,'wide desktop City must not remain capped by the legacy 1240px app shell');
+assert.match(coreViewport,/phase44-city-active #phase29InterviewDay.*phase44-city-active #phase30Remediation\{display:none!important/s,'Interview Day and remediation must not consume neutral City viewport');
+assert.match(coreViewport,/phase44-learning-objectives.*phase44-interleaving.*phase44-ages.*phase44-p2-integration-panel.*p6-civ-status\{display:none!important/s,'persistent learning/status dashboard cards must be retired from the neutral world surface');
 assert.match(coreViewport,/body\.phase44-city-active \.layout\{grid-template-columns:minmax\(0,1fr\)!important/,'desktop City must stop reserving a Mission Control column');
 assert.match(coreViewport,/phase44-city-active.*\.city-stage\{[^}]*flex:1 1 auto!important[^}]*height:100%!important[^}]*overflow:hidden!important/s,'desktop City stage must own the available viewport rather than clip a tall Phaser canvas');
 assert.match(coreViewport,/phase44-city-active.*\.phaser-city-host\{[^}]*height:100%!important[^}]*min-height:0!important[^}]*max-height:none!important/s,'desktop Phaser host must fit its visible City stage');
@@ -36,11 +41,19 @@ assert.match(acceptance,/Touch target too small/);
 assert.match(acceptance,/r14-first-run/);
 assert.match(acceptance,/closeCompetingPanel/);
 assert.match(acceptance,/cityViewportHealthy/,'city viewport acceptance must be explicit and testable');
-assert.match(acceptance,/mode==='phone_landscape'.*hostRect\.width>=vp\.width\*\.9.*hostRect\.height>=vp\.height\*\.6/s,'landscape acceptance must require world-first viewport coverage instead of a brittle absolute pixel cutoff');
-assert.match(acceptance,/Landscape city does not own enough of viewport/,'landscape coverage failure must be player-visible in audit diagnostics');
+assert.match(acceptance,/mode==='phone_landscape'.*hostRect\.width>=vp\.width\*\.9.*hostRect\.height>=vp\.height\*\.6/s,'landscape acceptance must require world-first viewport coverage');
+assert.match(acceptance,/hostRect\.width>=vp\.width\*\.85&&hostRect\.height>=vp\.height\*\.7/,'portrait, tablet and desktop must devote most of the viewport to the city');
+assert.match(acceptance,/City does not own enough of .* viewport/,'world-coverage failure must be explicit in audit diagnostics');
+assert.match(acceptance,/Persistent dashboard cards cover the city/,'neutral City clutter must fail acceptance');
+assert.match(acceptance,/Non-city panels consume City viewport/,'external interview/remediation panels must fail if visible during City');
+assert.match(acceptance,/Economy status renders an object instead of a numeric warning count/,'object-string economy regressions must fail player acceptance');
 assert.match(acceptance,/r14-empty-land > :not\(canvas\)/,'empty-land City must suppress every non-renderer Phaser overlay');
 assert.match(acceptance,/r14-build-ready > :not\(canvas\):not\(\.p1-catalog\)/,'build-ready City must keep only the renderer and Build catalog');
 assert.match(acceptance,/r14-first-run-state/,'first-run state must suppress migrated legacy City chrome');
+
+assert.match(economyUi,/budgetBlocked=\(s\.rows\|\|\[\]\)\.filter\(r=>r\.state==='budget'\)\.length/,'economy warning count must count budget-blocked rows numerically');
+assert.doesNotMatch(economyUi,/s\.shortage\+s\.disconnected\+s\.budget/,'economy UI must never add the budget object to a numeric warning count');
+assert.match(customizationUi,/this\.summary\.style\.display=showSummary\?'block':'none'/,'customization summary must be contextual rather than permanently covering the city');
 
 for(const shot of ['01-empty-land.png','02-coding-mission.png','03-build-ready.png','04-operating-city.png','05-interview-campaign.png','06-customization.png','07-expanded-city.png'])assert.ok(harness.includes(shot),`missing screenshot state ${shot}`);
 assert.match(harness,/manual_first_build/,'browser acceptance must exercise a manual first placement');
