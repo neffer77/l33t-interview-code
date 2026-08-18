@@ -12,13 +12,15 @@ def diagnostics(page):
       const C=window.Codeopolis,s=C?.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');let lexicalState={};
       try{lexicalState={defined:typeof state!=='undefined',truthy:typeof state!=='undefined'&&!!state}}catch(e){lexicalState={defined:false,error:String(e)}}
       const required=['WorldSystem','IsoCamera','CitySimulation','CityRenderer','AudioSystem','RewardEngine','GameUI','PhaserCivilizationBootstrap'];
-      const host=C?.phaserCity?.host,city=document.querySelector('.codeopolis-mobile-city-peek'),stage=document.querySelector('.codeopolis-ionic-stage');
-      const box=e=>e?{display:getComputedStyle(e).display,w:Math.round(e.getBoundingClientRect().width),h:Math.round(e.getBoundingClientRect().height)}:null;
+      const shell=document.querySelector('#codeopolisIonicShell'),content=document.querySelector('#codeopolisIonicContent'),host=C?.phaserCity?.host,city=document.querySelector('.codeopolis-mobile-city-peek'),stage=document.querySelector('.codeopolis-ionic-stage'),title=document.querySelector('.section-title'),summary=document.querySelector('.city-summary'),ionicLink=[...document.querySelectorAll('link[rel="stylesheet"]')].find(l=>(l.getAttribute('href')||'').includes('phase43-ionic.css'));
+      const box=e=>{if(!e)return null;const cs=getComputedStyle(e),r=e.getBoundingClientRect();return{tag:e.tagName,id:e.id||null,className:typeof e.className==='string'?e.className:null,parent:e.parentElement?`${e.parentElement.tagName}#${e.parentElement.id||''}.${typeof e.parentElement.className==='string'?e.parentElement.className:''}`:null,display:cs.display,visibility:cs.visibility,position:cs.position,padding:cs.padding,border:cs.border,borderRadius:cs.borderRadius,gridTemplateRows:cs.gridTemplateRows,w:Math.round(r.width),h:Math.round(r.height),x:Math.round(r.x),y:Math.round(r.y)}};
       return {codeopolis:!!C,game:!!C?.game,gameState:!!C?.game?.state,gameWorld:!!C?.game?.world,bootstrap:C?.GameBootstrapStatus||null,lexicalState,windowState:!!window.state,
         modules:Object.fromEntries(required.map(k=>[k,!!C?.get?.(k)])),projection:{present:!!C?.PixelWorldProjection,layout:typeof C?.PixelWorldProjection?.layout,tileW:C?.PixelWorldProjection?.TILE_W||null,tileH:C?.PixelWorldProjection?.TILE_H||null},
-        phaserCity:!!C?.phaserCity,host:!!host,hostBox:box(host),cityBox:box(city),stageBox:box(stage),scene:!!s,active:!!s?.sys?.isActive?.(),sleeping:!!s?.scene?.isSleeping?.(),paused:!!s?.scene?.isPaused?.(),
+        phaserCity:!!C?.phaserCity,host:!!host,shell:box(shell),content:box(content),stage:box(stage),city:box(city),hostBox:box(host),title:box(title),summary:box(summary),bodyClass:document.body.className,
+        ionicCss:{present:!!ionicLink,href:ionicLink?.href||null,sheet:!!ionicLink?.sheet,media:[...document.styleSheets].filter(x=>(x.href||'').includes('phase43-ionic.css')).map(x=>({href:x.href,disabled:x.disabled,media:x.media?.mediaText||''}))},
+        scene:!!s,active:!!s?.sys?.isActive?.(),sleeping:!!s?.scene?.isSleeping?.(),paused:!!s?.scene?.isPaused?.(),
         r14:!!C?.R14PlayerAcceptance,r14Script:!!document.querySelector('script[data-r14-player-acceptance]'),legacyCanvas:!!document.getElementById('cityCanvas'),legacyDisplay:document.getElementById('cityCanvas')?.style?.display||'',
-        view:document.querySelector('#codeopolisIonicShell')?.dataset?.view||document.querySelector('.tabs button.active[data-tab]')?.dataset?.tab||null,phaser:window.Phaser?.VERSION||null,capturedWarnings:(window.__r14CapturedWarnings||[]).slice(-6),
+        view:shell?.dataset?.view||document.querySelector('.tabs button.active[data-tab]')?.dataset?.tab||null,phaser:window.Phaser?.VERSION||null,capturedWarnings:(window.__r14CapturedWarnings||[]).slice(-6),
         r1:C?.R1ProductionAudit?{renderer:C.R1ProductionAudit.rendererSnapshot?.(),events:C.R1ProductionAudit.runtime?.loadEvents?.slice?.(-8),fallback:C.R1ProductionAudit.runtime?.fallbackReason}:null};
     }""")
 def wait_city(page):
@@ -49,36 +51,36 @@ def run_viewport(browser,base_url,out_dir,name,width,height,deployed=False):
     if mobile: page.wait_for_selector('#codeopolisIonicShell',state='visible',timeout=15000)
     switch_city(page);wait_city(page);vp_dir=out_dir/name;vp_dir.mkdir(parents=True,exist_ok=True)
     fresh=audit(page)
-    if fresh['mode']!=name: fail(f"{name}: viewport classified as {fresh['mode']}")
-    if fresh['renderer']!='phaser' or fresh['legacyVisible']: fail(f"{name}: Phaser does not own city: {fresh}")
-    if fresh['overflowX']>4: fail(f"{name}: horizontal overflow {fresh['overflowX']}px")
-    if not fresh['manualStart'] or fresh['placed']!=0 or fresh['roads']!=0: fail(f"{name}: fresh save is not empty land: {fresh}")
-    if not page.locator('.r4-start-panel').is_visible(): fail(f"{name}: first-run panel missing")
+    if fresh['mode']!=name: fail(f"{name}: viewport classified as {fresh['mode']} · {diagnostics(page)}")
+    if fresh['renderer']!='phaser' or fresh['legacyVisible']: fail(f"{name}: Phaser does not own city: {fresh} · {diagnostics(page)}")
+    if fresh['overflowX']>4: fail(f"{name}: horizontal overflow {fresh['overflowX']}px · {diagnostics(page)}")
+    if not fresh['manualStart'] or fresh['placed']!=0 or fresh['roads']!=0: fail(f"{name}: fresh save is not empty land: {fresh} · {diagnostics(page)}")
+    if not page.locator('.r4-start-panel').is_visible(): fail(f"{name}: first-run panel missing · {diagnostics(page)}")
     hittable=page.evaluate("""()=>{const b=document.querySelector('[data-r4-earn]');if(!b)return false;const r=b.getBoundingClientRect(),top=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return top===b||!!top?.closest?.('[data-r4-earn]')}""")
-    if not hittable: fail(f"{name}: first-run resource button is covered by another layer")
+    if not hittable: fail(f"{name}: first-run resource button is covered by another layer · {diagnostics(page)}")
     clutter=page.evaluate("""()=>[...document.querySelectorAll('#phaserCityHost [class*="-fab"],#phaserCityHost [class*="-hud"],#phaserCityHost .phase44-camera-controls')].filter(e=>getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().width>1).map(e=>e.className)""")
-    if clutter: fail(f"{name}: first-run city has competing controls: {clutter}")
+    if clutter: fail(f"{name}: first-run city has competing controls: {clutter} · {diagnostics(page)}")
     snap(page,vp_dir/'01-empty-land.png');page.locator('[data-r4-earn]').click();page.wait_for_function("()=>(Codeopolis.game?.state||window.state)?.r4Construction?.stage==='solve'",timeout=10000);page.wait_for_timeout(300)
-    if page.locator('.r4-start-panel').is_visible(): fail(f"{name}: R4 onboarding covers coding workspace")
+    if page.locator('.r4-start-panel').is_visible(): fail(f"{name}: R4 onboarding covers coding workspace · {diagnostics(page)}")
     snap(page,vp_dir/'02-coding-mission.png')
     page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state;C.ConceptResources.award(s,{challenge:{district:'arrays',difficulty:'easy',pattern:'Foundations'},concept:'R14 starter',rewardOverride:{resourceId:'materials',amount:12}});s.money=Math.max(5000,Number(s.money)||0)}""");page.wait_for_function("()=>(Codeopolis.game?.state||window.state)?.r4Construction?.stage==='build'",timeout=10000);wait_city(page);snap(page,vp_dir/'03-build-ready.png')
     manual_first_build(page);page.wait_for_timeout(350)
-    if page.locator('.r4-start-panel').count(): fail(f"{name}: onboarding did not clear after manually placing first building")
+    if page.locator('.r4-start-panel').count(): fail(f"{name}: onboarding did not clear after manually placing first building · {diagnostics(page)}")
     seeded=seed_operating_city(page)
-    if seeded['placed']<4 or seeded['roads']<4: fail(f"{name}: representative city setup failed: {seeded}")
+    if seeded['placed']<4 or seeded['roads']<4: fail(f"{name}: representative city setup failed: {seeded} · {diagnostics(page)}")
     page.wait_for_timeout(700);operating=audit(page)
-    if not operating['pass']: fail(f"{name}: operating city audit failed: {operating['issues']}")
-    if operating.get('legacyCards',0): fail(f"{name}: legacy dashboard cards remain over operating city")
+    if not operating['pass']: fail(f"{name}: operating city audit failed: {operating['issues']} · live={diagnostics(page)}")
+    if operating.get('legacyCards',0): fail(f"{name}: legacy dashboard cards remain over operating city · {diagnostics(page)}")
     snap(page,vp_dir/'04-operating-city.png');page.wait_for_selector('.r13-campaign-fab',state='visible',timeout=25000);page.locator('.r13-campaign-fab').click();page.wait_for_selector('.r13-campaign-panel.show',timeout=5000);snap(page,vp_dir/'05-interview-campaign.png');page.wait_for_selector('.r12-custom-fab',state='visible',timeout=15000);page.locator('.r12-custom-fab').click();page.wait_for_selector('.r12-custom-panel.show',timeout=5000)
-    if page.locator('.r13-campaign-panel.show').count(): fail(f"{name}: campaign and customization panels overlap")
+    if page.locator('.r13-campaign-panel.show').count(): fail(f"{name}: campaign and customization panels overlap · {diagnostics(page)}")
     snap(page,vp_dir/'06-customization.png');before=page.evaluate("()=>({w:Codeopolis.game.world.world.width,h:Codeopolis.game.world.world.height})");result=page.evaluate("()=>Codeopolis.game.world.expandCity?.({free:true})")
-    if not result or not result.get('ok'): fail(f"{name}: city expansion failed: {result}")
+    if not result or not result.get('ok'): fail(f"{name}: city expansion failed: {result} · {diagnostics(page)}")
     page.wait_for_function("([w,h])=>{const C=Codeopolis,s=C.phaserCity.game.scene.getScene('CodeopolisCity');return C.game.world.world.width>w&&C.game.world.world.height>h&&s.layout.width===C.game.world.world.width}",arg=[before['w'],before['h']],timeout=10000);page.wait_for_timeout(500);expansion=page.evaluate("""()=>{const C=Codeopolis,s=C.phaserCity.game.scene.getScene('CodeopolisCity'),b=s.cameras.main._bounds;return{world:{w:C.game.world.world.width,h:C.game.world.world.height},layout:{w:s.layout.worldWidth,h:s.layout.worldHeight},bounds:{w:b?.width||0,h:b?.height||0},audit:C.R14PlayerAcceptance.audit()}}""")
-    if expansion['bounds']['w'] and abs(expansion['bounds']['w']-expansion['layout']['w'])>2: fail(f"{name}: camera bounds stale after expansion: {expansion}")
-    if not expansion['audit']['pass']: fail(f"{name}: expanded city audit failed: {expansion['audit']['issues']}")
+    if expansion['bounds']['w'] and abs(expansion['bounds']['w']-expansion['layout']['w'])>2: fail(f"{name}: camera bounds stale after expansion: {expansion} · {diagnostics(page)}")
+    if not expansion['audit']['pass']: fail(f"{name}: expanded city audit failed: {expansion['audit']['issues']} · {diagnostics(page)}")
     snap(page,vp_dir/'07-expanded-city.png')
-    if page_errors: fail(f"{name}: page errors: {page_errors}")
-    if severe_console: fail(f"{name}: severe console errors: {severe_console}")
+    if page_errors: fail(f"{name}: page errors: {page_errors} · {diagnostics(page)}")
+    if severe_console: fail(f"{name}: severe console errors: {severe_console} · {diagnostics(page)}")
     build_info=page.evaluate("async()=>await(await fetch('build-info.json',{cache:'no-store'})).json()") if deployed else None;context.close();return{'viewport':name,'size':[width,height],'fresh':fresh,'operating':operating,'seeded':seeded,'expansion':expansion,'buildInfo':build_info,'screenshots':7}
 def main():
     p=argparse.ArgumentParser();p.add_argument('--url',required=True);p.add_argument('--out',default='artifacts/r14-clean');p.add_argument('--deployed',action='store_true');args=p.parse_args();out=Path(args.out);out.mkdir(parents=True,exist_ok=True);report={'url':args.url,'deployed':args.deployed,'viewports':{},'pass':False}
