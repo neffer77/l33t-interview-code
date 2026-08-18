@@ -32,7 +32,6 @@ jobs:
           node-version: '22'
       - uses: actions/configure-pages@v5
         with:
-          # Turn Pages on for the repo if it is not already enabled.
           enablement: true
       - name: Build site
         run: ./scripts/build-site.sh
@@ -46,7 +45,38 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  deployed-player-acceptance:
+    name: R14 deployed mobile/desktop acceptance
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Chromium acceptance runtime
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.55.0
+          python -m playwright install --with-deps chromium
+      - name: Verify published Codeopolis across all canonical viewports
+        env:
+          CODEOPOLIS_URL: ${{ needs.deploy.outputs.page_url }}
+        run: |
+          sleep 5
+          python scripts/r14-browser-acceptance.py --url "$CODEOPOLIS_URL" --out artifacts/r14-deployed --deployed
+      - name: Upload deployed visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r14-deployed-player-evidence
+          path: artifacts/r14-deployed
+          if-no-files-found: warn
+          retention-days: 30
