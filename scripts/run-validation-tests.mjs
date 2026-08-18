@@ -56,6 +56,7 @@ const suites = [
   ['R11 crises and disasters', 'tests/r11-crises-disasters.mjs'],
   ['R12 world expansion and customization', 'tests/r12-world-expansion-customization.mjs'],
   ['R13 interview campaign integration', 'tests/r13-interview-campaign-integration.mjs'],
+  ['R14 visual/mobile/deployment acceptance contract', 'tests/r14-visual-mobile-deployment-acceptance.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
