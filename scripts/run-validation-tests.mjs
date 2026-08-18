@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 
 const suites = [
   ['beta readiness smoke', 'tests/beta-smoke.mjs'],
+  ['core seeded RNG bootstrap', 'tests/core-seeded-rng.mjs'],
   ['civilization foundation', 'tests/civilization-foundation.mjs'],
   ['city services', 'tests/city-services.mjs'],
   ['building specializations', 'tests/building-specializations.mjs'],
