@@ -6,15 +6,17 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 VIEWPORTS={'phone_portrait':(390,844),'phone_landscape':(844,390),'tablet':(834,1112),'desktop':(1440,1000),'wide_desktop':(1920,1080)}
 def fail(message): raise AssertionError(message)
 def snap(page,path): page.screenshot(path=str(path),full_page=False)
-def switch_city(page): page.evaluate("""() => {if(typeof window.switchTab==='function')window.switchTab('city');else document.querySelector('.tabs button[data-tab="city"]')?.click()}""")
+def switch_city(page): page.evaluate("""() => {const C=window.Codeopolis;if(C?.ionicShell?.go&&document.querySelector('#codeopolisIonicShell'))C.ionicShell.go('city');else if(typeof window.switchTab==='function')window.switchTab('city');else document.querySelector('.tabs button[data-tab="city"]')?.click()}""")
 def diagnostics(page):
     return page.evaluate("""() => {
       const C=window.Codeopolis,s=C?.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');let lexicalState={};
       try{lexicalState={defined:typeof state!=='undefined',truthy:typeof state!=='undefined'&&!!state}}catch(e){lexicalState={defined:false,error:String(e)}}
       const required=['WorldSystem','IsoCamera','CitySimulation','CityRenderer','AudioSystem','RewardEngine','GameUI','PhaserCivilizationBootstrap'];
+      const host=C?.phaserCity?.host,city=document.querySelector('.codeopolis-mobile-city-peek'),stage=document.querySelector('.codeopolis-ionic-stage');
+      const box=e=>e?{display:getComputedStyle(e).display,w:Math.round(e.getBoundingClientRect().width),h:Math.round(e.getBoundingClientRect().height)}:null;
       return {codeopolis:!!C,game:!!C?.game,gameState:!!C?.game?.state,gameWorld:!!C?.game?.world,bootstrap:C?.GameBootstrapStatus||null,lexicalState,windowState:!!window.state,
         modules:Object.fromEntries(required.map(k=>[k,!!C?.get?.(k)])),projection:{present:!!C?.PixelWorldProjection,layout:typeof C?.PixelWorldProjection?.layout,tileW:C?.PixelWorldProjection?.TILE_W||null,tileH:C?.PixelWorldProjection?.TILE_H||null},
-        phaserCity:!!C?.phaserCity,host:!!C?.phaserCity?.host,scene:!!s,active:!!s?.sys?.isActive?.(),sleeping:!!s?.scene?.isSleeping?.(),paused:!!s?.scene?.isPaused?.(),
+        phaserCity:!!C?.phaserCity,host:!!host,hostBox:box(host),cityBox:box(city),stageBox:box(stage),scene:!!s,active:!!s?.sys?.isActive?.(),sleeping:!!s?.scene?.isSleeping?.(),paused:!!s?.scene?.isPaused?.(),
         r14:!!C?.R14PlayerAcceptance,r14Script:!!document.querySelector('script[data-r14-player-acceptance]'),legacyCanvas:!!document.getElementById('cityCanvas'),legacyDisplay:document.getElementById('cityCanvas')?.style?.display||'',
         view:document.querySelector('#codeopolisIonicShell')?.dataset?.view||document.querySelector('.tabs button.active[data-tab]')?.dataset?.tab||null,phaser:window.Phaser?.VERSION||null,capturedWarnings:(window.__r14CapturedWarnings||[]).slice(-6),
         r1:C?.R1ProductionAudit?{renderer:C.R1ProductionAudit.rendererSnapshot?.(),events:C.R1ProductionAudit.runtime?.loadEvents?.slice?.(-8),fallback:C.R1ProductionAudit.runtime?.fallbackReason}:null};
@@ -34,7 +36,7 @@ def manual_first_build(page):
     page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state;s.money=Math.max(5000,Number(s.money)||0);s.buildings=[...new Set([...(s.buildings||[]),'house','market','foundry','solar','park'])];C.phaserCity.catalog?.render?.();C.phaserCity.catalog?.acquire?.('house')}""")
     page.wait_for_function("()=>Codeopolis.game.world.world.tool?.mode==='building'",timeout=5000);pt=canvas_point(page,5,5);page.mouse.click(pt['x'],pt['y']);page.wait_for_function("()=>Codeopolis.game.world.placedBuildings().length===1",timeout=8000)
 def seed_operating_city(page):
-    return page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state,w=C.game?.world;s.money=Math.max(5000,Number(s.money)||0);s.population=Math.max(12,Number(s.population)||0);s.eraLevel=3;s.ageProgression=Object.assign({},s.ageProgression,{level:3});s.tech=[...new Set([...(s.tech||[]),'arrays','maps','search','energy','graphs'])];s.buildings=[...new Set([...(s.buildings||[]),'market','foundry','solar','park'])];const placements=[['market',8,2],['foundry',2,5],['solar',8,5],['park',5,2]],results=[];for(const[id,x,y]of placements){if(w.tile(x,y)?.buildingId)continue;results.push({id,...w.placeBuilding(id,x,y,{construction:false})})}for(let x=1;x<=10;x++)if(!w.tile(x,4)?.buildingId&&!w.tile(x,4)?.occupiedBy)w.setRoad(x,4,true);for(const[x,y]of[[2,3],[5,3],[8,3],[2,4],[5,4],[8,4]])if(!w.tile(x,y)?.buildingId&&!w.tile(x,y)?.occupiedBy)w.setRoad(x,y,true);C.BuildingOperations?.sync?.(s,w);C.PopulationSimulation?.step?.(s,w,1);C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity')?.refresh?.();C.R14PlayerAcceptance?.sync?.();return{results,placed:w.placedBuildings().length,roads:w.roadTiles().length}}""")
+    return page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state,w=C.game?.world;s.money=Math.max(5000,Number(s.money)||0);s.population=Math.max(12,Number(s.population)||0);s.eraLevel=3;s.ageProgression=Object.assign({},s.ageProgression,{level:3});s.tech=[...new Set([...(s.tech||[]),'arrays','maps','search','energy','graphs'])];s.buildings=[...new Set([...(s.buildings||[]),'market','foundry','solar','park'])];const placements=[['market',8,2],['foundry',2,5],['solar',8,5],['park',5,2]],results=[];for(const[id,x,y]of placements){if(w.tile(x,y)?.buildingId)continue;results.push({id,...w.placeBuilding(id,x,y,{construction:false})})}for(let x=1;x<=10;x++)if(!w.tile(x,4)?.buildingId&&!w.tile(x,4)?.occupiedBy)w.setRoad(x,4,true);for(const[x,y]of[[2,3],[5,3],[8,3],[2,4],[5,4],[8,4]])if(!w.tile(x,y)?.buildingId&&!w.tile(x,y)?.occupiedBy)w.setRoad(x,y,true);w.world.selected=null;w.world.tool={mode:'inspect',buildingId:null};C.phaserCity?.catalog?.close?.();C.phaserCity?.manager?.close?.();C.phaserCity?.editing?.close?.();C.BuildingOperations?.sync?.(s,w);C.PopulationSimulation?.step?.(s,w,1);C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity')?.refresh?.();C.R14PlayerAcceptance?.sync?.();return{results,placed:w.placedBuildings().length,roads:w.roadTiles().length}}""")
 def run_viewport(browser,base_url,out_dir,name,width,height,deployed=False):
     mobile=name in ('phone_portrait','phone_landscape','tablet');context=browser.new_context(viewport={'width':width,'height':height},device_scale_factor=1,is_mobile=mobile,has_touch=mobile,service_workers='block');page=context.new_page();page_errors=[];severe_console=[]
     page.add_init_script("""() => {window.__r14CapturedWarnings=[];const original=console.warn.bind(console);console.warn=(...args)=>{try{window.__r14CapturedWarnings.push(args.map(v=>v instanceof Error?(v.stack||String(v)):String(v)).join(' '))}catch{}return original(...args)}}""")
@@ -43,7 +45,9 @@ def run_viewport(browser,base_url,out_dir,name,width,height,deployed=False):
         text=msg.text
         if msg.type=='error' or 'Phaser city unavailable' in text: print(f'CONSOLE {name}: {text}',flush=True)
         if (msg.type=='error' or 'Phaser city unavailable' in text) and any(k in text for k in ('TypeError','ReferenceError','SyntaxError','Phaser city unavailable','Uncaught')): severe_console.append(text)
-    page.on('console',on_console);sep='&' if '?' in base_url else '?';url=f"{base_url}{sep}r14qa=1&viewport={name}&t={int(time.time()*1000)}";page.goto(url,wait_until='domcontentloaded',timeout=90000);page.wait_for_selector('body',timeout=15000);switch_city(page);wait_city(page);vp_dir=out_dir/name;vp_dir.mkdir(parents=True,exist_ok=True)
+    page.on('console',on_console);sep='&' if '?' in base_url else '?';url=f"{base_url}{sep}r14qa=1&viewport={name}&t={int(time.time()*1000)}";page.goto(url,wait_until='domcontentloaded',timeout=90000);page.wait_for_selector('body',timeout=15000)
+    if mobile: page.wait_for_selector('#codeopolisIonicShell',state='visible',timeout=15000)
+    switch_city(page);wait_city(page);vp_dir=out_dir/name;vp_dir.mkdir(parents=True,exist_ok=True)
     fresh=audit(page)
     if fresh['mode']!=name: fail(f"{name}: viewport classified as {fresh['mode']}")
     if fresh['renderer']!='phaser' or fresh['legacyVisible']: fail(f"{name}: Phaser does not own city: {fresh}")
@@ -57,13 +61,14 @@ def run_viewport(browser,base_url,out_dir,name,width,height,deployed=False):
     snap(page,vp_dir/'01-empty-land.png');page.locator('[data-r4-earn]').click();page.wait_for_function("()=>(Codeopolis.game?.state||window.state)?.r4Construction?.stage==='solve'",timeout=10000);page.wait_for_timeout(300)
     if page.locator('.r4-start-panel').is_visible(): fail(f"{name}: R4 onboarding covers coding workspace")
     snap(page,vp_dir/'02-coding-mission.png')
-    page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state;C.ConceptResources.award(s,{challenge:{district:'arrays',difficulty:'easy',pattern:'Foundations'},concept:'R14 starter',rewardOverride:{resourceId:'materials',amount:12}});s.money=Math.max(5000,Number(s.money)||0)}""");switch_city(page);page.wait_for_function("()=>(Codeopolis.game?.state||window.state)?.r4Construction?.stage==='build'",timeout=10000);wait_city(page);snap(page,vp_dir/'03-build-ready.png')
+    page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state;C.ConceptResources.award(s,{challenge:{district:'arrays',difficulty:'easy',pattern:'Foundations'},concept:'R14 starter',rewardOverride:{resourceId:'materials',amount:12}});s.money=Math.max(5000,Number(s.money)||0)}""");page.wait_for_function("()=>(Codeopolis.game?.state||window.state)?.r4Construction?.stage==='build'",timeout=10000);wait_city(page);snap(page,vp_dir/'03-build-ready.png')
     manual_first_build(page);page.wait_for_timeout(350)
     if page.locator('.r4-start-panel').count(): fail(f"{name}: onboarding did not clear after manually placing first building")
     seeded=seed_operating_city(page)
     if seeded['placed']<4 or seeded['roads']<4: fail(f"{name}: representative city setup failed: {seeded}")
-    page.wait_for_timeout(600);operating=audit(page)
+    page.wait_for_timeout(700);operating=audit(page)
     if not operating['pass']: fail(f"{name}: operating city audit failed: {operating['issues']}")
+    if operating.get('legacyCards',0): fail(f"{name}: legacy dashboard cards remain over operating city")
     snap(page,vp_dir/'04-operating-city.png');page.wait_for_selector('.r13-campaign-fab',state='visible',timeout=25000);page.locator('.r13-campaign-fab').click();page.wait_for_selector('.r13-campaign-panel.show',timeout=5000);snap(page,vp_dir/'05-interview-campaign.png');page.wait_for_selector('.r12-custom-fab',state='visible',timeout=15000);page.locator('.r12-custom-fab').click();page.wait_for_selector('.r12-custom-panel.show',timeout=5000)
     if page.locator('.r13-campaign-panel.show').count(): fail(f"{name}: campaign and customization panels overlap")
     snap(page,vp_dir/'06-customization.png');before=page.evaluate("()=>({w:Codeopolis.game.world.world.width,h:Codeopolis.game.world.world.height})");result=page.evaluate("()=>Codeopolis.game.world.expandCity?.({free:true})")
