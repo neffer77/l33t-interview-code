@@ -35,6 +35,20 @@
     document.querySelectorAll('#codeopolisIonicTabs ion-tab-button[data-tab]').forEach(b=>b.selected=b.dataset.tab===tab);
     const title=document.querySelector('#codeopolisIonicTitle');
     const match=tabs.find(x=>x.key===tab); if(title) title.textContent=match?.label || 'Codeopolis';
+    const shell=document.querySelector('#codeopolisIonicShell');
+    if(shell) shell.dataset.view=tab;
+    mountLiveCityRenderer();
+  }
+
+  function mountLiveCityRenderer(){
+    const city=document.querySelector('#codeopolisIonicShell .codeopolis-mobile-city-peek');
+    if(!city) return false;
+    const canvas=document.querySelector('#cityCanvas');
+    const host=document.querySelector('#phaserCityHost');
+    if(canvas && canvas.parentElement!==city) city.appendChild(canvas);
+    if(host && host.parentElement!==city) city.appendChild(host);
+    root.phaserCity?.resize?.();
+    return !!(host||canvas);
   }
 
   async function openMore(){
@@ -60,8 +74,8 @@
     const content=document.createElement('ion-content'); content.id='codeopolisIonicContent'; content.fullscreen=true;
     const stage=document.createElement('div'); stage.className='codeopolis-ionic-stage';
     const city=document.createElement('section'); city.className='codeopolis-mobile-city-peek';
-    const title=primary.querySelector('.section-title'); const canvas=primary.querySelector('#cityCanvas'); const summary=primary.querySelector('.city-summary');
-    if(title) city.appendChild(title); if(canvas) city.appendChild(canvas); if(summary) city.appendChild(summary);
+    const title=primary.querySelector('.section-title'); const canvas=primary.querySelector('#cityCanvas'); const phaserHost=primary.querySelector('#phaserCityHost'); const summary=primary.querySelector('.city-summary');
+    if(title) city.appendChild(title); if(canvas) city.appendChild(canvas); if(phaserHost) city.appendChild(phaserHost); if(summary) city.appendChild(summary);
     const work=document.createElement('section'); work.className='codeopolis-mobile-workspace';
     ['challengeTab','learningTab','mockTab','cityTab','buildTab','researchTab','eventsTab','statsTab'].forEach(id=>{const el=document.getElementById(id);if(el)work.appendChild(el);});
     stage.append(city,work); content.appendChild(stage);
@@ -73,10 +87,18 @@
     app.classList.add('codeopolis-legacy-mounted');
     document.querySelector('#codeopolisMoreButton').onclick=openMore;
     document.addEventListener('click',e=>{if(e.target.closest?.('.tabs button[data-tab]'))setTimeout(sync,0);});
+
+    // Phaser is created asynchronously. If it was not present when Ionic
+    // migrated the canvas, move it into the live City surface as soon as it
+    // appears instead of leaving it inside the hidden legacy panel.
+    const rendererObserver=new MutationObserver(()=>mountLiveCityRenderer());
+    rendererObserver.observe(document.body,{childList:true,subtree:true});
+    root.events?.on?.('civilization:phaser-ready',()=>requestAnimationFrame(()=>mountLiveCityRenderer()));
+    mountLiveCityRenderer();
     sync();
   }
 
   function boot(){ loadIonic(); setTimeout(build,700); }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-  root.ionicShell={build,go,sync,openMore};
+  root.ionicShell={build,go,sync,openMore,mountLiveCityRenderer};
 })();
