@@ -20,6 +20,9 @@ assert.match(acceptance,/Document overflows viewport/);
 assert.match(acceptance,/Touch target too small/);
 assert.match(acceptance,/r14-first-run/);
 assert.match(acceptance,/closeCompetingPanel/);
+assert.match(acceptance,/r14-empty-land > :not\(canvas\)/,'empty-land City must suppress every non-renderer Phaser overlay');
+assert.match(acceptance,/r14-build-ready > :not\(canvas\):not\(\.p1-catalog\)/,'build-ready City must keep only the renderer and Build catalog');
+assert.match(acceptance,/r14-first-run-state/,'first-run state must suppress migrated legacy City chrome');
 
 for(const shot of ['01-empty-land.png','02-coding-mission.png','03-build-ready.png','04-operating-city.png','05-interview-campaign.png','06-customization.png','07-expanded-city.png'])assert.ok(harness.includes(shot),`missing screenshot state ${shot}`);
 assert.match(harness,/manual_first_build/,'browser acceptance must exercise a manual first placement');
