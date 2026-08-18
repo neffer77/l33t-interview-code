@@ -112,7 +112,7 @@ def run_viewport(browser, base_url, out_dir, name, width, height, deployed=False
     before=page.evaluate("() => ({w:Codeopolis.game.world.world.width,h:Codeopolis.game.world.world.height})")
     result=page.evaluate("() => Codeopolis.game.world.expandCity?.({free:true})")
     if not result or not result.get('ok'):fail(f"{name}: city expansion failed: {result}")
-    page.wait_for_function("([w,h]) => {const C=Codeopolis,s=C.phaserCity.game.scene.getScene('CodeopolisCity');return C.game.world.world.width>w&&C.game.world.world.height>h&&s.layout.width===C.game.world.world.width}",[before['w'],before['h']],timeout=10000)
+    page.wait_for_function("([w,h]) => {const C=Codeopolis,s=C.phaserCity.game.scene.getScene('CodeopolisCity');return C.game.world.world.width>w&&C.game.world.world.height>h&&s.layout.width===C.game.world.world.width}",arg=[before['w'],before['h']],timeout=10000)
     page.wait_for_timeout(500)
     expansion=page.evaluate("""() => {const C=Codeopolis,s=C.phaserCity.game.scene.getScene('CodeopolisCity'),b=s.cameras.main._bounds;return{world:{w:C.game.world.world.width,h:C.game.world.world.height},layout:{w:s.layout.worldWidth,h:s.layout.worldHeight},bounds:{w:b?.width||0,h:b?.height||0},audit:C.R14PlayerAcceptance.audit()}}""")
     if expansion['bounds']['w'] and abs(expansion['bounds']['w']-expansion['layout']['w'])>2:fail(f"{name}: camera bounds stale after expansion: {expansion}")
