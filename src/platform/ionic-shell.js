@@ -30,6 +30,36 @@
     sync();
   }
 
+  function citySurface(){return document.querySelector('#codeopolisIonicShell .codeopolis-mobile-city-peek')}
+  function hasGeometry(el){if(!el)return false;const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity||1)>.01&&r.width>1&&r.height>1}
+
+  function mountLiveCityRenderer(){
+    const city=citySurface();
+    if(!city) return false;
+    const canvas=document.querySelector('#cityCanvas');
+    const host=document.querySelector('#phaserCityHost');
+    if(canvas && canvas.parentElement!==city) city.appendChild(canvas);
+    if(host && host.parentElement!==city) city.appendChild(host);
+    return !!(host||canvas);
+  }
+
+  function activateCityRenderer(){
+    const shell=document.querySelector('#codeopolisIonicShell');
+    const city=citySurface();
+    const host=document.querySelector('#phaserCityHost');
+    if(!shell||shell.dataset.view!=='city'||!hasGeometry(city)||!hasGeometry(host))return false;
+    root.phaserCity?.setActive?.(true);
+    root.phaserCity?.resize?.();
+    return true;
+  }
+
+  function scheduleCityActivation(){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      mountLiveCityRenderer();
+      if(!activateCityRenderer())setTimeout(()=>{mountLiveCityRenderer();activateCityRenderer()},80);
+    }));
+  }
+
   function sync(){
     const tab=activeTab();
     document.querySelectorAll('#codeopolisIonicTabs ion-tab-button[data-tab]').forEach(b=>b.selected=b.dataset.tab===tab);
@@ -38,17 +68,8 @@
     const shell=document.querySelector('#codeopolisIonicShell');
     if(shell) shell.dataset.view=tab;
     mountLiveCityRenderer();
-  }
-
-  function mountLiveCityRenderer(){
-    const city=document.querySelector('#codeopolisIonicShell .codeopolis-mobile-city-peek');
-    if(!city) return false;
-    const canvas=document.querySelector('#cityCanvas');
-    const host=document.querySelector('#phaserCityHost');
-    if(canvas && canvas.parentElement!==city) city.appendChild(canvas);
-    if(host && host.parentElement!==city) city.appendChild(host);
-    root.phaserCity?.resize?.();
-    return !!(host||canvas);
+    if(tab==='city')scheduleCityActivation();
+    else root.phaserCity?.setActive?.(false);
   }
 
   async function openMore(){
@@ -88,17 +109,16 @@
     document.querySelector('#codeopolisMoreButton').onclick=openMore;
     document.addEventListener('click',e=>{if(e.target.closest?.('.tabs button[data-tab]'))setTimeout(sync,0);});
 
-    // Phaser is created asynchronously. If it was not present when Ionic
-    // migrated the canvas, move it into the live City surface as soon as it
-    // appears instead of leaving it inside the hidden legacy panel.
+    // Phaser is created asynchronously. Reparenting is safe while hidden, but
+    // WebGL must only be resized after the City surface is actually visible.
     const rendererObserver=new MutationObserver(()=>mountLiveCityRenderer());
     rendererObserver.observe(document.body,{childList:true,subtree:true});
-    root.events?.on?.('civilization:phaser-ready',()=>requestAnimationFrame(()=>mountLiveCityRenderer()));
+    root.events?.on?.('civilization:phaser-ready',()=>{mountLiveCityRenderer();if(activeTab()==='city')scheduleCityActivation()});
     mountLiveCityRenderer();
     sync();
   }
 
   function boot(){ loadIonic(); setTimeout(build,700); }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-  root.ionicShell={build,go,sync,openMore,mountLiveCityRenderer};
+  root.ionicShell={build,go,sync,openMore,mountLiveCityRenderer,activateCityRenderer,scheduleCityActivation,hasGeometry};
 })();
