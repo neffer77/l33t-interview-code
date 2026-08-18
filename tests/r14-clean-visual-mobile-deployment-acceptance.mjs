@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 const camera=readFileSync('src/civilization/phaser/mobile-camera-controller.js','utf8');
 const acceptance=readFileSync('src/quality/r14-player-acceptance.js','utf8');
 const harness=readFileSync('scripts/r14-browser-acceptance.py','utf8');
+const ionicShell=readFileSync('src/platform/ionic-shell.js','utf8');
 
 assert.match(camera,/fromWorld/,'mobile double-tap must invert the isometric projection');
 assert.match(camera,/toWorld/,'mobile focus must use projected world coordinates');
@@ -24,5 +25,12 @@ assert.match(harness,/placedBuildings\(\)\.length===1/);
 assert.match(harness,/expandCity/);
 assert.match(harness,/camera bounds stale after expansion/);
 assert.match(harness,/service_workers='block'/,'acceptance must not pass because of a stale service-worker cache');
+assert.match(harness,/elementFromPoint/,'first-run CTA must be hit-testable, not merely present');
+assert.match(harness,/R4 onboarding covers coding workspace/,'coding workspace must stay unobscured by city onboarding');
+
+assert.match(ionicShell,/mountLiveCityRenderer/,'mobile shell must explicitly mount the live renderer');
+assert.match(ionicShell,/querySelector\('#phaserCityHost'\)/,'mobile shell must move the Phaser host, not only the legacy canvas');
+assert.match(ionicShell,/civilization:phaser-ready/,'mobile shell must reconcile renderer placement when Phaser boots after Ionic');
+assert.match(ionicShell,/city\.appendChild\(host\)/,'Phaser host must live inside the visible mobile City surface');
 
 console.log('R14 clean visual/mobile/deployment acceptance regression passed');
