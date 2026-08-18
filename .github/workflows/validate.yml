@@ -59,7 +59,9 @@ jobs:
       - name: Install Chromium acceptance runtime
         run: |
           python -m pip install --disable-pip-version-check playwright==1.55.0
-          python -m playwright install --with-deps chromium
+          # ubuntu-latest already carries Chromium's runtime shared libraries;
+          # avoid the slow apt/font pass from --with-deps on every PR iteration.
+          python -m playwright install chromium
       - name: Build deployable site
         run: ./scripts/build-site.sh
       - name: Start local production server
