@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const camera=readFileSync('src/civilization/phaser/mobile-camera-controller.js','utf8');
 const phaserBootstrap=readFileSync('src/civilization/phaser/phaser-bootstrap.js','utf8');
+const phase44Runtime=readFileSync('src/civilization/phaser/phase44-runtime.js','utf8');
 const acceptance=readFileSync('src/quality/r14-player-acceptance.js','utf8');
 const harness=readFileSync('scripts/r14-browser-acceptance.py','utf8');
 const ionicShell=readFileSync('src/platform/ionic-shell.js','utf8');
@@ -17,6 +18,10 @@ assert.match(camera,/world:expanded/,'expanded territory must refresh mobile cam
 assert.match(camera,/r14-player-acceptance\.js/,'runtime must load the R14 player acceptance auditor');
 assert.match(phaserBootstrap,/mobileRenderer\?Phaser\.CANVAS:Phaser\.AUTO/,'mobile 2D city must avoid unstable WebGL framebuffer transitions');
 assert.match(phaserBootstrap,/rendererBackend:mobileRenderer\?'canvas':'auto'/,'renderer backend must be observable in runtime state');
+assert.match(phase44Runtime,/function wrapSwitchTab\(\)/,'Phaser lifecycle must wrap programmatic legacy tab navigation');
+assert.match(phase44Runtime,/window\.switchTab=wrapped/,'desktop programmatic tab changes must flow through the lifecycle wrapper');
+assert.match(phase44Runtime,/requestAnimationFrame\(syncLifecycle\)/,'programmatic City return must synchronize Phaser after the tab DOM updates');
+assert.match(phase44Runtime,/C\.Phase44Lifecycle=/,'renderer lifecycle must be observable for QA and integration');
 
 for(const size of ['390,height:844','844,height:390','834,height:1112','1440,height:1000','1920,height:1080'])assert.ok(acceptance.includes(size),`missing canonical viewport ${size}`);
 assert.match(acceptance,/Legacy Canvas2D renderer is visible/);
