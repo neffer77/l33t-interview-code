@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse, json, time
 from pathlib import Path
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 VIEWPORTS = {
     'phone_portrait': (390, 844),
@@ -20,12 +20,33 @@ def switch_city(page):
       else document.querySelector('.tabs button[data-tab="city"]')?.click();
     }""")
 
+def diagnostics(page):
+    return page.evaluate("""() => {
+      const C=window.Codeopolis,s=C?.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');
+      return {
+        codeopolis:!!C, phaserCity:!!C?.phaserCity, host:!!C?.phaserCity?.host, scene:!!s,
+        active:!!s?.sys?.isActive?.(), sleeping:!!s?.scene?.isSleeping?.(), paused:!!s?.scene?.isPaused?.(),
+        r14:!!C?.R14PlayerAcceptance, r14Script:!!document.querySelector('script[data-r14-player-acceptance]'),
+        legacyDisplay:document.getElementById('cityCanvas')?.style?.display||'',
+        view:document.querySelector('#codeopolisIonicShell')?.dataset?.view||document.querySelector('.tabs button.active[data-tab]')?.dataset?.tab||null,
+        phaser:window.Phaser?.VERSION||null,
+      };
+    }""")
+
 def wait_city(page):
-    page.wait_for_function("""() => {
-      const C=window.Codeopolis;
-      const s=C?.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');
-      return !!C?.phaserCity?.host && !!s?.sys?.isActive?.() && !!C?.R14PlayerAcceptance;
-    }""", timeout=60000)
+    try:
+        page.wait_for_function("""() => {const C=window.Codeopolis,s=C?.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');return !!C?.phaserCity?.host&&!!s}""", timeout=60000)
+    except PlaywrightTimeoutError:
+        fail(f"City renderer never created: {diagnostics(page)}")
+    switch_city(page)
+    try:
+        page.wait_for_function("""() => {const C=window.Codeopolis,s=C?.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');return !!s?.sys?.isActive?.()}""", timeout=12000)
+    except PlaywrightTimeoutError:
+        fail(f"City scene exists but did not wake for City view: {diagnostics(page)}")
+    try:
+        page.wait_for_function("() => !!window.Codeopolis?.R14PlayerAcceptance", timeout=12000)
+    except PlaywrightTimeoutError:
+        fail(f"R14 player auditor did not auto-load: {diagnostics(page)}")
     page.wait_for_timeout(700)
 
 def audit(page):
