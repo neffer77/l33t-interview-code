@@ -3,6 +3,18 @@
   const root=window.Codeopolis=window.Codeopolis||{};
   const viewFromLegacy = () => document.querySelector('.tabs button.active[data-tab]')?.dataset.tab || 'challenge';
 
+  function ensureShellStyles(){
+    const href='phase43-ionic.css';
+    const existing=document.querySelector('link[data-codeopolis-ionic-layout],link[href="phase43-ionic.css"],link[href$="/phase43-ionic.css"]');
+    if(existing)return existing;
+    const link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href=href;
+    link.dataset.codeopolisIonicLayout='1';
+    document.head.appendChild(link);
+    return link;
+  }
+
   function syncRenderer(active){
     if(active==='city'){
       root.ionicShell?.mountLiveCityRenderer?.();
@@ -13,6 +25,7 @@
   }
 
   function apply(view){
+    ensureShellStyles();
     const shell=document.querySelector('#codeopolisIonicShell');
     if(!shell) return false;
     const active=view || viewFromLegacy();
@@ -43,6 +56,7 @@
   }
 
   function boot(){
+    ensureShellStyles();
     loadHomeNav();
     let tries=0;
     const timer=setInterval(()=>{
@@ -60,6 +74,8 @@
     if(tabs) new MutationObserver(()=>apply()).observe(tabs,{subtree:true,attributes:true,attributeFilter:['class']});
   }
 
+  ensureShellStyles();
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true});
   else boot();
+  root.ensureIonicShellStyles=ensureShellStyles;
 })();
