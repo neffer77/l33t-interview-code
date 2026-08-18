@@ -47,9 +47,13 @@ assert.match(ionicShell,/activateCityRenderer/,'mobile City must explicitly wake
 assert.match(ionicShell,/hasGeometry\(city\).*hasGeometry\(host\)/s,'Phaser resize must be gated on nonzero visible City geometry');
 assert.match(ionicShell,/if\(tab==='city'\)scheduleCityActivation\(\)/,'City activation must run after the shell switches to City');
 assert.match(ionicShell,/else root\.phaserCity\?\.setActive\?\.\(false\)/,'non-City views must sleep Phaser without resizing hidden renderer');
+assert.match(ionicView,/ensureShellStyles/,'mobile view controller must ensure the canonical shell stylesheet is present');
+assert.match(ionicView,/phase43-ionic\.css/,'production runtime must load the world-first Ionic stylesheet');
 assert.match(ionicView,/syncRenderer\(active\)/,'legacy tab observer must hand renderer state to the mobile shell');
 assert.match(ionicView,/scheduleCityActivation/,'legacy switchTab City return must schedule visible Phaser activation');
 assert.match(ionicCss,/#phaserCityHost\{[^}]*height:100%!important/s,'mobile Phaser host must receive explicit full-height geometry');
 assert.match(ionicCss,/data-view="city"[^}]*codeopolis-mobile-workspace\{display:none!important/s,'mobile City must not reserve screen space for the old dashboard workspace');
+assert.match(ionicCss,/data-view="city"[^}]*codeopolis-mobile-city-peek>\.section-title.*display:none!important/s,'mobile City must not spend world space on the migrated legacy title row');
+assert.match(ionicCss,/data-view="city"[^}]*codeopolis-mobile-city-peek>\.city-summary.*display:none!important/s,'mobile City must not spend world space on the migrated legacy stat row');
 
 console.log('R14 clean visual/mobile/deployment acceptance regression passed');
