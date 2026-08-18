@@ -110,7 +110,7 @@
     document.addEventListener('click',e=>{if(e.target.closest?.('.tabs button[data-tab]'))setTimeout(sync,0);});
 
     // Phaser is created asynchronously. Reparenting is safe while hidden, but
-    // WebGL must only be resized after the City surface is actually visible.
+    // the renderer is resized only after the City surface is actually visible.
     const rendererObserver=new MutationObserver(()=>mountLiveCityRenderer());
     rendererObserver.observe(document.body,{childList:true,subtree:true});
     root.events?.on?.('civilization:phaser-ready',()=>{mountLiveCityRenderer();if(activeTab()==='city')scheduleCityActivation()});
@@ -118,7 +118,13 @@
     sync();
   }
 
-  function boot(){ loadIonic(); setTimeout(build,700); }
+  function boot(){
+    loadIonic();
+    build();
+    // DOMContentLoaded normally has every migration target. Keep one short
+    // retry for unusual script ordering without exposing a pre-shell 700ms UI.
+    if(MOBILE.matches&&!document.querySelector('#codeopolisIonicShell'))setTimeout(build,50);
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
   root.ionicShell={build,go,sync,openMore,mountLiveCityRenderer,activateCityRenderer,scheduleCityActivation,hasGeometry};
 })();
