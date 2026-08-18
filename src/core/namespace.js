@@ -24,6 +24,21 @@
     now:()=>Date.now()
   };
 
+  // R2's isometric projection is a hard renderer dependency. Keep the
+  // canonical 64x32 projection available from first-party core bootstrap so
+  // Phaser scene/controller creation cannot race a later dynamic asset load.
+  if(!C.PixelWorldProjection){
+    const VERSION=1,TILE_W=64,TILE_H=32,PAD_X=72,PAD_Y=74;
+    const layout=(width=12,height=8)=>({tileW:TILE_W,tileH:TILE_H,originX:PAD_X+(Math.max(1,height)-1)*TILE_W/2,originY:PAD_Y,width,height,worldWidth:PAD_X*2+(Math.max(1,width)+Math.max(1,height))*TILE_W/2,worldHeight:PAD_Y*2+(Math.max(1,width)+Math.max(1,height))*TILE_H/2});
+    const toWorld=(x,y,l=layout())=>({x:l.originX+(x-y)*l.tileW/2,y:l.originY+(x+y)*l.tileH/2});
+    const fromWorld=(wx,wy,l=layout())=>{const dx=(wx-l.originX)/(l.tileW/2),dy=(wy-l.originY)/(l.tileH/2);return{x:Math.round((dx+dy)/2),y:Math.round((dy-dx)/2)}};
+    const corners=(x,y,l=layout())=>{const p=toWorld(x,y,l),hw=l.tileW/2,hh=l.tileH/2;return[{x:p.x,y:p.y-hh},{x:p.x+hw,y:p.y},{x:p.x,y:p.y+hh},{x:p.x-hw,y:p.y}]};
+    const depth=(x,y,layer=0)=>(x+y)*100+x+layer;
+    const footprintCells=(def,x,y)=>{const w=Math.max(1,Number(def?.footprint?.w)||1),h=Math.max(1,Number(def?.footprint?.h)||1),out=[];for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++)out.push({x:x+xx,y:y+yy});return out};
+    const footprintCenter=(def,x,y,l)=>{const pts=footprintCells(def,x,y).map(c=>toWorld(c.x,c.y,l));return{x:pts.reduce((n,p)=>n+p.x,0)/pts.length,y:pts.reduce((n,p)=>n+p.y,0)/pts.length}};
+    C.PixelWorldProjection={VERSION,TILE_W,TILE_H,PAD_X,PAD_Y,layout,toWorld,fromWorld,corners,depth,footprintCells,footprintCenter};
+  }
+
   C.register=function(name,value){C.modules[name]=value;return value};
   C.get=function(name){return C.modules[name]};
 })(window);
