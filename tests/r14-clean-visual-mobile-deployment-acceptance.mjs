@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const camera=readFileSync('src/civilization/phaser/mobile-camera-controller.js','utf8');
+const phaserBootstrap=readFileSync('src/civilization/phaser/phaser-bootstrap.js','utf8');
 const acceptance=readFileSync('src/quality/r14-player-acceptance.js','utf8');
 const harness=readFileSync('scripts/r14-browser-acceptance.py','utf8');
 const ionicShell=readFileSync('src/platform/ionic-shell.js','utf8');
@@ -13,6 +14,8 @@ assert.match(camera,/toWorld/,'mobile focus must use projected world coordinates
 assert.match(camera,/syncBounds/,'camera bounds must be synchronized to the isometric world');
 assert.match(camera,/world:expanded/,'expanded territory must refresh mobile camera bounds');
 assert.match(camera,/r14-player-acceptance\.js/,'runtime must load the R14 player acceptance auditor');
+assert.match(phaserBootstrap,/mobileRenderer\?Phaser\.CANVAS:Phaser\.AUTO/,'mobile 2D city must avoid unstable WebGL framebuffer transitions');
+assert.match(phaserBootstrap,/rendererBackend:mobileRenderer\?'canvas':'auto'/,'renderer backend must be observable in runtime state');
 
 for(const size of ['390,height:844','844,height:390','834,height:1112','1440,height:1000','1920,height:1080'])assert.ok(acceptance.includes(size),`missing canonical viewport ${size}`);
 assert.match(acceptance,/Legacy Canvas2D renderer is visible/);
@@ -40,7 +43,7 @@ assert.match(ionicShell,/city\.appendChild\(host\)/,'Phaser host must live insid
 assert.match(ionicShell,/activateCityRenderer/,'mobile City must explicitly wake renderer after its surface is visible');
 assert.match(ionicShell,/hasGeometry\(city\).*hasGeometry\(host\)/s,'Phaser resize must be gated on nonzero visible City geometry');
 assert.match(ionicShell,/if\(tab==='city'\)scheduleCityActivation\(\)/,'City activation must run after the shell switches to City');
-assert.match(ionicShell,/else root\.phaserCity\?\.setActive\?\.\(false\)/,'non-City views must sleep Phaser without resizing hidden WebGL');
+assert.match(ionicShell,/else root\.phaserCity\?\.setActive\?\.\(false\)/,'non-City views must sleep Phaser without resizing hidden renderer');
 assert.match(ionicView,/syncRenderer\(active\)/,'legacy tab observer must hand renderer state to the mobile shell');
 assert.match(ionicView,/scheduleCityActivation/,'legacy switchTab City return must schedule visible Phaser activation');
 assert.match(ionicCss,/#phaserCityHost\{[^}]*height:100%!important/s,'mobile Phaser host must receive explicit full-height geometry');
