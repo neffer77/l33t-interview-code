@@ -100,9 +100,11 @@
     const match=tabs.find(x=>x.key===tab); if(title) title.textContent=match?.label || 'Codeopolis';
     const shell=document.querySelector('#codeopolisIonicShell');
     if(shell) shell.dataset.view=tab;
-    if(shell)mountLiveCityRenderer();
-    if(shell&&tab==='city')scheduleCityActivation();
-    else if(shell)root.phaserCity?.setActive?.(false);
+    if(shell){
+      mountLiveCityRenderer();
+      if(tab==='city')scheduleCityActivation();
+      else root.phaserCity?.setActive?.(false);
+    }
   }
 
   async function openMore(){
