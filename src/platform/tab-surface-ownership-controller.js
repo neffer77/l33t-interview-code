@@ -11,6 +11,7 @@
   const MOCK_SURFACES = ['phase29InterviewDay','phase30Remediation'];
   const SECONDARY = new Set(['learning','mock','build','research','events','stats']);
   let scheduled = false;
+  let lastView = null;
 
   function activeView(){
     return document.querySelector('#codeopolisIonicShell')?.dataset?.view ||
@@ -55,9 +56,11 @@
 
   function setHidden(el, hidden){
     if(!el) return;
-    el.hidden = !!hidden;
-    el.classList.toggle('hidden', !!hidden);
-    el.setAttribute('aria-hidden', String(!!hidden));
+    hidden = !!hidden;
+    if(el.hidden !== hidden) el.hidden = hidden;
+    if(el.classList.contains('hidden') !== hidden) el.classList.toggle('hidden', hidden);
+    const aria = String(hidden);
+    if(el.getAttribute('aria-hidden') !== aria) el.setAttribute('aria-hidden', aria);
   }
 
   function ownMockSurfaces(view){
@@ -67,7 +70,7 @@
       const el = document.getElementById(id);
       if(!el) continue;
       if(el.parentElement !== host) host.appendChild(el);
-      el.dataset.tabSurfaceOwner = 'mock';
+      if(el.dataset.tabSurfaceOwner !== 'mock') el.dataset.tabSurfaceOwner = 'mock';
       setHidden(el, view !== 'mock');
     }
   }
@@ -78,20 +81,25 @@
       if(!el) continue;
       const active = key === view;
       setHidden(el, !active);
-      el.dataset.tabSurfaceActive = String(active);
+      const value = String(active);
+      if(el.dataset.tabSurfaceActive !== value) el.dataset.tabSurfaceActive = value;
     }
   }
 
   function evictDormantCity(view){
     const host = C.phaserCity?.host || document.getElementById('phaserCityHost');
-    if(!host) return;
-    if(view !== 'city'){
-      host.hidden = true;
-      host.style.display = 'none';
-      host.style.visibility = 'hidden';
-      host.style.pointerEvents = 'none';
-      host.setAttribute('aria-hidden','true');
-    }
+    if(!host || view === 'city') return;
+    if(!host.hidden) host.hidden = true;
+    if(host.style.display !== 'none') host.style.display = 'none';
+    if(host.style.visibility !== 'hidden') host.style.visibility = 'hidden';
+    if(host.style.pointerEvents !== 'none') host.style.pointerEvents = 'none';
+    if(host.getAttribute('aria-hidden') !== 'true') host.setAttribute('aria-hidden','true');
+  }
+
+  function cityNeedsRestore(){
+    const host = C.phaserCity?.host || document.getElementById('phaserCityHost');
+    if(!host) return false;
+    return host.hidden || host.style.display === 'none' || getComputedStyle(host).display === 'none' || getComputedStyle(host).visibility === 'hidden';
   }
 
   function sync(){
@@ -99,12 +107,16 @@
     installStyles();
     const view = activeView();
     if(!TABS.includes(view)) return view;
-    document.body?.setAttribute('data-primary-workspace', view);
+    const previous = lastView;
+    lastView = view;
+    if(document.body?.getAttribute('data-primary-workspace') !== view) document.body?.setAttribute('data-primary-workspace', view);
     document.body?.classList.toggle('r14-focused-secondary-workspace', SECONDARY.has(view));
     ownMockSurfaces(view);
     ownPrimaryPanels(view);
     evictDormantCity(view);
-    if(view === 'city') C.Phase44Lifecycle?.syncLifecycle?.();
+    // Do not continuously resize/refit Phaser. Restore it only on an actual
+    // transition into City, or if another runtime incorrectly hid it.
+    if(view === 'city' && (previous !== 'city' || cityNeedsRestore())) requestAnimationFrame(()=>C.Phase44Lifecycle?.syncLifecycle?.());
     return view;
   }
 
@@ -114,16 +126,29 @@
     requestAnimationFrame(sync);
   }
 
+  function bindViewObservers(){
+    const tabs = document.querySelector('.tabs');
+    if(tabs && !tabs.__tabOwnershipObserved){
+      tabs.__tabOwnershipObserved = true;
+      new MutationObserver(schedule).observe(tabs,{subtree:true,attributes:true,attributeFilter:['class']});
+    }
+    const shell = document.querySelector('#codeopolisIonicShell');
+    if(shell && !shell.__tabOwnershipObserved){
+      shell.__tabOwnershipObserved = true;
+      new MutationObserver(schedule).observe(shell,{attributes:true,attributeFilter:['data-view']});
+    }
+  }
+
   function install(){
     if(install.done) return;
     install.done = true;
     installStyles();
+    bindViewObservers();
     sync();
     document.addEventListener('click', e => { if(e.target.closest?.('[data-tab]')) schedule(); }, true);
-    const observer = new MutationObserver(mutations => {
-      if(mutations.some(m => m.type === 'childList' || (m.type === 'attributes' && (m.attributeName === 'class' || m.attributeName === 'data-view')))) schedule();
-    });
-    observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','data-view']});
+    // Child-list changes catch late creation/reparenting of Phase 29/30 surfaces,
+    // without observing every HUD animation/class mutation in the city.
+    new MutationObserver(()=>{bindViewObservers();schedule();}).observe(document.body,{childList:true,subtree:true});
     addEventListener('resize', schedule, {passive:true});
     window.visualViewport?.addEventListener?.('resize', schedule, {passive:true});
     // Legacy phases finish booting asynchronously. Reassert ownership while they settle.
