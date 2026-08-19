@@ -12,13 +12,9 @@ permissions:
 
 concurrency:
   group: pages
-  # Never cancel a deploy that is already publishing - a cancelled deploy can
-  # leave the live site on a half-uploaded artifact.
   cancel-in-progress: false
 
 jobs:
-  # Same checks that guard every branch. A commit that fails validation
-  # must not reach the live site.
   validate:
     uses: ./.github/workflows/validate.yml
 
@@ -32,7 +28,6 @@ jobs:
           node-version: '22'
       - uses: actions/configure-pages@v5
         with:
-          # Turn Pages on for the repo if it is not already enabled.
           enablement: true
       - name: Build site
         run: ./scripts/build-site.sh
@@ -46,7 +41,37 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  r14-deployed-acceptance:
+    name: R14 deployed mobile/desktop acceptance
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Chromium acceptance runtime
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.55.0
+          python -m playwright install --with-deps chromium
+      - name: Wait for Pages edge propagation
+        run: sleep 12
+      - name: Exercise deployed five-viewport player flow
+        env:
+          CODEOPOLIS_URL: ${{ needs.deploy.outputs.page_url }}
+        run: python scripts/r14-browser-acceptance.py --url "$CODEOPOLIS_URL" --out artifacts/r14-clean-deployed --deployed
+      - name: Upload deployed R14 visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r14-clean-deployed-player-evidence
+          path: artifacts/r14-clean-deployed
+          if-no-files-found: warn

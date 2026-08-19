@@ -30,11 +30,46 @@
     sync();
   }
 
+  function citySurface(){return document.querySelector('#codeopolisIonicShell .codeopolis-mobile-city-peek')}
+  function hasGeometry(el){if(!el)return false;const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity||1)>.01&&r.width>1&&r.height>1}
+
+  function mountLiveCityRenderer(){
+    const city=citySurface();
+    if(!city) return false;
+    const canvas=document.querySelector('#cityCanvas');
+    const host=document.querySelector('#phaserCityHost');
+    if(canvas && canvas.parentElement!==city) city.appendChild(canvas);
+    if(host && host.parentElement!==city) city.appendChild(host);
+    return !!(host||canvas);
+  }
+
+  function activateCityRenderer(){
+    const shell=document.querySelector('#codeopolisIonicShell');
+    const city=citySurface();
+    const host=document.querySelector('#phaserCityHost');
+    if(!shell||shell.dataset.view!=='city'||!hasGeometry(city)||!hasGeometry(host))return false;
+    root.phaserCity?.setActive?.(true);
+    root.phaserCity?.resize?.();
+    return true;
+  }
+
+  function scheduleCityActivation(){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      mountLiveCityRenderer();
+      if(!activateCityRenderer())setTimeout(()=>{mountLiveCityRenderer();activateCityRenderer()},80);
+    }));
+  }
+
   function sync(){
     const tab=activeTab();
     document.querySelectorAll('#codeopolisIonicTabs ion-tab-button[data-tab]').forEach(b=>b.selected=b.dataset.tab===tab);
     const title=document.querySelector('#codeopolisIonicTitle');
     const match=tabs.find(x=>x.key===tab); if(title) title.textContent=match?.label || 'Codeopolis';
+    const shell=document.querySelector('#codeopolisIonicShell');
+    if(shell) shell.dataset.view=tab;
+    mountLiveCityRenderer();
+    if(tab==='city')scheduleCityActivation();
+    else root.phaserCity?.setActive?.(false);
   }
 
   async function openMore(){
@@ -60,8 +95,8 @@
     const content=document.createElement('ion-content'); content.id='codeopolisIonicContent'; content.fullscreen=true;
     const stage=document.createElement('div'); stage.className='codeopolis-ionic-stage';
     const city=document.createElement('section'); city.className='codeopolis-mobile-city-peek';
-    const title=primary.querySelector('.section-title'); const canvas=primary.querySelector('#cityCanvas'); const summary=primary.querySelector('.city-summary');
-    if(title) city.appendChild(title); if(canvas) city.appendChild(canvas); if(summary) city.appendChild(summary);
+    const title=primary.querySelector('.section-title'); const canvas=primary.querySelector('#cityCanvas'); const phaserHost=primary.querySelector('#phaserCityHost'); const summary=primary.querySelector('.city-summary');
+    if(title) city.appendChild(title); if(canvas) city.appendChild(canvas); if(phaserHost) city.appendChild(phaserHost); if(summary) city.appendChild(summary);
     const work=document.createElement('section'); work.className='codeopolis-mobile-workspace';
     ['challengeTab','learningTab','mockTab','cityTab','buildTab','researchTab','eventsTab','statsTab'].forEach(id=>{const el=document.getElementById(id);if(el)work.appendChild(el);});
     stage.append(city,work); content.appendChild(stage);
@@ -73,10 +108,23 @@
     app.classList.add('codeopolis-legacy-mounted');
     document.querySelector('#codeopolisMoreButton').onclick=openMore;
     document.addEventListener('click',e=>{if(e.target.closest?.('.tabs button[data-tab]'))setTimeout(sync,0);});
+
+    // Phaser is created asynchronously. Reparenting is safe while hidden, but
+    // the renderer is resized only after the City surface is actually visible.
+    const rendererObserver=new MutationObserver(()=>mountLiveCityRenderer());
+    rendererObserver.observe(document.body,{childList:true,subtree:true});
+    root.events?.on?.('civilization:phaser-ready',()=>{mountLiveCityRenderer();if(activeTab()==='city')scheduleCityActivation()});
+    mountLiveCityRenderer();
     sync();
   }
 
-  function boot(){ loadIonic(); setTimeout(build,700); }
+  function boot(){
+    loadIonic();
+    build();
+    // DOMContentLoaded normally has every migration target. Keep one short
+    // retry for unusual script ordering without exposing a pre-shell 700ms UI.
+    if(MOBILE.matches&&!document.querySelector('#codeopolisIonicShell'))setTimeout(build,50);
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-  root.ionicShell={build,go,sync,openMore};
+  root.ionicShell={build,go,sync,openMore,mountLiveCityRenderer,activateCityRenderer,scheduleCityActivation,hasGeometry};
 })();

@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 
 const suites = [
   ['beta readiness smoke', 'tests/beta-smoke.mjs'],
+  ['core seeded RNG bootstrap', 'tests/core-seeded-rng.mjs'],
   ['civilization foundation', 'tests/civilization-foundation.mjs'],
   ['city services', 'tests/city-services.mjs'],
   ['building specializations', 'tests/building-specializations.mjs'],
@@ -56,6 +57,7 @@ const suites = [
   ['R11 crises and disasters', 'tests/r11-crises-disasters.mjs'],
   ['R12 world expansion and customization', 'tests/r12-world-expansion-customization.mjs'],
   ['R13 interview campaign integration', 'tests/r13-interview-campaign-integration.mjs'],
+  ['R14 clean visual/mobile/deployment acceptance', 'tests/r14-clean-visual-mobile-deployment-acceptance.mjs'],
   ['technology tree', 'tests/technology-tree.mjs'],
   ['adaptive challenge selection', 'tests/adaptive-challenge-selection.mjs'],
   ['learning objectives', 'tests/learning-objectives.mjs'],
