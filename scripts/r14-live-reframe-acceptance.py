@@ -17,7 +17,7 @@ def fail(message): raise AssertionError(message)
 def mobile_for(width): return width<=899
 
 def snapshot_state(page):
-    return page.evaluate("""()=>{const C=window.Codeopolis,editor=document.querySelector('#challengeTab textarea[data-phase43-editor],#challengeTab textarea'),host=C?.phaserCity?.host,shell=document.querySelector('#codeopolisIonicShell'),er=editor?.getBoundingClientRect(),hr=host?.getBoundingClientRect();return{view:C?.R14PlayerAcceptance?.currentView?.()||shell?.dataset?.view||document.querySelector('.tabs button.active[data-tab]')?.dataset?.tab||null,shell:!!shell,body:document.body.className,mode:C?.LiveReframe?.mode?.()||null,editor:{probe:editor?.dataset?.reframeProbe||null,value:editor?.value||'',w:Math.round(er?.width||0),h:Math.round(er?.height||0)},host:{probe:host?.dataset?.reframeProbe||null,w:Math.round(hr?.width||0),h:Math.round(hr?.height||0)},coding:C?.R14PlayerAcceptance?.codingAudit?.()||null,city:C?.R14PlayerAcceptance?.audit?.()||null}}""")
+    return page.evaluate("""()=>{const C=window.Codeopolis,editor=document.querySelector('#challengeTab textarea[data-phase43-editor],#challengeTab textarea'),host=C?.phaserCity?.host,shell=document.querySelector('#codeopolisIonicShell'),er=editor?.getBoundingClientRect(),hr=host?.getBoundingClientRect(),core=[...document.styleSheets].some(s=>(s.href||'').includes('phase43-core-viewport.css'));return{view:C?.R14PlayerAcceptance?.currentView?.()||shell?.dataset?.view||document.querySelector('.tabs button.active[data-tab]')?.dataset?.tab||null,shell:!!shell,body:document.body.className,mode:C?.LiveReframe?.mode?.()||null,coreCss:core,editor:{probe:editor?.dataset?.reframeProbe||null,value:editor?.value||'',w:Math.round(er?.width||0),h:Math.round(er?.height||0)},host:{probe:host?.dataset?.reframeProbe||null,w:Math.round(hr?.width||0),h:Math.round(hr?.height||0)},coding:C?.R14PlayerAcceptance?.codingAudit?.()||null,city:C?.R14PlayerAcceptance?.audit?.()||null}}""")
 
 def wait_shell_mode(page,width):
     expected=mobile_for(width)
@@ -26,6 +26,13 @@ def wait_shell_mode(page,width):
     except PlaywrightTimeoutError:
         fail(f"Responsive shell did not settle for width {width}: {snapshot_state(page)}")
     page.wait_for_timeout(260)
+
+def wait_baseline_challenge(page):
+    try:
+        page.wait_for_function("""()=>{const C=Codeopolis,core=[...document.styleSheets].some(s=>(s.href||'').includes('phase43-core-viewport.css')),audit=C.R14PlayerAcceptance?.codingAudit?.();return core&&audit?.view==='challenge'&&audit?.pass===true}""",timeout=30000)
+    except PlaywrightTimeoutError:
+        fail(f"Desktop Challenge never reached a stable responsive baseline: {snapshot_state(page)}")
+    page.wait_for_timeout(220)
 
 def resize_step(page,out_dir,label,width,height,kind,sentinel):
     page.set_viewport_size({'width':width,'height':height})
@@ -68,6 +75,7 @@ def main():
             fail(f"Live reframe runtime did not boot: {snapshot_state(page)}")
         page.evaluate("""()=>{document.querySelector('.phase43-start')?.remove();const C=Codeopolis,s=C.game?.state||window.state;if(s?.r4Construction){s.r4Construction.manualStart=false;s.r4Construction.stage='complete'}C.phaserCity?.catalog?.close?.();C.phaserCity?.manager?.close?.();C.R14PlayerAcceptance?.sync?.();if(typeof window.switchTab==='function')window.switchTab('challenge')}""")
         page.wait_for_selector('#challengeTab textarea',state='visible',timeout=15000)
+        wait_baseline_challenge(page)
         sentinel='# live-reframe-sentinel'
         page.evaluate("""sentinel=>{const e=document.querySelector('#challengeTab textarea[data-phase43-editor],#challengeTab textarea');e.dataset.reframeProbe='editor-live-reframe';if(!e.value.includes(sentinel))e.value=`${sentinel}\n${e.value}`;Codeopolis.phaserCity.host.dataset.reframeProbe='city-live-reframe';Codeopolis.R14PlayerAcceptance?.sync?.()}""",sentinel)
         for label,w,h in SEQUENCE:
