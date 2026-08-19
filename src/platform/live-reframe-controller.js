@@ -6,6 +6,7 @@
   const SHELL_URL='src/platform/ionic-shell.js';
   const VIEW_URL='src/platform/ionic-view-state.js';
   const IONIC_LAYOUT_URL='phase43-ionic.css';
+  const OWNERSHIP_URL='src/platform/tab-surface-ownership-controller.js';
   let generation=0;
   let scheduled=0;
   let lastMode=null;
@@ -41,13 +42,17 @@
     });
   }
 
+  function ensureOwnership(){
+    return loadScript(OWNERSHIP_URL,'r14-tab-ownership',()=>!!C.TabSurfaceOwnership)
+      .then(()=>C.TabSurfaceOwnership?.sync?.())
+      .catch(error=>console.error('Codeopolis tab ownership controller failed to load',error));
+  }
+
   function mode(){return MOBILE.matches?'mobile':'desktop'}
   function shellMounted(){return !!document.querySelector('#codeopolisIonicShell')}
 
   async function enterMobile(token){
     try{
-      // Match the proven first-load mobile path: layout CSS must exist before
-      // the live City/editor DOM is moved into the Ionic shell.
       ensureLayoutCss();
       await loadScript(SHELL_URL,'r14-reframe-shell',()=>!!C.ionicShell);
       if(token!==generation||!MOBILE.matches)return;
@@ -57,6 +62,7 @@
       C.ionicShell?.sync?.();
       C.R14PlayerAcceptance?.sync?.();
       C.Phase44Lifecycle?.syncLifecycle?.();
+      C.TabSurfaceOwnership?.sync?.();
     }catch(error){console.error('Codeopolis live reframe mobile transition failed',error)}
   }
 
@@ -64,12 +70,11 @@
     C.ionicShell?.teardown?.();
     C.Phase44Lifecycle?.syncLifecycle?.();
     C.R14PlayerAcceptance?.sync?.();
+    C.TabSurfaceOwnership?.sync?.();
   }
 
   function reconcile(force=false){
     const next=mode();
-    // Ordinary resize events inside the current mode only resize the existing
-    // surface. Shell migration is reserved for an actual breakpoint change.
     if(!force&&next===lastMode)return;
     lastMode=next;
     const token=++generation;
@@ -94,12 +99,10 @@
 
   function install(){
     bind();
-    // Do not replace the already-proven initial mobile bootstrap. The legacy
-    // Phase 43 router owns first load; LiveReframe owns later breakpoint
-    // transitions in the same running session.
     lastMode=mode();
     document.documentElement.dataset.codeopolisShellMode=lastMode;
+    ensureOwnership();
   }
-  C.LiveReframe={MOBILE,mode,reconcile,schedule,shellMounted,ensureLayoutCss,install};
+  C.LiveReframe={MOBILE,mode,reconcile,schedule,shellMounted,ensureLayoutCss,ensureOwnership,install};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
