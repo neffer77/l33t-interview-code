@@ -6,7 +6,8 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 VIEWPORTS={'phone_portrait':(390,844),'phone_landscape':(844,390),'tablet':(834,1112),'desktop':(1440,1000),'wide_desktop':(1920,1080)}
 def fail(message): raise AssertionError(message)
 def snap(page,path): page.screenshot(path=str(path),full_page=False)
-def switch_city(page): page.evaluate("""() => {const C=window.Codeopolis;if(C?.ionicShell?.go&&document.querySelector('#codeopolisIonicShell'))C.ionicShell.go('city');else if(typeof window.switchTab==='function')window.switchTab('city');else document.querySelector('.tabs button[data-tab="city"]')?.click()}""")
+def switch_view(page,view): page.evaluate("""view => {const C=window.Codeopolis;if(C?.ionicShell?.go&&document.querySelector('#codeopolisIonicShell'))C.ionicShell.go(view);else if(typeof window.switchTab==='function')window.switchTab(view);else document.querySelector(`.tabs button[data-tab="${view}"]`)?.click();C?.R14PlayerAcceptance?.sync?.()}""",view)
+def switch_city(page): switch_view(page,'city')
 def diagnostics(page):
     return page.evaluate("""() => {
       const C=window.Codeopolis,s=C?.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');let lexicalState={};
@@ -21,6 +22,7 @@ def diagnostics(page):
         scene:!!s,active:!!s?.sys?.isActive?.(),sleeping:!!s?.scene?.isSleeping?.(),paused:!!s?.scene?.isPaused?.(),
         r14:!!C?.R14PlayerAcceptance,r14Script:!!document.querySelector('script[data-r14-player-acceptance]'),legacyCanvas:!!document.getElementById('cityCanvas'),legacyDisplay:document.getElementById('cityCanvas')?.style?.display||'',
         view:shell?.dataset?.view||document.querySelector('.tabs button.active[data-tab]')?.dataset?.tab||null,phaser:window.Phaser?.VERSION||null,capturedWarnings:(window.__r14CapturedWarnings||[]).slice(-6),
+        coding:C?.R14PlayerAcceptance?.codingAudit?.()||null,
         r1:C?.R1ProductionAudit?{renderer:C.R1ProductionAudit.rendererSnapshot?.(),events:C.R1ProductionAudit.runtime?.loadEvents?.slice?.(-8),fallback:C.R1ProductionAudit.runtime?.fallbackReason}:null};
     }""")
 def wait_city(page):
@@ -33,10 +35,26 @@ def wait_city(page):
     except PlaywrightTimeoutError: fail(f"R14 player auditor did not auto-load: {diagnostics(page)}")
     page.wait_for_timeout(500)
 def audit(page): return page.evaluate('() => window.Codeopolis.R14PlayerAcceptance.audit()')
-def canvas_point(page,x,y): return page.evaluate("""([x,y])=>{const C=Codeopolis,s=C.phaserCity.game.scene.getScene('CodeopolisCity'),c=s.cameras.main,p=s.toWorld(x,y),r=s.game.canvas.getBoundingClientRect();return{x:r.left+(p.x-c.scrollX)*c.zoom,y:r.top+(p.y-c.scrollY)*c.zoom}}""",[x,y])
+def coding_audit(page): return page.evaluate('() => window.Codeopolis.R14PlayerAcceptance.codingAudit()')
+def visible_map_points(page):
+    return page.evaluate("""()=>{const C=Codeopolis,canvas=C.phaserCity?.game?.canvas,host=C.phaserCity?.host;if(!canvas||!host)return[];const r=canvas.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,points=[];for(let row=1;row<=11;row++)for(let col=1;col<=13;col++){const px=r.left+r.width*col/14,py=r.top+r.height*row/12;if(px<8||px>innerWidth-8||py<8||py>innerHeight-8)continue;const top=document.elementFromPoint(px,py),blocked=top?.closest?.('.r4-start-panel,.p1-catalog,.p1-placement-hud,button,ion-header,ion-tab-bar');if(blocked)continue;if(top!==canvas&&top!==host&&!host.contains(top))continue;points.push({px,py,d:(px-cx)*(px-cx)+(py-cy)*(py-cy),top:top?.tagName||null})}points.sort((a,b)=>a.d-b.d);return points.slice(0,40)}""")
 def manual_first_build(page):
-    page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state;s.money=Math.max(5000,Number(s.money)||0);s.buildings=[...new Set([...(s.buildings||[]),'house','market','foundry','solar','park'])];C.phaserCity.catalog?.render?.();C.phaserCity.catalog?.acquire?.('house')}""")
-    page.wait_for_function("()=>Codeopolis.game.world.world.tool?.mode==='building'",timeout=5000);pt=canvas_point(page,5,5);page.mouse.click(pt['x'],pt['y']);page.wait_for_function("()=>Codeopolis.game.world.placedBuildings().length===1",timeout=8000)
+    acquired=page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state;s.money=Math.max(5000,Number(s.money)||0);s.buildings=[...new Set([...(s.buildings||[]),'house','market','foundry','solar','park'])];C.phaserCity.catalog?.render?.();return C.phaserCity.catalog?.acquire?.('house')===true}""")
+    if not acquired: fail(f"Could not acquire first building · {diagnostics(page)}")
+    page.wait_for_function("()=>Codeopolis.game.world.world.tool?.mode==='building'&&Codeopolis.R14PlayerAcceptance?.currentView?.()==='city'",timeout=5000)
+    page.wait_for_function("()=>{const p=document.querySelector('.p1-catalog');return !p||p.classList.contains('hidden')}",timeout=5000)
+    page.wait_for_function("()=>{const c=Codeopolis.phaserCity?.game?.canvas,r=c?.getBoundingClientRect?.();return !!r&&r.width>100&&r.height>100}",timeout=5000)
+    page.wait_for_timeout(350)
+    points=visible_map_points(page)
+    if not points: fail(f"No uncovered live-map screen point available for first building · {diagnostics(page)}")
+    for pt in points:
+        page.mouse.click(pt['px'],pt['py'])
+        try:
+            page.wait_for_function("()=>Codeopolis.game.world.placedBuildings().length===1",timeout=500)
+            return
+        except PlaywrightTimeoutError:
+            continue
+    fail(f"Visible pointer taps did not place first building · points={points[:8]} · {diagnostics(page)}")
 def seed_operating_city(page):
     return page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state,w=C.game?.world;s.money=Math.max(5000,Number(s.money)||0);s.population=Math.max(12,Number(s.population)||0);s.eraLevel=3;s.ageProgression=Object.assign({},s.ageProgression,{level:3});s.tech=[...new Set([...(s.tech||[]),'arrays','maps','search','energy','graphs'])];s.buildings=[...new Set([...(s.buildings||[]),'market','foundry','solar','park'])];const placements=[['market',8,2],['foundry',2,5],['solar',8,5],['park',5,2]],results=[];for(const[id,x,y]of placements){if(w.tile(x,y)?.buildingId)continue;results.push({id,...w.placeBuilding(id,x,y,{construction:false})})}for(let x=1;x<=10;x++)if(!w.tile(x,4)?.buildingId&&!w.tile(x,4)?.occupiedBy)w.setRoad(x,4,true);for(const[x,y]of[[2,3],[5,3],[8,3],[2,4],[5,4],[8,4]])if(!w.tile(x,y)?.buildingId&&!w.tile(x,y)?.occupiedBy)w.setRoad(x,y,true);w.world.selected=null;w.world.tool={mode:'inspect',buildingId:null};C.phaserCity?.catalog?.close?.();C.phaserCity?.manager?.close?.();C.phaserCity?.editing?.close?.();C.BuildingOperations?.sync?.(s,w);C.PopulationSimulation?.step?.(s,w,1);C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity')?.refresh?.();C.R14PlayerAcceptance?.sync?.();return{results,placed:w.placedBuildings().length,roads:w.roadTiles().length}}""")
 def run_viewport(browser,base_url,out_dir,name,width,height,deployed=False):
@@ -60,8 +78,10 @@ def run_viewport(browser,base_url,out_dir,name,width,height,deployed=False):
     if not hittable: fail(f"{name}: first-run resource button is covered by another layer · {diagnostics(page)}")
     clutter=page.evaluate("""()=>[...document.querySelectorAll('#phaserCityHost [class*="-fab"],#phaserCityHost [class*="-hud"],#phaserCityHost .phase44-camera-controls')].filter(e=>getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().width>1).map(e=>e.className)""")
     if clutter: fail(f"{name}: first-run city has competing controls: {clutter} · {diagnostics(page)}")
-    snap(page,vp_dir/'01-empty-land.png');page.locator('[data-r4-earn]').click();page.wait_for_function("()=>(Codeopolis.game?.state||window.state)?.r4Construction?.stage==='solve'",timeout=10000);page.wait_for_timeout(300)
+    snap(page,vp_dir/'01-empty-land.png');page.locator('[data-r4-earn]').click();page.wait_for_function("()=>(Codeopolis.game?.state||window.state)?.r4Construction?.stage==='solve'",timeout=10000);page.wait_for_function("()=>Codeopolis.R14PlayerAcceptance?.currentView?.()==='challenge'",timeout=10000);page.wait_for_selector('#challengeTab textarea',state='visible',timeout=15000);page.wait_for_timeout(350)
     if page.locator('.r4-start-panel').is_visible(): fail(f"{name}: R4 onboarding covers coding workspace · {diagnostics(page)}")
+    coding=coding_audit(page)
+    if not coding['pass']: fail(f"{name}: coding surface audit failed: {coding['issues']} · {diagnostics(page)}")
     snap(page,vp_dir/'02-coding-mission.png')
     page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state;C.ConceptResources.award(s,{challenge:{district:'arrays',difficulty:'easy',pattern:'Foundations'},concept:'R14 starter',rewardOverride:{resourceId:'materials',amount:12}});s.money=Math.max(5000,Number(s.money)||0)}""");page.wait_for_function("()=>(Codeopolis.game?.state||window.state)?.r4Construction?.stage==='build'",timeout=10000);wait_city(page);snap(page,vp_dir/'03-build-ready.png')
     manual_first_build(page);page.wait_for_timeout(350)
@@ -81,7 +101,7 @@ def run_viewport(browser,base_url,out_dir,name,width,height,deployed=False):
     snap(page,vp_dir/'07-expanded-city.png')
     if page_errors: fail(f"{name}: page errors: {page_errors} · {diagnostics(page)}")
     if severe_console: fail(f"{name}: severe console errors: {severe_console} · {diagnostics(page)}")
-    build_info=page.evaluate("async()=>await(await fetch('build-info.json',{cache:'no-store'})).json()") if deployed else None;context.close();return{'viewport':name,'size':[width,height],'fresh':fresh,'operating':operating,'seeded':seeded,'expansion':expansion,'buildInfo':build_info,'screenshots':7}
+    build_info=page.evaluate("async()=>await(await fetch('build-info.json',{cache:'no-store'})).json()") if deployed else None;context.close();return{'viewport':name,'size':[width,height],'fresh':fresh,'coding':coding,'operating':operating,'seeded':seeded,'expansion':expansion,'buildInfo':build_info,'screenshots':7}
 def main():
     p=argparse.ArgumentParser();p.add_argument('--url',required=True);p.add_argument('--out',default='artifacts/r14-clean');p.add_argument('--deployed',action='store_true');args=p.parse_args();out=Path(args.out);out.mkdir(parents=True,exist_ok=True);report={'url':args.url,'deployed':args.deployed,'viewports':{},'pass':False}
     with sync_playwright() as pw:
