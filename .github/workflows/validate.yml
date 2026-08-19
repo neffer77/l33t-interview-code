@@ -105,6 +105,8 @@ jobs:
           exit 1
       - name: Exercise same-session browser reframing
         run: python scripts/r14-live-reframe-acceptance.py --url http://127.0.0.1:4174/ --out artifacts/r14-live-reframe
+      - name: Exercise all primary tab surfaces
+        run: python scripts/r14-tab-surface-acceptance.py --url http://127.0.0.1:4174/ --out artifacts/r14-live-reframe/tab-ownership
       - name: Upload live reframe evidence
         if: always()
         uses: actions/upload-artifact@v4
