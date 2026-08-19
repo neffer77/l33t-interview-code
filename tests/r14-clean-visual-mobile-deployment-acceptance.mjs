@@ -19,6 +19,11 @@ assert.match(camera,/toWorld/,'mobile focus must use projected world coordinates
 assert.match(camera,/syncBounds/,'camera bounds must be synchronized to the isometric world');
 assert.match(camera,/world:expanded/,'expanded territory must refresh mobile camera bounds');
 assert.match(camera,/r14-player-acceptance\.js/,'runtime must load the R14 player acceptance auditor');
+assert.match(camera,/developedBounds/,'responsive camera must measure the authored city rather than only the full map');
+assert.match(camera,/fitDeveloped/,'responsive camera must fit the developed city footprint');
+assert.match(camera,/framingMetrics/,'developed-city screen coverage must be observable to acceptance');
+assert.match(camera,/maxZoom=mobile\?1\.55:2\.15/,'desktop city framing must be allowed to zoom beyond the old conservative cap');
+assert.match(camera,/world:building-placed.*scheduleResponsiveFit/s,'new authored construction must refresh responsive framing on desktop');
 assert.match(phaserBootstrap,/mobileRenderer\?Phaser\.CANVAS:Phaser\.AUTO/,'mobile 2D city must avoid unstable WebGL framebuffer transitions');
 assert.match(phaserBootstrap,/rendererBackend:mobileRenderer\?'canvas':'auto'/,'renderer backend must be observable in runtime state');
 assert.match(phase44Runtime,/function wrapSwitchTab\(\)/,'Phaser lifecycle must wrap programmatic legacy tab navigation');
@@ -35,11 +40,12 @@ assert.match(coreViewport,/phase44-city-active.*\.phaser-city-host\{[^}]*height:
 assert.match(coreViewport,/phase44-city-active.*#cityTab.*display:none!important/s,'legacy desktop City dashboard rows must not consume world space');
 assert.match(coreViewport,/body\.r14-view-challenge #phase29InterviewDay,body\.r14-view-challenge #phase30Remediation\{display:none!important/,'Interview Day and remediation must yield to the active coding surface');
 assert.match(coreViewport,/body\.r14-view-challenge \.layout>section\.panel>#challengeTab\{[^}]*flex:1 1 auto!important[^}]*min-height:0!important[^}]*overflow:auto!important/s,'desktop Challenge must own remaining play-surface height');
+assert.match(coreViewport,/body\.r14-view-challenge \.layout>section\.panel>\.city-stage.*display:none!important.*height:0!important/s,'sleeping City stage must not leave a blank desktop band above coding');
 assert.match(coreViewport,/textarea\[data-phase43-editor\].*min-height:clamp\(300px,48dvh,720px\)!important/s,'desktop editor must keep a useful responsive minimum height');
 assert.match(coreViewport,/@media\(min-width:900px\) and \(max-width:1180px\).*r14-view-challenge \.layout>\.sidebar\{display:none!important\}/s,'Mission Control must yield before coding becomes too narrow');
 
 for(const size of ['390,height:844','844,height:390','834,height:1112','1440,height:1000','1920,height:1080'])assert.ok(acceptance.includes(size),`missing canonical viewport ${size}`);
-assert.match(acceptance,/const VERSION=9/,'R14 play-surface acceptance contract must be current');
+assert.match(acceptance,/const VERSION=10/,'R14 play-surface acceptance contract must be current');
 assert.match(acceptance,/Legacy Canvas2D renderer is visible/);
 assert.match(acceptance,/Document overflows viewport/);
 assert.match(acceptance,/Touch target too small/);
@@ -58,6 +64,9 @@ assert.match(acceptance,/r14-first-run-state/,'first-run state must suppress mig
 assert.match(acceptance,/codingViewportHealthy/,'coding viewport acceptance must be explicit and reusable');
 assert.match(acceptance,/Coding surface is too small for/,'undersized code/editor surfaces must fail acceptance');
 assert.match(acceptance,/Secondary interview\/remediation panels compete with coding/,'secondary dashboards must not crowd active coding');
+assert.match(acceptance,/Dormant City stage consumes desktop coding space/,'blank sleeping City space must fail desktop coding acceptance');
+assert.match(acceptance,/Developed city is framed too small/,'tiny authored city presentation must fail desktop City acceptance');
+assert.match(acceptance,/framing\.widthRatio<\.46&&framing\.heightRatio<\.34/,'desktop developed-city framing must have a minimum perceptual size');
 assert.match(acceptance,/r14-play-surface-active/,'City and Challenge must be exposed as protected play surfaces');
 assert.match(acceptance,/installViewObserver/,'responsive play-surface classes must follow both desktop and Ionic navigation');
 
@@ -68,6 +77,8 @@ assert.match(customizationUi,/this\.summary\.style\.display=showSummary\?'block'
 for(const shot of ['01-empty-land.png','02-coding-mission.png','03-build-ready.png','04-operating-city.png','05-interview-campaign.png','06-customization.png','07-expanded-city.png'])assert.ok(harness.includes(shot),`missing screenshot state ${shot}`);
 assert.match(harness,/manual_first_build/,'browser acceptance must exercise a manual first placement');
 assert.match(harness,/placedBuildings\(\)\.length===1/);
+assert.match(harness,/visible_map_points/,'pointer acceptance must drive real visible map screen points');
+assert.match(harness,/page\.mouse\.click\(pt\['px'\],pt\['py'\]\)/,'first construction must still be pointer-driven');
 assert.match(harness,/expandCity/);
 assert.match(harness,/camera bounds stale after expansion/);
 assert.match(harness,/service_workers='block'/,'acceptance must not pass because of a stale service-worker cache');
