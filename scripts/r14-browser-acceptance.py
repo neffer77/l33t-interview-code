@@ -36,9 +36,8 @@ def wait_city(page):
     page.wait_for_timeout(500)
 def audit(page): return page.evaluate('() => window.Codeopolis.R14PlayerAcceptance.audit()')
 def coding_audit(page): return page.evaluate('() => window.Codeopolis.R14PlayerAcceptance.codingAudit()')
-def canvas_point(page,x,y): return page.evaluate("""([x,y])=>{const C=Codeopolis,s=C.phaserCity.game.scene.getScene('CodeopolisCity'),c=s.cameras.main,p=s.toWorld(x,y),r=s.game.canvas.getBoundingClientRect();return{x:r.left+(p.x-c.scrollX)*c.zoom,y:r.top+(p.y-c.scrollY)*c.zoom}}""",[x,y])
-def visible_build_points(page):
-    return page.evaluate("""()=>{const C=Codeopolis,s=C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity'),w=C.game?.world,c=s?.cameras?.main,canvas=s?.game?.canvas;if(!s||!w||!c||!canvas)return[];const r=canvas.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,candidates=[];for(let y=0;y<w.world.height;y++)for(let x=0;x<w.world.width;x++){const t=w.tile(x,y);if(!t||t.buildingId||t.occupiedBy||t.road)continue;const p=s.toWorld(x,y),px=r.left+(p.x-c.scrollX)*c.zoom,py=r.top+(p.y-c.scrollY)*c.zoom;if(px<r.left+8||px>r.right-8||py<r.top+8||py>r.bottom-8)continue;const top=document.elementFromPoint(px,py),blocked=top?.closest?.('.r4-start-panel,.p1-catalog,button,ion-header,ion-tab-bar');if(blocked)continue;candidates.push({x,y,px,py,d:(px-cx)*(px-cx)+(py-cy)*(py-cy),top:top?.tagName||null})}candidates.sort((a,b)=>a.d-b.d);return candidates.slice(0,24)}""")
+def visible_map_points(page):
+    return page.evaluate("""()=>{const C=Codeopolis,canvas=C.phaserCity?.game?.canvas,host=C.phaserCity?.host;if(!canvas||!host)return[];const r=canvas.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,points=[];for(let row=1;row<=11;row++)for(let col=1;col<=13;col++){const px=r.left+r.width*col/14,py=r.top+r.height*row/12;if(px<8||px>innerWidth-8||py<8||py>innerHeight-8)continue;const top=document.elementFromPoint(px,py),blocked=top?.closest?.('.r4-start-panel,.p1-catalog,.p1-placement-hud,button,ion-header,ion-tab-bar');if(blocked)continue;if(top!==canvas&&top!==host&&!host.contains(top))continue;points.push({px,py,d:(px-cx)*(px-cx)+(py-cy)*(py-cy),top:top?.tagName||null})}points.sort((a,b)=>a.d-b.d);return points.slice(0,40)}""")
 def manual_first_build(page):
     acquired=page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state;s.money=Math.max(5000,Number(s.money)||0);s.buildings=[...new Set([...(s.buildings||[]),'house','market','foundry','solar','park'])];C.phaserCity.catalog?.render?.();return C.phaserCity.catalog?.acquire?.('house')===true}""")
     if not acquired: fail(f"Could not acquire first building · {diagnostics(page)}")
@@ -46,16 +45,16 @@ def manual_first_build(page):
     page.wait_for_function("()=>{const p=document.querySelector('.p1-catalog');return !p||p.classList.contains('hidden')}",timeout=5000)
     page.wait_for_function("()=>{const c=Codeopolis.phaserCity?.game?.canvas,r=c?.getBoundingClientRect?.();return !!r&&r.width>100&&r.height>100}",timeout=5000)
     page.wait_for_timeout(350)
-    points=visible_build_points(page)
-    if not points: fail(f"No visible empty map tile available for first building · {diagnostics(page)}")
+    points=visible_map_points(page)
+    if not points: fail(f"No uncovered live-map screen point available for first building · {diagnostics(page)}")
     for pt in points:
         page.mouse.click(pt['px'],pt['py'])
         try:
-            page.wait_for_function("()=>Codeopolis.game.world.placedBuildings().length===1",timeout=650)
+            page.wait_for_function("()=>Codeopolis.game.world.placedBuildings().length===1",timeout=500)
             return
         except PlaywrightTimeoutError:
             continue
-    fail(f"Visible pointer clicks did not place first building · points={points[:6]} · {diagnostics(page)}")
+    fail(f"Visible pointer taps did not place first building · points={points[:8]} · {diagnostics(page)}")
 def seed_operating_city(page):
     return page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state,w=C.game?.world;s.money=Math.max(5000,Number(s.money)||0);s.population=Math.max(12,Number(s.population)||0);s.eraLevel=3;s.ageProgression=Object.assign({},s.ageProgression,{level:3});s.tech=[...new Set([...(s.tech||[]),'arrays','maps','search','energy','graphs'])];s.buildings=[...new Set([...(s.buildings||[]),'market','foundry','solar','park'])];const placements=[['market',8,2],['foundry',2,5],['solar',8,5],['park',5,2]],results=[];for(const[id,x,y]of placements){if(w.tile(x,y)?.buildingId)continue;results.push({id,...w.placeBuilding(id,x,y,{construction:false})})}for(let x=1;x<=10;x++)if(!w.tile(x,4)?.buildingId&&!w.tile(x,4)?.occupiedBy)w.setRoad(x,4,true);for(const[x,y]of[[2,3],[5,3],[8,3],[2,4],[5,4],[8,4]])if(!w.tile(x,y)?.buildingId&&!w.tile(x,y)?.occupiedBy)w.setRoad(x,y,true);w.world.selected=null;w.world.tool={mode:'inspect',buildingId:null};C.phaserCity?.catalog?.close?.();C.phaserCity?.manager?.close?.();C.phaserCity?.editing?.close?.();C.BuildingOperations?.sync?.(s,w);C.PopulationSimulation?.step?.(s,w,1);C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity')?.refresh?.();C.R14PlayerAcceptance?.sync?.();return{results,placed:w.placedBuildings().length,roads:w.roadTiles().length}}""")
 def run_viewport(browser,base_url,out_dir,name,width,height,deployed=False):
