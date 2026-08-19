@@ -33,8 +33,13 @@ assert.match(coreViewport,/body\.phase44-city-active \.layout\{grid-template-col
 assert.match(coreViewport,/phase44-city-active.*\.city-stage\{[^}]*flex:1 1 auto!important[^}]*height:100%!important[^}]*overflow:hidden!important/s,'desktop City stage must own the available viewport rather than clip a tall Phaser canvas');
 assert.match(coreViewport,/phase44-city-active.*\.phaser-city-host\{[^}]*height:100%!important[^}]*min-height:0!important[^}]*max-height:none!important/s,'desktop Phaser host must fit its visible City stage');
 assert.match(coreViewport,/phase44-city-active.*#cityTab.*display:none!important/s,'legacy desktop City dashboard rows must not consume world space');
+assert.match(coreViewport,/body\.r14-view-challenge #phase29InterviewDay,body\.r14-view-challenge #phase30Remediation\{display:none!important/,'Interview Day and remediation must yield to the active coding surface');
+assert.match(coreViewport,/body\.r14-view-challenge \.layout>section\.panel>#challengeTab\{[^}]*flex:1 1 auto!important[^}]*min-height:0!important[^}]*overflow:auto!important/s,'desktop Challenge must own remaining play-surface height');
+assert.match(coreViewport,/textarea\[data-phase43-editor\].*min-height:clamp\(300px,48dvh,720px\)!important/s,'desktop editor must keep a useful responsive minimum height');
+assert.match(coreViewport,/@media\(min-width:900px\) and \(max-width:1180px\).*r14-view-challenge \.layout>\.sidebar\{display:none!important\}/s,'Mission Control must yield before coding becomes too narrow');
 
 for(const size of ['390,height:844','844,height:390','834,height:1112','1440,height:1000','1920,height:1080'])assert.ok(acceptance.includes(size),`missing canonical viewport ${size}`);
+assert.match(acceptance,/const VERSION=9/,'R14 play-surface acceptance contract must be current');
 assert.match(acceptance,/Legacy Canvas2D renderer is visible/);
 assert.match(acceptance,/Document overflows viewport/);
 assert.match(acceptance,/Touch target too small/);
@@ -50,6 +55,11 @@ assert.match(acceptance,/Economy status renders an object instead of a numeric w
 assert.match(acceptance,/r14-empty-land > :not\(canvas\)/,'empty-land City must suppress every non-renderer Phaser overlay');
 assert.match(acceptance,/r14-build-ready > :not\(canvas\):not\(\.p1-catalog\)/,'build-ready City must keep only the renderer and Build catalog');
 assert.match(acceptance,/r14-first-run-state/,'first-run state must suppress migrated legacy City chrome');
+assert.match(acceptance,/codingViewportHealthy/,'coding viewport acceptance must be explicit and reusable');
+assert.match(acceptance,/Coding surface is too small for/,'undersized code/editor surfaces must fail acceptance');
+assert.match(acceptance,/Secondary interview\/remediation panels compete with coding/,'secondary dashboards must not crowd active coding');
+assert.match(acceptance,/r14-play-surface-active/,'City and Challenge must be exposed as protected play surfaces');
+assert.match(acceptance,/installViewObserver/,'responsive play-surface classes must follow both desktop and Ionic navigation');
 
 assert.match(economyUi,/budgetBlocked=\(s\.rows\|\|\[\]\)\.filter\(r=>r\.state==='budget'\)\.length/,'economy warning count must count budget-blocked rows numerically');
 assert.doesNotMatch(economyUi,/s\.shortage\+s\.disconnected\+s\.budget/,'economy UI must never add the budget object to a numeric warning count');
@@ -63,6 +73,9 @@ assert.match(harness,/camera bounds stale after expansion/);
 assert.match(harness,/service_workers='block'/,'acceptance must not pass because of a stale service-worker cache');
 assert.match(harness,/elementFromPoint/,'first-run CTA must be hit-testable, not merely present');
 assert.match(harness,/R4 onboarding covers coding workspace/,'coding workspace must stay unobscured by city onboarding');
+assert.match(harness,/coding_audit/,'browser acceptance must inspect coding geometry, not only take a screenshot');
+assert.match(harness,/coding surface audit failed/,'browser acceptance must fail when the coding play surface collapses');
+assert.match(harness,/wait_for_selector\('#challengeTab textarea'/,'browser acceptance must wait for the actual editor before accepting the coding state');
 assert.match(harness,/ionicCss/,'browser failures must preserve live Ionic stylesheet diagnostics');
 
 assert.match(ionicShell,/mountLiveCityRenderer/,'mobile shell must explicitly mount the live renderer');
@@ -81,6 +94,9 @@ assert.match(ionicCss,/#phaserCityHost\{[^}]*height:100%!important/s,'mobile Pha
 assert.match(ionicCss,/data-view="city"[^}]*codeopolis-mobile-workspace\{display:none!important/s,'mobile City must not reserve screen space for the old dashboard workspace');
 assert.match(ionicCss,/data-view="city"[^}]*codeopolis-mobile-city-peek>\.section-title.*display:none!important/s,'mobile City must not spend world space on the migrated legacy title row');
 assert.match(ionicCss,/data-view="city"[^}]*codeopolis-mobile-city-peek>\.city-summary.*display:none!important/s,'mobile City must not spend world space on the migrated legacy stat row');
+assert.match(ionicCss,/challengeTab textarea\[data-phase43-editor\].*height:clamp\(300px,52dvh,620px\)!important/s,'mobile portrait/tablet editor must retain useful height');
+assert.match(ionicCss,/data-view="challenge"\]>ion-header.*display:none!important/s,'short landscape coding must reclaim header space before shrinking the editor');
+assert.match(ionicCss,/height:clamp\(170px,48dvh,260px\)!important/,'short landscape editor must remain usable without overflowing the screen');
 
 assert.match(worldFirst,/const VERSION=2/,'P6N world-first bridge must declare the reconstructed mobile presentation contract');
 assert.match(worldFirst,/codeopolis-mobile-city-peek>\.section-title.*codeopolis-mobile-city-peek>\.city-summary.*p6n-manage-city\{display:none!important/s,'legacy P6N title, stat row, and Manage City chrome must remain retired on mobile City');
