@@ -1,7 +1,7 @@
 (function(C){'use strict';
 class Phase29UI{
  constructor(game,day){this.game=game;this.day=day;this.timer=null}
- esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
+ esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
  ensure(){
   let root=document.getElementById('phase29InterviewDay');
   const host=document.getElementById('mockTab');
