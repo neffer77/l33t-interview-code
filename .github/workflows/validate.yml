@@ -73,6 +73,8 @@ jobs:
           exit 1
       - name: Exercise five canonical player viewports
         run: python scripts/r14-browser-acceptance.py --url http://127.0.0.1:4173/ --out artifacts/r14-clean-local
+      - name: Exercise same-session browser reframing
+        run: python scripts/r14-live-reframe-acceptance.py --url http://127.0.0.1:4173/ --out artifacts/r14-clean-local/live-reframe
       - name: Upload R14 local visual evidence
         if: always()
         uses: actions/upload-artifact@v4
