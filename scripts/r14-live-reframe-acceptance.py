@@ -22,7 +22,7 @@ def snapshot_state(page):
 def wait_shell_mode(page,width):
     expected=mobile_for(width)
     try:
-        page.wait_for_function("""expected=>{const shell=!!document.querySelector('#codeopolisIonicShell'),body=document.body.classList.contains('codeopolis-ionic-mobile');return expected?(shell&&body):(!shell&&!body)}""",expected,timeout=12000)
+        page.wait_for_function("""expected=>{const shell=!!document.querySelector('#codeopolisIonicShell'),body=document.body.classList.contains('codeopolis-ionic-mobile');return expected?(shell&&body):(!shell&&!body)}""",arg=expected,timeout=12000)
     except PlaywrightTimeoutError:
         fail(f"Responsive shell did not settle for width {width}: {snapshot_state(page)}")
     page.wait_for_timeout(260)
