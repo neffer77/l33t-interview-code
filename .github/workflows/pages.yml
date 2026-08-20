@@ -62,8 +62,27 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check playwright==1.55.0
           python -m playwright install --with-deps chromium
-      - name: Wait for Pages edge propagation
-        run: sleep 12
+      - name: Wait for deployed edge to serve this commit
+        env:
+          CODEOPOLIS_URL: ${{ needs.deploy.outputs.page_url }}
+        run: |
+          # Never run the acceptance against a stale CDN edge: poll build-info.json
+          # until it reports this commit's build, then let the edge settle briefly.
+          expected="$(git rev-parse --short HEAD)"
+          echo "Expecting deployed build version: $expected"
+          matched=0
+          for i in $(seq 1 60); do
+            got="$(curl -fsS "${CODEOPOLIS_URL%/}/build-info.json?ts=$(date +%s%N)" 2>/dev/null \
+              | python3 -c 'import sys,json;print(json.load(sys.stdin).get("version",""))' 2>/dev/null || echo "")"
+            echo "attempt $i: deployed build-info version='$got'"
+            if [ "$got" = "$expected" ]; then matched=1; echo "Edge is fresh."; break; fi
+            sleep 3
+          done
+          if [ "$matched" != "1" ]; then
+            echo "::warning::Deployed edge never reported $expected after ~3m; running acceptance anyway."
+          fi
+          # Small settle so first-run camera framing/assets are fully warm.
+          sleep 6
       - name: Exercise deployed five-viewport player flow
         env:
           CODEOPOLIS_URL: ${{ needs.deploy.outputs.page_url }}

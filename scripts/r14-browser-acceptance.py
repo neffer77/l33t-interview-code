@@ -33,6 +33,12 @@ def wait_city(page):
     except PlaywrightTimeoutError: fail(f"City scene exists but did not wake for City view: {diagnostics(page)}")
     try: page.wait_for_function("() => !!window.Codeopolis?.R14PlayerAcceptance",timeout=12000)
     except PlaywrightTimeoutError: fail(f"R14 player auditor did not auto-load: {diagnostics(page)}")
+    # Let first-run camera framing settle before any map interaction, so sampled
+    # tap points map to the tiles actually on screen. Resolves immediately when the
+    # camera is already stable; only adds delay while it is still animating.
+    page.evaluate("()=>{window.__r14CamKey=null;window.__r14CamStable=0}")
+    try: page.wait_for_function("""() => {const s=window.Codeopolis?.phaserCity?.game?.scene?.getScene?.('CodeopolisCity'),cam=s?.cameras?.main;if(!cam)return false;const k=Math.round(cam.scrollX)+','+Math.round(cam.scrollY)+','+cam.zoom.toFixed(3);if(window.__r14CamKey===k){window.__r14CamStable=(window.__r14CamStable||0)+1}else{window.__r14CamKey=k;window.__r14CamStable=0}return window.__r14CamStable>=4}""",timeout=10000)
+    except PlaywrightTimeoutError: pass
     page.wait_for_timeout(500)
 def audit(page): return page.evaluate('() => window.Codeopolis.R14PlayerAcceptance.audit()')
 def coding_audit(page): return page.evaluate('() => window.Codeopolis.R14PlayerAcceptance.codingAudit()')
