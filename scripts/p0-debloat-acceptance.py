@@ -36,14 +36,29 @@ def main():
         except PlaywrightTimeoutError:
             fail('Python worker did not become ready')
 
-        before = page.evaluate("""() => ({
-          gate: !!window.CodeopolisPythonRuntimeGate,
-          mainThreadBooted: window.CodeopolisPythonRuntimeGate?.hasBooted?.() ?? null,
-          status: document.querySelector('#pythonStatus')?.textContent || '',
-          directPyodideScripts: [...document.scripts].map(s=>s.src).filter(src=>/pyodide/i.test(src)),
-        })""")
+        before = page.evaluate("""() => {
+          const sameOrigin = src => { try { return new URL(src, location.href).origin === location.origin; } catch { return false; } };
+          const scriptPaths = [...document.scripts].map(s=>s.src).filter(Boolean);
+          const stylePaths = [...document.querySelectorAll('link[rel="stylesheet"]')].map(l=>l.href).filter(Boolean);
+          const resources = performance.getEntriesByType('resource').map(r=>r.name);
+          return {
+            gate: !!window.CodeopolisPythonRuntimeGate,
+            mainThreadBooted: window.CodeopolisPythonRuntimeGate?.hasBooted?.() ?? null,
+            status: document.querySelector('#pythonStatus')?.textContent || '',
+            directPyodideScripts: scriptPaths.filter(src=>/pyodide/i.test(src)),
+            compiledRuntime: scriptPaths.some(src=>sameOrigin(src) && /\/codeopolis-runtime\.js(?:[?#]|$)/.test(src)),
+            compiledStyles: stylePaths.some(src=>sameOrigin(src) && /\/codeopolis\.css(?:[?#]|$)/.test(src)),
+            retiredScriptTags: scriptPaths.filter(src=>sameOrigin(src) && /\/(?:app|worker-bridge|python-runtime-gate)\.js(?:[?#]|$)/.test(src)),
+            retiredPhaseStyles: stylePaths.filter(src=>sameOrigin(src) && /\/phase\d+\.css(?:[?#]|$)/.test(src)),
+            retiredNetworkRequests: resources.filter(src=>sameOrigin(src) && /\/(?:app|worker-bridge|python-runtime-gate)\.js(?:[?#]|$)/.test(src)),
+          };
+        }""")
         if not before['gate']:
-            fail(f'Python runtime gate did not load: {before}')
+            fail(f'Python runtime gate did not execute from compiled runtime: {before}')
+        if not before['compiledRuntime'] or not before['compiledStyles']:
+            fail(f'Production bootstrap bundles were not active: {before}')
+        if before['retiredScriptTags'] or before['retiredPhaseStyles'] or before['retiredNetworkRequests']:
+            fail(f'Historical bootstrap fan-out survived in the deployed page: {before}')
         if before['mainThreadBooted']:
             fail(f'Main-thread Pyodide booted during normal worker startup: {before}')
         if before['directPyodideScripts']:
@@ -79,9 +94,9 @@ def main():
         if after['mainThreadBooted']:
             fail(f'Main-thread Pyodide booted after worker-backed judging: {after}')
         if errors:
-            fail(f'Page errors during P0 de-bloat acceptance: {errors}')
+            fail(f'Page errors during de-bloat acceptance: {errors}')
 
-        print('P0 de-bloat acceptance passed: worker judging works and main-thread Pyodide stayed dormant.')
+        print('De-bloat runtime acceptance passed: compiled bootstrap is active, worker judging works, and main-thread Pyodide stayed dormant.')
         context.close()
         browser.close()
 
