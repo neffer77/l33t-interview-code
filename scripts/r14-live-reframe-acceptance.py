@@ -32,7 +32,28 @@ def wait_baseline_challenge(page):
         page.wait_for_function("""()=>{const C=Codeopolis,core=[...document.styleSheets].some(s=>(s.href||'').includes('phase43-core-viewport.css')),audit=C.R14PlayerAcceptance?.codingAudit?.();return core&&audit?.view==='challenge'&&audit?.pass===true}""",timeout=30000)
     except PlaywrightTimeoutError:
         fail(f"Desktop Challenge never reached a stable responsive baseline: {snapshot_state(page)}")
-    page.wait_for_timeout(220)
+
+    # Several legacy phase bootstraps finish asynchronously and may perform one
+    # normal Challenge render after the responsive surface is already green.
+    # Establish the identity probe only after the textarea survives a quiet
+    # post-bootstrap window. This keeps the resize assertion strict while
+    # avoiding a false failure from normal startup rendering.
+    deadline=time.time()+15
+    candidate=0
+    while time.time()<deadline:
+        candidate+=1
+        token=f'baseline-{candidate}-{int(time.time()*1000)}'
+        page.evaluate("""token=>{const e=document.querySelector('#challengeTab textarea[data-phase43-editor],#challengeTab textarea');if(e)e.dataset.reframeBaseline=token}""",token)
+        page.wait_for_timeout(650)
+        first=page.evaluate("""token=>{const e=document.querySelector('#challengeTab textarea[data-phase43-editor],#challengeTab textarea'),audit=Codeopolis.R14PlayerAcceptance?.codingAudit?.();return !!e&&e.dataset.reframeBaseline===token&&audit?.view==='challenge'&&audit?.pass===true}""",token)
+        if not first:
+            continue
+        page.wait_for_timeout(650)
+        second=page.evaluate("""token=>{const e=document.querySelector('#challengeTab textarea[data-phase43-editor],#challengeTab textarea'),audit=Codeopolis.R14PlayerAcceptance?.codingAudit?.();return !!e&&e.dataset.reframeBaseline===token&&audit?.view==='challenge'&&audit?.pass===true}""",token)
+        if second:
+            page.evaluate("""()=>{const e=document.querySelector('#challengeTab textarea[data-phase43-editor],#challengeTab textarea');e?.removeAttribute('data-reframe-baseline')}""")
+            return
+    fail(f"Challenge editor never reached a stable post-bootstrap DOM baseline: {snapshot_state(page)}")
 
 def resize_step(page,out_dir,label,width,height,kind,sentinel):
     page.set_viewport_size({'width':width,'height':height})
