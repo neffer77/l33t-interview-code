@@ -12,8 +12,8 @@ rm -rf "$OUT"
 mkdir -p "$OUT"
 
 # Ship the runtime site only. Repo history, docs, tests and tooling never reach
-# the CDN. P0 deliberately keeps all runtime JS/CSS modules until later
-# reachability cleanup proves they can be removed without feature loss.
+# the CDN. Source JS/CSS remains modular in Git; P1 compiles the index-loaded
+# bootstrap into production bundles after the runtime tree is copied.
 rsync -a \
   --exclude '.git' \
   --exclude '.github' \
@@ -26,6 +26,10 @@ rsync -a \
   --exclude 'scripts' \
   --exclude "$OUT" \
   ./ "$OUT/"
+
+# Replace the historical 100+ script / phase-CSS fan-out with two ordered
+# production assets and remove their source copies from the deployed artifact.
+node scripts/bundle-runtime.mjs "$OUT"
 
 # Pages runs Jekyll over the artifact unless told not to.
 touch "$OUT/.nojekyll"
