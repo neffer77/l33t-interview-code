@@ -11,10 +11,16 @@ VERSION="${SITE_VERSION:-$(git rev-parse --short HEAD 2>/dev/null || echo dev)}"
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
-# Ship the runtime site only. Repo-tooling directories never reach the CDN.
+# Ship the runtime site only. Repo history, docs, tests and tooling never reach
+# the CDN. P0 deliberately keeps all runtime JS/CSS modules until later
+# reachability cleanup proves they can be removed without feature loss.
 rsync -a \
   --exclude '.git' \
   --exclude '.github' \
+  --exclude '.gitignore' \
+  --exclude 'README.md' \
+  --exclude '*.md' \
+  --exclude 'docs' \
   --exclude 'node_modules' \
   --exclude 'tests' \
   --exclude 'scripts' \
@@ -24,8 +30,8 @@ rsync -a \
 # Pages runs Jekyll over the artifact unless told not to.
 touch "$OUT/.nojekyll"
 
-# The service worker is cache-first for same-origin requests, so a deploy only
-# reaches returning players if CACHE changes. Stamp it with the commit.
+# Stamp the service-worker cache namespace with the commit so a deployment can
+# evict prior cached shells even though current app code is network-first.
 node -e '
 const fs = require("fs");
 const path = process.argv[1];
@@ -46,6 +52,9 @@ cat > "$OUT/build-info.json" <<JSON
   "ref": "${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo local)}"
 }
 JSON
+
+# Treat payload hygiene as a release invariant, not a manual cleanup task.
+node scripts/audit-deploy-bloat.mjs "$OUT"
 
 echo "Built $OUT (version $VERSION, $(find "$OUT" -type f | wc -l) files)"
 grep -o "const CACHE='[^']*'" "$OUT/sw.js"
