@@ -6,6 +6,17 @@ let judgeSeq=0;
 const judgePending=new Map();
 const JUDGE_TIMEOUT_MS=5000;
 
+// Phase 43's main-thread fallback watches window.judgeWorkerStatus. Keep the
+// public status synchronized with this lexical state so a failed Worker can
+// release the lazy Pyodide gate instead of leaving Python unavailable.
+try{
+  Object.defineProperty(window,'judgeWorkerStatus',{
+    configurable:true,
+    get:()=>judgeWorkerStatus,
+    set:value=>{judgeWorkerStatus=value}
+  });
+}catch{}
+
 const baseWorkerRenderChallenge=renderChallenge;
 renderPythonStatus=function(){
   pyStatus=judgeWorkerStatus;
@@ -19,6 +30,15 @@ renderChallenge=function(){
   baseWorkerRenderChallenge();
 };
 
+function markWorkerFailure(error,label='Python worker error'){
+  console.error(label,error);
+  judgeWorkerReady=false;
+  judgeWorkerStatus='error';
+  pyStatus='error';
+  renderPythonStatus();
+  renderChallenge();
+}
+
 function startJudgeWorker(){
   if(judgeWorker)judgeWorker.terminate();
   judgeWorkerReady=false;
@@ -27,7 +47,13 @@ function startJudgeWorker(){
   renderPythonStatus();
   // Module worker: Pyodide 314.x is ESM-only, so python-worker.js imports it
   // rather than using importScripts(). See the comment at the top of that file.
-  judgeWorker=new Worker('python-worker.js',{type:'module'});
+  try{
+    judgeWorker=new Worker('python-worker.js',{type:'module'});
+  }catch(error){
+    judgeWorker=null;
+    markWorkerFailure(error,'Python worker unavailable:');
+    return;
+  }
   judgeWorker.onmessage=event=>{
     const msg=event.data||{};
     if(msg.type==='ready'){
@@ -39,12 +65,7 @@ function startJudgeWorker(){
       return;
     }
     if(msg.type==='boot-error'){
-      judgeWorkerReady=false;
-      judgeWorkerStatus='error';
-      pyStatus='error';
-      renderPythonStatus();
-      renderChallenge();
-      console.error('Python worker boot error:',msg.error);
+      markWorkerFailure(msg.error,'Python worker boot error:');
       return;
     }
     if(msg.type==='result'){
@@ -55,14 +76,7 @@ function startJudgeWorker(){
       pending.resolve(msg.result);
     }
   };
-  judgeWorker.onerror=error=>{
-    console.error('Python worker error:',error);
-    judgeWorkerReady=false;
-    judgeWorkerStatus='error';
-    pyStatus='error';
-    renderPythonStatus();
-    renderChallenge();
-  };
+  judgeWorker.onerror=error=>markWorkerFailure(error);
 }
 
 function failPendingForRestart(message){
