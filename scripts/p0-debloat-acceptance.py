@@ -36,11 +36,18 @@ def main():
         except PlaywrightTimeoutError:
             fail('Python worker did not become ready')
 
-        before = page.evaluate("""() => {
+        before = page.evaluate(r"""() => {
           const sameOrigin = src => { try { return new URL(src, location.href).origin === location.origin; } catch { return false; } };
           const scriptPaths = [...document.scripts].map(s=>s.src).filter(Boolean);
           const stylePaths = [...document.querySelectorAll('link[rel="stylesheet"]')].map(l=>l.href).filter(Boolean);
           const resources = performance.getEntriesByType('resource').map(r=>r.name);
+          const retiredBootstrapStyle = src => {
+            if (!sameOrigin(src)) return false;
+            const name = new URL(src, location.href).pathname.split('/').pop();
+            if (name === 'styles.css') return true;
+            const match = /^phase(\d+)\.css$/.exec(name || '');
+            return !!match && Number(match[1]) >= 5 && Number(match[1]) <= 27;
+          };
           return {
             gate: !!window.CodeopolisPythonRuntimeGate,
             mainThreadBooted: window.CodeopolisPythonRuntimeGate?.hasBooted?.() ?? null,
@@ -49,7 +56,7 @@ def main():
             compiledRuntime: scriptPaths.some(src=>sameOrigin(src) && /\/codeopolis-runtime\.js(?:[?#]|$)/.test(src)),
             compiledStyles: stylePaths.some(src=>sameOrigin(src) && /\/codeopolis\.css(?:[?#]|$)/.test(src)),
             retiredScriptTags: scriptPaths.filter(src=>sameOrigin(src) && /\/(?:app|worker-bridge|python-runtime-gate)\.js(?:[?#]|$)/.test(src)),
-            retiredPhaseStyles: stylePaths.filter(src=>sameOrigin(src) && /\/phase\d+\.css(?:[?#]|$)/.test(src)),
+            retiredBootstrapStyles: stylePaths.filter(retiredBootstrapStyle),
             retiredNetworkRequests: resources.filter(src=>sameOrigin(src) && /\/(?:app|worker-bridge|python-runtime-gate)\.js(?:[?#]|$)/.test(src)),
           };
         }""")
@@ -57,7 +64,7 @@ def main():
             fail(f'Python runtime gate did not execute from compiled runtime: {before}')
         if not before['compiledRuntime'] or not before['compiledStyles']:
             fail(f'Production bootstrap bundles were not active: {before}')
-        if before['retiredScriptTags'] or before['retiredPhaseStyles'] or before['retiredNetworkRequests']:
+        if before['retiredScriptTags'] or before['retiredBootstrapStyles'] or before['retiredNetworkRequests']:
             fail(f'Historical bootstrap fan-out survived in the deployed page: {before}')
         if before['mainThreadBooted']:
             fail(f'Main-thread Pyodide booted during normal worker startup: {before}')
