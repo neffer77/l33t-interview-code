@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  PRUNED_RUNTIME_SCRIPTS,
+  PRUNED_RUNTIME_STYLES,
+  PRUNED_RUNTIME_DOM_IDS,
+} from './runtime-prune-manifest.mjs';
 
 const root = path.resolve(process.argv[2] || '_site');
 if (!fs.existsSync(root)) {
@@ -51,6 +56,11 @@ else {
     violations.push(`index.html: expected one compiled local stylesheet, found ${localCss.join(', ') || 'none'}`);
   }
   if (phaseCss.length) violations.push(`index.html: historical phase stylesheet fan-out returned: ${phaseCss.join(', ')}`);
+  for (const id of PRUNED_RUNTIME_DOM_IDS) {
+    if (new RegExp(`\\bid=["']${id}["']`, 'i').test(html)) {
+      violations.push(`index.html: retired runtime root #${id} survived production pruning`);
+    }
+  }
 
   console.log(`Runtime bootstrap inventory: ${localScripts.length} local script, ${localCss.length} local stylesheet, ${phaseCss.length} historical phase stylesheets.`);
 }
@@ -66,21 +76,36 @@ if (fs.existsSync(runtimePath)) {
   if (workerAt < 0) violations.push('codeopolis-runtime.js: worker-bridge.js source is missing');
   if (gateAt >= 0 && appAt >= 0 && gateAt > appAt) violations.push('codeopolis-runtime.js: Python runtime gate must execute before app.js');
   if (appAt >= 0 && workerAt >= 0 && appAt > workerAt) violations.push('codeopolis-runtime.js: app.js must establish judge/render globals before worker-bridge.js overrides them');
+  for (const ref of PRUNED_RUNTIME_SCRIPTS) {
+    if (runtime.includes(`@codeopolis-source ${ref}`)) {
+      violations.push(`codeopolis-runtime.js: retired source still executes in production: ${ref}`);
+    }
+  }
+}
+
+const cssBundlePath = path.join(root, 'codeopolis.css');
+if (fs.existsSync(cssBundlePath)) {
+  const css = fs.readFileSync(cssBundlePath, 'utf8');
+  for (const ref of PRUNED_RUNTIME_STYLES) {
+    if (css.includes(`@codeopolis-source ${ref}`)) {
+      violations.push(`codeopolis.css: retired stylesheet still ships in production: ${ref}`);
+    }
+  }
 }
 
 for (const required of ['codeopolis-runtime.js', 'codeopolis.css', 'python-worker.js', 'sw.js', 'manifest.webmanifest']) {
   if (!files.includes(required)) violations.push(`${required}: required runtime asset missing from deploy`);
 }
-for (const retired of ['python-runtime-gate.js', 'app.js', 'worker-bridge.js', 'styles.css', 'phase26.css', 'phase27.css']) {
-  if (files.includes(retired)) violations.push(`${retired}: source bootstrap asset should be compiled into the production bundle, not deployed separately`);
+for (const retired of ['python-runtime-gate.js', 'app.js', 'worker-bridge.js', 'styles.css', 'phase26.css', 'phase27.css', ...PRUNED_RUNTIME_SCRIPTS, ...PRUNED_RUNTIME_STYLES]) {
+  if (files.includes(retired)) violations.push(`${retired}: retired/source bootstrap asset must not deploy separately`);
 }
 
 const swPath = path.join(root, 'sw.js');
 if (fs.existsSync(swPath)) {
   const sw = fs.readFileSync(swPath, 'utf8');
   if (!sw.includes("'./codeopolis.css'") && !sw.includes('"./codeopolis.css"')) violations.push('sw.js: compiled stylesheet is missing from precache shell');
-  for (const stale of ['./styles.css', './phase26.css', './phase27.css']) {
-    if (sw.includes(stale)) violations.push(`sw.js: stale precache reference survived bundling: ${stale}`);
+  for (const stale of ['./styles.css', './phase26.css', './phase27.css', ...PRUNED_RUNTIME_STYLES.map(ref => `./${ref}`), ...PRUNED_RUNTIME_SCRIPTS.map(ref => `./${ref}`)]) {
+    if (sw.includes(stale)) violations.push(`sw.js: stale/retired precache reference survived bundling: ${stale}`);
   }
 }
 
