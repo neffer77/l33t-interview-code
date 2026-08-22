@@ -48,6 +48,11 @@ def main():
             const match = /^phase(\d+)\.css$/.exec(name || '');
             return !!match && Number(match[1]) >= 5 && Number(match[1]) <= 27;
           };
+          const retiredRuntimePath = src => {
+            if (!sameOrigin(src)) return false;
+            const path = new URL(src, location.href).pathname;
+            return /\/(?:src\/repository-sim\/repository-sim|src\/projects\/real-projects|src\/projects\/phase23-integration|src\/ai\/phase24-ui)\.js(?:[?#]|$)/.test(path);
+          };
           return {
             gate: !!window.CodeopolisPythonRuntimeGate,
             mainThreadBooted: window.CodeopolisPythonRuntimeGate?.hasBooted?.() ?? null,
@@ -58,6 +63,14 @@ def main():
             retiredScriptTags: scriptPaths.filter(src=>sameOrigin(src) && /\/(?:app|worker-bridge|python-runtime-gate)\.js(?:[?#]|$)/.test(src)),
             retiredBootstrapStyles: stylePaths.filter(retiredBootstrapStyle),
             retiredNetworkRequests: resources.filter(src=>sameOrigin(src) && /\/(?:app|worker-bridge|python-runtime-gate)\.js(?:[?#]|$)/.test(src)),
+            retiredSurfaceNetworkRequests: resources.filter(retiredRuntimePath),
+            retiredSurfaceGlobals: {
+              RepositorySim: typeof window.RepositorySim !== 'undefined',
+              RealProjects: typeof window.RealProjects !== 'undefined',
+              Phase24UI: typeof window.Phase24UI !== 'undefined',
+            },
+            retiredSurfaceRoots: ['repositorySim','realProjects','aiStudio'].filter(id=>document.getElementById(id)),
+            aiNpcDirectorRetained: !!window.AINPCDirector,
           };
         }""")
         if not before['gate']:
@@ -66,6 +79,10 @@ def main():
             fail(f'Production bootstrap bundles were not active: {before}')
         if before['retiredScriptTags'] or before['retiredBootstrapStyles'] or before['retiredNetworkRequests']:
             fail(f'Historical bootstrap fan-out survived in the deployed page: {before}')
+        if any(before['retiredSurfaceGlobals'].values()) or before['retiredSurfaceRoots'] or before['retiredSurfaceNetworkRequests']:
+            fail(f'P2 retired hidden surfaces still execute or exist in production: {before}')
+        if not before['aiNpcDirectorRetained']:
+            fail(f'P2 accidentally removed the underlying AI NPC director while retiring only the standalone studio UI: {before}')
         if before['mainThreadBooted']:
             fail(f'Main-thread Pyodide booted during normal worker startup: {before}')
         if before['directPyodideScripts']:
@@ -103,7 +120,7 @@ def main():
         if errors:
             fail(f'Page errors during de-bloat acceptance: {errors}')
 
-        print('De-bloat runtime acceptance passed: compiled bootstrap is active, worker judging works, and main-thread Pyodide stayed dormant.')
+        print('De-bloat runtime acceptance passed: compiled bootstrap active, retired hidden surfaces absent, AI NPC core retained, and worker judging works.')
         context.close()
         browser.close()
 
