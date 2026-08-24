@@ -44,6 +44,13 @@ def audit(page): return page.evaluate('() => window.Codeopolis.R14PlayerAcceptan
 def coding_audit(page): return page.evaluate('() => window.Codeopolis.R14PlayerAcceptance.codingAudit()')
 def visible_map_points(page):
     return page.evaluate("""()=>{const C=Codeopolis,canvas=C.phaserCity?.game?.canvas,host=C.phaserCity?.host;if(!canvas||!host)return[];const r=canvas.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,points=[];for(let row=1;row<=11;row++)for(let col=1;col<=13;col++){const px=r.left+r.width*col/14,py=r.top+r.height*row/12;if(px<8||px>innerWidth-8||py<8||py>innerHeight-8)continue;const top=document.elementFromPoint(px,py),blocked=top?.closest?.('.r4-start-panel,.p1-catalog,.p1-placement-hud,button,ion-header,ion-tab-bar');if(blocked)continue;if(top!==canvas&&top!==host&&!host.contains(top))continue;points.push({px,py,d:(px-cx)*(px-cx)+(py-cy)*(py-cy),top:top?.tagName||null})}points.sort((a,b)=>a.d-b.d);return points.slice(0,40)}""")
+def aimed_map_points(page):
+    # Project the actual buildable tiles to screen via the camera's worldView, so
+    # a player-style tap lands on real placeable land regardless of how the
+    # first-run camera happens to be framed. Points are still real, uncovered
+    # on-screen coordinates the pointer clicks — this just aims them at land the
+    # game reports as buildable instead of blindly sampling a fixed grid.
+    return page.evaluate("""()=>{const C=Codeopolis,w=C.game?.world,s=C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity'),host=C.phaserCity?.host;if(!w||!s||!host)return[];const cam=s.cameras.main,canvas=s.game.canvas,r=canvas.getBoundingClientRect(),vw=cam?.worldView;if(!vw||!vw.width||!vw.height||typeof s.toWorld!=='function')return[];const W=w.world.width,H=w.world.height,cx=r.left+r.width/2,cy=r.top+r.height/2,tool=w.world.tool||{},id=tool.buildingId||'house',pts=[];for(let y=0;y<H;y++)for(let x=0;x<W;x++){const chk=w.canPlaceBuilding(id,x,y);if(!chk||!chk.ok)continue;const wp=s.toWorld(x,y);if(!wp)continue;const px=r.left+(wp.x-vw.x)/vw.width*r.width,py=r.top+(wp.y-vw.y)/vw.height*r.height;if(px<8||px>innerWidth-8||py<8||py>innerHeight-8)continue;const top=document.elementFromPoint(px,py);if(top?.closest?.('.r4-start-panel,.p1-catalog,.p1-placement-hud,button,ion-header,ion-tab-bar'))continue;if(top!==canvas&&top!==host&&!host.contains(top))continue;pts.push({px,py,d:(px-cx)*(px-cx)+(py-cy)*(py-cy)})}pts.sort((a,b)=>a.d-b.d);return pts.slice(0,40)}""")
 def manual_first_build(page):
     acquired=page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state;s.money=Math.max(5000,Number(s.money)||0);s.buildings=[...new Set([...(s.buildings||[]),'house','market','foundry','solar','park'])];C.phaserCity.catalog?.render?.();return C.phaserCity.catalog?.acquire?.('house')===true}""")
     if not acquired: fail(f"Could not acquire first building · {diagnostics(page)}")
@@ -51,7 +58,11 @@ def manual_first_build(page):
     page.wait_for_function("()=>{const p=document.querySelector('.p1-catalog');return !p||p.classList.contains('hidden')}",timeout=5000)
     page.wait_for_function("()=>{const c=Codeopolis.phaserCity?.game?.canvas,r=c?.getBoundingClientRect?.();return !!r&&r.width>100&&r.height>100}",timeout=5000)
     page.wait_for_timeout(350)
-    points=visible_map_points(page)
+    # Aim at real buildable land first; fall back to the blind grid so the test is
+    # never weaker than before.
+    aimed=aimed_map_points(page)
+    blind=visible_map_points(page)
+    points=aimed+blind
     if not points: fail(f"No uncovered live-map screen point available for first building · {diagnostics(page)}")
     for pt in points:
         page.mouse.click(pt['px'],pt['py'])
@@ -60,7 +71,7 @@ def manual_first_build(page):
             return
         except PlaywrightTimeoutError:
             continue
-    fail(f"Visible pointer taps did not place first building · points={points[:8]} · {diagnostics(page)}")
+    fail(f"Visible pointer taps did not place first building · aimed={len(aimed)} blind={len(blind)} points={points[:8]} · {diagnostics(page)}")
 def seed_operating_city(page):
     return page.evaluate("""()=>{const C=Codeopolis,s=C.game?.state||window.state,w=C.game?.world;s.money=Math.max(5000,Number(s.money)||0);s.population=Math.max(12,Number(s.population)||0);s.eraLevel=3;s.ageProgression=Object.assign({},s.ageProgression,{level:3});s.tech=[...new Set([...(s.tech||[]),'arrays','maps','search','energy','graphs'])];s.buildings=[...new Set([...(s.buildings||[]),'market','foundry','solar','park'])];const placements=[['market',8,2],['foundry',2,5],['solar',8,5],['park',5,2]],results=[];for(const[id,x,y]of placements){if(w.tile(x,y)?.buildingId)continue;results.push({id,...w.placeBuilding(id,x,y,{construction:false})})}for(let x=1;x<=10;x++)if(!w.tile(x,4)?.buildingId&&!w.tile(x,4)?.occupiedBy)w.setRoad(x,4,true);for(const[x,y]of[[2,3],[5,3],[8,3],[2,4],[5,4],[8,4]])if(!w.tile(x,y)?.buildingId&&!w.tile(x,y)?.occupiedBy)w.setRoad(x,y,true);w.world.selected=null;w.world.tool={mode:'inspect',buildingId:null};C.phaserCity?.catalog?.close?.();C.phaserCity?.manager?.close?.();C.phaserCity?.editing?.close?.();C.BuildingOperations?.sync?.(s,w);C.PopulationSimulation?.step?.(s,w,1);C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity')?.refresh?.();C.R14PlayerAcceptance?.sync?.();return{results,placed:w.placedBuildings().length,roads:w.roadTiles().length}}""")
 def run_viewport(browser,base_url,out_dir,name,width,height,deployed=False):
