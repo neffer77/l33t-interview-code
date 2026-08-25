@@ -20,7 +20,8 @@
       C.events.on('world:selected',s=>{this.selected=s;const t=s?this.world.selectedTile():null;if(s&&t&&!t.buildingId&&!t.occupiedBy&&!t.road&&this.world.world.tool?.mode==='inspect')this.open(s);else this.render()});
       C.events.on('world:tool',()=>this.render());C.events.on('learning:resource-earned',()=>this.render());C.events.on('learning:resources-spent',()=>this.render());C.events.on('learning-city:installed',()=>this.render());
       C.events.on('learning-city:visible-consequence',r=>this.showLearningFeedback(r));
-      C.events.on('world:building-placed',e=>{this.close();this.notify(`🏗️ ${e.def?.name||e.id} construction started`);setTimeout(()=>this.notify(`✅ ${e.def?.name||e.id} online`),4400)});
+      C.events.on('world:building-placed',e=>{this.close();this.notify(`🏗️ ${e.def?.name||e.id} construction started`)});
+      C.events.on('world:construction-complete',e=>{const d=this.world?.buildingDef?.(e.id)||{};this.notify(`${d.icon||'🏠'} ${d.name||e.id} built`);C.game?.audio?.complete?.()});
       C.events.on('placement:rejected',e=>this.notify(`⚠️ ${e.reason}`));
     }
     open(tile=null){if(tile)this.selected=tile;this.render();this.panel?.classList.remove('hidden');const pending=this.state?.learningCity?.pending;if(pending)this.showLearningFeedback(pending)}
