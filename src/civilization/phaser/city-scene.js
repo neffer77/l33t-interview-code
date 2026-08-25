@@ -17,7 +17,8 @@
     toWorld(x,y){return this.iso.toWorld(x,y,this.layout)}
     fromWorld(x,y){return this.iso.fromWorld(x,y,this.layout)}
     tilePolygon(x,y){return this.iso.corners(x,y,this.layout)}
-    update(time){if(time-this.lastConstructionTick<120)return;this.lastConstructionTick=time;let complete=false;for(const [k,ref] of this.buildingRefs){if(ref.progress>=1)continue;const [x,y]=k.split(',').map(Number),tile=this.world.tile(x,y);if(!tile?.buildingId){complete=true;continue}const p=this.world.constructionProgress(tile);ref.progress=p;ref.image?.setAlpha(.45+.55*p);if(p>=1){ref.dust?.destroy();ref.dust=null;complete=true}}if(complete)this.snapshot=this.adapter.snapshot()}
+    update(time){if(time-this.lastConstructionTick<120)return;this.lastConstructionTick=time;let complete=false;for(const [k,ref] of this.buildingRefs){if(ref.progress>=1)continue;const [x,y]=k.split(',').map(Number),tile=this.world.tile(x,y);if(!tile?.buildingId){complete=true;continue}const p=this.world.constructionProgress(tile);ref.progress=p;ref.image?.setAlpha(.45+.55*p);if(p>=1){ref.dust?.destroy();ref.dust=null;this.celebrateBuild(ref.image);complete=true}}if(complete)this.snapshot=this.adapter.snapshot()}
+    celebrateBuild(img){if(!img||!img.active||!this.tweens)return;const sx=img.scaleX||1,sy=img.scaleY||1;this.tweens.add({targets:img,scaleX:sx*1.22,scaleY:sy*1.22,duration:160,yoyo:true,ease:'Back.easeOut'});if(img.setTintFill){img.setTintFill(0xfff2b0);this.time?.delayedCall?.(120,()=>{if(img&&img.active)img.clearTint()})}}
     pixel(g,x,y,w,h,color,alpha=1){g.fillStyle(color,alpha);g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
     texture(key,draw,w=64,h=64){if(this.textures.exists(key))return;const g=this.make.graphics({x:0,y:0,add:false});draw(g);g.generateTexture(key,w,h);g.destroy()}
     diamond(g,color,alpha=1,y0=0){g.fillStyle(color,alpha);g.fillTriangle(32,y0,64,y0+16,32,y0+32);g.fillTriangle(32,y0,32,y0+32,0,y0+16)}
