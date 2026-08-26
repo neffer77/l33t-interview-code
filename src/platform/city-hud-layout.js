@@ -1,23 +1,28 @@
 // City HUD layout — stop the corner-anchored overlays from colliding.
 //
-// The Phaser city mounts ~20 independently absolute-positioned HUD panels into
-// the city host; several of them anchor to the same top-left / top-right spot
-// and pile on top of each other (and over the centered resource bar). This
-// manager reparents the informational panels into two vertical flex stacks that
-// clear the resource bar, so they flow instead of overlapping. Functional FAB
-// clusters (build/roads/zoning/campaign/camera) and the resource bar keep their
-// own positions — they don't collide and R14 acceptance depends on them.
-// Desktop/tablet-wide only; the Ionic mobile shell has its own city layout.
+// The Phaser city mounts ~20 independently absolute-positioned HUD panels and
+// action buttons into the city host. Each feature (phase1/2, r8..r13, phase44)
+// drops its own control at a hand-picked pixel offset with no shared layout, so
+// several land on the same corner and pile on top of each other — and because
+// the panels use translucent-glass backgrounds, the overlaps read as an
+// unreadable muddy band. This manager gives them an actual layout:
+//   - informational panels  -> two vertical flex stacks (top-left / top-right)
+//   - functional action FABs -> one horizontal "dock" (mobile) so they flow in
+//     a row and cannot overlap, inside a single opaque bar.
+// Runs on every width. Desktop keeps the two info stacks (its FABs already have
+// room); mobile additionally gets the bottom dock, which is where the collisions
+// were worst. R14 acceptance taps buildable tiles (not buttons), so relocating
+// the buttons into a dock keeps them tappable without blocking the map.
 (() => {
   'use strict';
-  // class -> corner. Order within a corner defines top-to-bottom stack order.
+
+  // Informational panels -> top-corner stacks. Order defines top-to-bottom.
   const ROUTES = new Map([
     ['r6-population-hud', 'tl'],
     ['p1-road-summary', 'tl'],
+    ['r12-custom-summary', 'tl'],
     ['phase44-tech-tree', 'tl'],
     ['phase44-adaptive', 'tl'],
-    ['r12-custom-fab', 'tl'],
-    ['phase44-diagnostics-button', 'tl'],
     ['p1-overlay-ui', 'tl'],
     ['phase44-learning-intelligence', 'tr'],
     ['phase44-specialization-panel', 'tr'],
@@ -27,9 +32,25 @@
     ['r8-zone-summary', 'tr'],
   ]);
 
+  // Functional action buttons -> the mobile dock, in this left-to-right order
+  // (primary actions first so they stay visible before the dock scrolls).
+  const DOCK_ORDER = [
+    'p1-build-fab', 'p1-road-fab', 'p2-district-fab', 'r8-zoning-fab',
+    'r13-campaign-fab', 'r9ef', 'p1-services-fab', 'p1-construction-fab',
+    'p1f-spec-fab', 'p1-undo-fab', 'r11-crisis-fab',
+    'phase44-diagnostics-button',
+  ];
+  // Customize (r12-custom-fab) is deliberately left at its native position and
+  // z-index (77). The player flow opens the Campaign panel and then clicks
+  // Customize while that panel is open; Customize only stays clickable because
+  // its native z-index sits above the panel. Docking it (or routing it into a
+  // rail, which drops it to the rail's lower z-index) puts it behind the panel
+  // and the panel intercepts the click. So it is excluded from all routing.
+
   function host() {
     return window.Codeopolis?.phaserCity?.host || document.getElementById('phaserCityHost');
   }
+  const isMobile = () => !matchMedia('(min-width: 900px)').matches;
 
   function ensureStyles() {
     if (document.getElementById('cityHudLayoutStyle')) return;
@@ -44,6 +65,28 @@
       .hud-stack>*{position:static!important;inset:auto!important;top:auto!important;left:auto!important;
         right:auto!important;bottom:auto!important;margin:0!important;transform:none!important;
         max-width:100%!important;pointer-events:auto}
+      /* Mobile action dock: one opaque scrollable row; buttons flow, never overlap. */
+      /* Wrap (never horizontal-scroll): every docked control must stay inside the
+         city host — the R14 audit fails a control whose rect leaves the host. */
+      .hud-dock{position:absolute;left:6px;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
+        z-index:88;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:5px;padding:6px;
+        max-height:calc(100% - 96px);overflow-y:auto;
+        background:#0b141dee;border:1px solid #26414d;border-radius:14px;box-shadow:0 6px 22px #0008;
+        scrollbar-width:none;-webkit-overflow-scrolling:touch}
+      .hud-dock::-webkit-scrollbar{display:none}
+      .hud-dock>*{position:static!important;inset:auto!important;top:auto!important;left:auto!important;
+        right:auto!important;bottom:auto!important;margin:0!important;transform:none!important;
+        flex:0 0 auto;white-space:nowrap;display:inline-flex!important;align-items:center;
+        box-shadow:none!important;animation:none!important}
+      .hud-dock:empty{display:none}
+      /* On mobile: keep the info rails compact so the map stays the hero.
+         Narrow columns, capped height with internal scroll, above the dock. */
+      @media (max-width:899px){
+        .hud-stack-tl,.hud-stack-tr{top:44px;max-width:44%;
+          max-height:min(46%,360px);gap:5px}
+        .hud-stack-tl{left:6px}
+        .hud-stack-tr{right:6px}
+      }
     `;
     document.head.appendChild(s);
   }
@@ -52,15 +95,20 @@
   function ensureStacks() {
     const h = host();
     if (!h) return null;
-    if (stacks && stacks.tl.parentNode === h && stacks.tr.parentNode === h) return stacks;
+    if (stacks && stacks.tl.parentNode === h && stacks.tr.parentNode === h &&
+        (!stacks.dock || stacks.dock.parentNode === h)) return stacks;
     ensureStyles();
-    const mk = corner => {
-      let el = h.querySelector(':scope > .hud-stack-' + corner);
-      if (!el) { el = document.createElement('div'); el.className = 'hud-stack hud-stack-' + corner; }
+    const mk = (cls, corner) => {
+      let el = h.querySelector(':scope > .' + cls + (corner ? '-' + corner : ''));
+      if (!el) { el = document.createElement('div'); el.className = cls + (corner ? ' ' + cls + '-' + corner : ''); }
       if (el.parentNode !== h) h.appendChild(el);
       return el;
     };
-    stacks = { tl: mk('tl'), tr: mk('tr') };
+    stacks = {
+      tl: mk('hud-stack', 'tl'),
+      tr: mk('hud-stack', 'tr'),
+      dock: isMobile() ? mk('hud-dock', '') : null,
+    };
     return stacks;
   }
 
@@ -71,12 +119,27 @@
     if (!h) return;
     const s = ensureStacks();
     if (!s) return;
+    // Informational panels -> corner stacks.
     ROUTES.forEach((corner, cls) => {
       const target = corner === 'tl' ? s.tl : s.tr;
       h.querySelectorAll(':scope > .' + cls).forEach(el => {
         if (el.parentNode !== target) target.appendChild(el);
       });
     });
+    // Functional action buttons -> the mobile dock, in priority order.
+    if (s.dock) {
+      DOCK_ORDER.forEach(cls => {
+        h.querySelectorAll(':scope > .' + cls).forEach(el => {
+          if (el.parentNode !== s.dock) s.dock.appendChild(el);
+        });
+      });
+      // Keep dock children in the declared order even if some arrive late.
+      const rank = el => {
+        for (let i = 0; i < DOCK_ORDER.length; i++) if (el.classList.contains(DOCK_ORDER[i])) return i;
+        return DOCK_ORDER.length;
+      };
+      [...s.dock.children].sort((a, b) => rank(a) - rank(b)).forEach(el => s.dock.appendChild(el));
+    }
   }
   function schedule() {
     if (queued) return;
@@ -85,10 +148,9 @@
   }
 
   function boot() {
-    if (!matchMedia('(min-width: 900px)').matches) return; // Ionic owns mobile city.
     schedule();
-    // Panels are created (and some re-appended) as the city boots and refreshes;
-    // re-assert their home when the host's children change.
+    // Panels/buttons are created (and some re-appended) as the city boots and
+    // refreshes; re-assert their home when the host's children change.
     new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
     addEventListener('resize', schedule, { passive: true });
     let passes = 0;

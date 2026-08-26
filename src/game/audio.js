@@ -10,6 +10,7 @@
     tone(freq,{start=0,duration=.12,type='sine',gain=.22,slide=0}={}){if(this.muted)return;this.unlock();if(!this.ctx||!this.master)return;const now=this.ctx.currentTime+start,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,now);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),now+duration);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(gain,now+.018);g.gain.exponentialRampToValueAtTime(.0001,now+duration);o.connect(g);g.connect(this.master);o.start(now);o.stop(now+duration+.03)}
     click(){this.tone(520,{duration:.05,gain:.08,type:'triangle'})}
     build(){this.tone(180,{duration:.08,gain:.13,type:'square',slide:80});this.tone(310,{start:.07,duration:.11,gain:.12,type:'triangle',slide:90})}
+    complete(){this.tone(660,{duration:.12,gain:.14,type:'triangle',slide:20});this.tone(988,{start:.09,duration:.2,gain:.13,type:'triangle',slide:16});this.haptic([12,26,14])}
     success(intensity=1){const notes=intensity>=3?[523,659,784,1047]:intensity>=2?[440,554,659,880]:[392,494,587];notes.forEach((f,i)=>this.tone(f,{start:i*.075,duration:.2,gain:.16+intensity*.02,type:'triangle',slide:12}));if(intensity>=3)this.tone(131,{start:.02,duration:.35,gain:.13,type:'sine',slide:30});this.haptic(intensity>=3?[20,40,25]:[18])}
     discovery(){[392,523,659,784,1047].forEach((f,i)=>this.tone(f,{start:i*.09,duration:.32,gain:.12,type:'sine',slide:20}));this.haptic([20,35,20,35,35])}
     haptic(pattern){try{navigator.vibrate?.(pattern)}catch{}}
