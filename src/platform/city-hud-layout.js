@@ -60,8 +60,11 @@
         right:auto!important;bottom:auto!important;margin:0!important;transform:none!important;
         max-width:100%!important;pointer-events:auto}
       /* Mobile action dock: one opaque scrollable row; buttons flow, never overlap. */
+      /* Wrap (never horizontal-scroll): every docked control must stay inside the
+         city host — the R14 audit fails a control whose rect leaves the host. */
       .hud-dock{position:absolute;left:6px;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
-        z-index:88;display:flex;align-items:center;gap:6px;padding:6px;overflow-x:auto;
+        z-index:88;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:5px;padding:6px;
+        max-height:calc(100% - 96px);overflow-y:auto;
         background:#0b141dee;border:1px solid #26414d;border-radius:14px;box-shadow:0 6px 22px #0008;
         scrollbar-width:none;-webkit-overflow-scrolling:touch}
       .hud-dock::-webkit-scrollbar{display:none}
