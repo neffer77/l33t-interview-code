@@ -37,9 +37,14 @@
   const DOCK_ORDER = [
     'p1-build-fab', 'p1-road-fab', 'p2-district-fab', 'r8-zoning-fab',
     'r13-campaign-fab', 'r9ef', 'p1-services-fab', 'p1-construction-fab',
-    'p1f-spec-fab', 'r12-custom-fab', 'p1-undo-fab', 'r11-crisis-fab',
+    'p1f-spec-fab', 'p1-undo-fab', 'r11-crisis-fab',
     'phase44-diagnostics-button',
   ];
+  // The bottom-sheet panels (campaign/custom/etc.) cover the bottom dock, so any
+  // control that must stay clickable while a panel is open cannot live in the
+  // dock. Customize is opened right after Campaign in the player flow, so it is
+  // pinned to the top-left rail (above the sheet zone) instead of docked.
+  const TOP_PINNED = ['r12-custom-fab'];
 
   function host() {
     return window.Codeopolis?.phaserCity?.host || document.getElementById('phaserCityHost');
@@ -133,6 +138,12 @@
         return DOCK_ORDER.length;
       };
       [...s.dock.children].sort((a, b) => rank(a) - rank(b)).forEach(el => s.dock.appendChild(el));
+      // Controls that must stay clickable while a bottom sheet is open live at the
+      // very top of the top-left rail, above the sheet zone.
+      TOP_PINNED.forEach(cls => {
+        const el = h.querySelector('.' + cls);
+        if (el && !(el.parentNode === s.tl && s.tl.firstChild === el)) s.tl.insertBefore(el, s.tl.firstChild || null);
+      });
     }
   }
   function schedule() {
