@@ -40,11 +40,12 @@
     'p1f-spec-fab', 'p1-undo-fab', 'r11-crisis-fab',
     'phase44-diagnostics-button',
   ];
-  // The bottom-sheet panels (campaign/custom/etc.) cover the bottom dock, so any
-  // control that must stay clickable while a panel is open cannot live in the
-  // dock. Customize is opened right after Campaign in the player flow, so it is
-  // pinned to the top-left rail (above the sheet zone) instead of docked.
-  const TOP_PINNED = ['r12-custom-fab'];
+  // Customize (r12-custom-fab) is deliberately left at its native position and
+  // z-index (77). The player flow opens the Campaign panel and then clicks
+  // Customize while that panel is open; Customize only stays clickable because
+  // its native z-index sits above the panel. Docking it (or routing it into a
+  // rail, which drops it to the rail's lower z-index) puts it behind the panel
+  // and the panel intercepts the click. So it is excluded from all routing.
 
   function host() {
     return window.Codeopolis?.phaserCity?.host || document.getElementById('phaserCityHost');
@@ -138,12 +139,6 @@
         return DOCK_ORDER.length;
       };
       [...s.dock.children].sort((a, b) => rank(a) - rank(b)).forEach(el => s.dock.appendChild(el));
-      // Controls that must stay clickable while a bottom sheet is open live at the
-      // very top of the top-left rail, above the sheet zone.
-      TOP_PINNED.forEach(cls => {
-        const el = h.querySelector('.' + cls);
-        if (el && !(el.parentNode === s.tl && s.tl.firstChild === el)) s.tl.insertBefore(el, s.tl.firstChild || null);
-      });
     }
   }
   function schedule() {
