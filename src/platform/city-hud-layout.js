@@ -11,8 +11,10 @@
 //     a row and cannot overlap, inside a single opaque bar.
 // Runs on every width. Desktop keeps the two info stacks (its FABs already have
 // room); mobile additionally gets the bottom dock, which is where the collisions
-// were worst. R14 acceptance taps buildable tiles (not buttons), so relocating
-// the buttons into a dock keeps them tappable without blocking the map.
+// were worst. On mobile the info rails are collapsed by default (a "📊 Info"
+// toggle in the dock reveals them) so the map is the hero instead of being
+// flanked by ~10 telemetry panels. R14 acceptance taps buildable tiles (not
+// buttons), so relocating the buttons into a dock keeps them tappable.
 (() => {
   'use strict';
 
@@ -79,13 +81,18 @@
         flex:0 0 auto;white-space:nowrap;display:inline-flex!important;align-items:center;
         box-shadow:none!important;animation:none!important}
       .hud-dock:empty{display:none}
-      /* On mobile: keep the info rails compact so the map stays the hero.
-         Narrow columns, capped height with internal scroll, above the dock. */
+      /* Collapse toggle (lives in the dock on mobile). */
+      .hud-rail-toggle{min-width:40px;min-height:40px;padding:8px 12px;border:1px solid #35566a;
+        border-radius:999px;background:#16303f;color:#cfe7d8;font:800 12px system-ui;cursor:pointer}
+      /* On mobile: keep the info rails compact, and collapse them by default so
+         the map is the hero. The dock's "Info" toggle reveals them on demand. */
       @media (max-width:899px){
         .hud-stack-tl,.hud-stack-tr{top:44px;max-width:44%;
           max-height:min(46%,360px);gap:5px}
         .hud-stack-tl{left:6px}
         .hud-stack-tr{right:6px}
+        .phaser-city-host:not(.hud-rails-open) .hud-stack-tl,
+        .phaser-city-host:not(.hud-rails-open) .hud-stack-tr{display:none}
       }
     `;
     document.head.appendChild(s);
@@ -139,6 +146,27 @@
         return DOCK_ORDER.length;
       };
       [...s.dock.children].sort((a, b) => rank(a) - rank(b)).forEach(el => s.dock.appendChild(el));
+      // Rail collapse toggle: only meaningful once the info rails have content.
+      // Kept as the last dock item so the primary actions stay leftmost.
+      const railCount = s.tl.children.length + s.tr.children.length;
+      if (railCount > 0) {
+        if (!s.toggle) {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'hud-rail-toggle';
+          b.setAttribute('aria-expanded', 'false');
+          b.textContent = '📊 Info';
+          b.addEventListener('click', () => {
+            const open = h.classList.toggle('hud-rails-open');
+            b.setAttribute('aria-expanded', String(open));
+            b.textContent = open ? '✕ Hide' : '📊 Info';
+          });
+          s.toggle = b;
+        }
+        s.dock.appendChild(s.toggle); // keep it last
+      } else if (s.toggle && s.toggle.parentNode) {
+        s.toggle.remove();
+      }
     }
   }
   function schedule() {
