@@ -25,8 +25,28 @@
     generatePixelTextures(){
       const A=this.assets;
       for(const [name,p] of Object.entries(A.terrain))for(let v=0;v<(A.variants[name]||1);v++)for(let f=0;f<(name==='water'?2:1);f++)this.texture(`terrain-${name}-${v}-${f}`,g=>{this.diamond(g,p.base);g.lineStyle(1,p.edge,.72);g.strokePoints([{x:32,y:0},{x:63,y:16},{x:32,y:31},{x:1,y:16}],true);const dots=name==='grass'?7:name==='dirt'?9:name==='forest'?6:4;for(let i=0;i<dots;i++){const xx=13+((i*17+v*9)%38),yy=8+((i*7+v*5)%15);this.pixel(g,xx,yy,(i+v)%3===0?3:2,1,i%2?p.light:p.dark,.72)}if(name==='water'){for(let i=0;i<3;i++){const yy=8+i*6+f*2,xx=17+((i*13+v*7)%18);this.pixel(g,xx,yy,13,1,p.light,.8)}}if(name==='grass'&&v%2===0){this.pixel(g,20+v,10,2,3,p.accent,.75);this.pixel(g,42-v,20,2,2,p.dark,.6)}},64,32);
-      for(let v=0;v<5;v++)this.texture(`tree-${v}`,g=>{const P=A.props;this.pixel(g,21,42,7,21,P.treeTrunk);this.pixel(g,15,18,20,29,P.treeDark);this.pixel(g,11,23,28,19,P.treeMid);this.pixel(g,16+v%4,12,20,18,P.treeMid);this.pixel(g,20+v%3,9,13,13,P.treeLight);this.pixel(g,12,31,8,7,P.treeLight,.75);this.pixel(g,31,25,7,6,P.treeDark,.8)},48,64);
-      for(let mask=0;mask<16;mask++)this.texture(`road-${mask}`,g=>{const R=A.roads;this.diamond(g,R.grassEdge,.9);g.lineStyle(13,R.edge,1);g.beginPath();g.moveTo(32,16);if(mask&1)g.lineTo(32,0);if(mask&2){g.moveTo(32,16);g.lineTo(64,16)}if(mask&4){g.moveTo(32,16);g.lineTo(32,32)}if(mask&8){g.moveTo(32,16);g.lineTo(0,16)}g.strokePath();g.lineStyle(9,R.base,1);g.beginPath();g.moveTo(32,16);if(mask&1)g.lineTo(32,0);if(mask&2){g.moveTo(32,16);g.lineTo(64,16)}if(mask&4){g.moveTo(32,16);g.lineTo(32,32)}if(mask&8){g.moveTo(32,16);g.lineTo(0,16)}g.strokePath();g.fillStyle(R.base,1);g.fillCircle(32,16,7);this.pixel(g,30,15,4,2,R.line,.45)},64,32);
+      for(let v=0;v<5;v++)this.texture(`tree-${v}`,g=>{const P=A.props;
+        g.fillStyle(0x24352e,.30);g.fillEllipse(24,57,26,8);// ground shadow so it sits on the tile
+        this.pixel(g,22,40,5,17,P.treeTrunk);this.pixel(g,25,40,2,17,P.treeDark,.5);// trunk + shaded side
+        // rounded canopy silhouette built from tapering rows (not stacked boxes)
+        const rows=[[6,19,10],[10,15,18],[14,11,26],[18,9,30],[23,9,30],[28,11,26],[33,15,18],[37,19,10]];
+        for(const row of rows)this.pixel(g,row[1],row[0],row[2],5,P.treeMid);
+        this.pixel(g,24,20,16,16,P.treeDark,.5);this.pixel(g,26,32,12,6,P.treeDark,.45);// shadow on lower-right
+        this.pixel(g,12+v%3,10,12,10,P.treeLight,.9);this.pixel(g,16,15,7,6,P.treeLight,.7);// highlight upper-left
+        this.pixel(g,14+(v*5)%16,22,3,3,P.treeDark,.5);this.pixel(g,21+(v*3)%10,29,3,3,P.treeDark,.45);// foliage clumps, varied per tree
+      },48,64);
+      for(let mask=0;mask<16;mask++)this.texture(`road-${mask}`,g=>{const R=A.roads;
+        // Ribbon roads: no full-diamond fill (that made every cell a tan blob that read
+        // as a muddy trail). Draw only spokes toward connected neighbours so the terrain
+        // shows through around a paved surface with a dark curb and a dashed centreline.
+        const dirs=[[1,32,0],[2,64,16],[4,32,32],[8,0,16]];
+        const spoke=(w,color,alpha)=>{g.lineStyle(w,color,alpha);for(const d of dirs){if(mask&d[0]){g.beginPath();g.moveTo(32,16);g.lineTo(d[1],d[2]);g.strokePath()}}};
+        spoke(16,R.edge,1);   // curb (dark outer)
+        spoke(11,R.base,1);   // paved surface
+        spoke(4,R.dark,.5);   // subtle crown shading
+        g.fillStyle(R.edge,1);g.fillCircle(32,16,mask?8:9);g.fillStyle(R.base,1);g.fillCircle(32,16,mask?5.5:6);// junction hub / isolated pad
+        for(const d of dirs){if(!(mask&d[0]))continue;for(let t=.34;t<.9;t+=.28)this.pixel(g,Math.round(32+(d[1]-32)*t)-1,Math.round(16+(d[2]-16)*t)-1,2,2,R.line,.7)}// dashed centreline
+      },64,32);
       for(const [district,colors] of Object.entries(A.buildings))this.texture(`building-${district}`,g=>{const [wall,shadow,roof]=colors;g.fillStyle(0x25342e,.34);g.fillEllipse(32,58,43,11);this.pixel(g,12,31,20,24,shadow);this.pixel(g,32,31,20,24,wall);g.fillStyle(roof,1);g.fillTriangle(8,31,32,16,32,39);g.fillTriangle(32,16,56,31,32,39);this.pixel(g,18,39,6,7,0xd7e9d7,.8);this.pixel(g,39,38,6,7,0xf0d58b,.85);this.pixel(g,27,45,8,11,0x513d38);this.pixel(g,16,27,4,7,0xf1d18b,.65)},64,64);
       this.texture('building-unknown',g=>{g.fillStyle(0x26352e,.35);g.fillEllipse(32,58,43,11);this.pixel(g,13,31,19,24,0x575d67);this.pixel(g,32,31,19,24,0x747c86);g.fillStyle(0xa49a86,1);g.fillTriangle(8,31,32,17,32,39);g.fillTriangle(32,17,56,31,32,39)},64,64);
     }
