@@ -26,5 +26,27 @@
   function spend(state,cost={},source='economy'){const r=ensure(state),need=normalizeCost(cost),short=missing(state,need);if(Object.keys(short).length)return{ok:false,missing:short};for(const [id,n] of Object.entries(need))r.balances[id]-=n;C.events?.emit?.('learning:resources-spent',{cost:need,source,balances:{...r.balances}});return{ok:true,cost:need,balances:{...r.balances}}}
   function refund(state,cost={},rate=1,source='refund'){const r=ensure(state),items=normalizeCost(cost),returned={};for(const [id,n] of Object.entries(items)){const amount=Math.max(0,Math.round(n*Math.max(0,Number(rate)||0))),room=r.capacity[id]-r.balances[id],grant=Math.min(amount,room);if(grant){r.balances[id]+=grant;returned[id]=grant}}C.events?.emit?.('learning:resources-refunded',{resources:returned,source,balances:{...r.balances}});return returned}
   function install(state){if(!state)return false;ensure(state);if(install._done)return true;install._done=true;if(!C.CodingRewardPipeline)for(const evt of ['challenge:solved','problem:solved','coding:solved'])C.events?.on?.(evt,payload=>{const s=C.game?.state||window.state||state;if(s)award(s,payload||{})});return true}
-  C.ConceptResources={RESOURCE_DEFS,DISTRICT_MAP,DEFAULT_CAP,conceptKey,rewardFor,ensure,award,balances,capacities,normalizeCost,missing,canSpend,spend,refund,install};
+  // Pixel resource icons — original 16x16 art in each resource's signature
+  // district hue (from Phase44Assets.districtGround), with a 1px dark outline so
+  // they read at HUD size and share the world's pixel vocabulary instead of
+  // clashing OS emoji. Returned as an inline SVG string for the DOM HUD.
+  const ICON_INK='#1a130d';
+  const ICON_PAL={
+    materials:{d:'#7a4a28',b:'#c27b4a',l:'#e2a366'},
+    trade:{d:'#7d6323',b:'#c7a554',l:'#ecd488'},
+    research:{d:'#2f5f4f',b:'#579b82',l:'#86c6a9',x:'#bfe2e8'},
+    compute:{d:'#653f5b',b:'#aa6d94',l:'#cf9cbb'},
+    infrastructure:{d:'#3a5574',b:'#6788ae',l:'#cfe0f0'},
+    stability:{d:'#5f3f3b',b:'#a16d66',l:'#c79b95'}
+  };
+  const ICON_CELLS={
+    materials:[[2,9,12,4,'d'],[2,9,12,1,'l'],[3,10,3,2,'b'],[7,10,3,2,'b'],[11,10,2,2,'b'],[3,4,10,4,'d'],[3,4,10,1,'l'],[4,5,3,2,'b'],[8,5,3,2,'b']],
+    trade:[[3,10,9,3,'d'],[3,10,9,1,'l'],[2,5,10,5,'b'],[2,5,10,1,'l'],[2,9,10,1,'d'],[6,6,3,3,'d'],[6,6,2,1,'l']],
+    research:[[6,2,4,2,'l'],[6,4,4,3,'d'],[4,7,8,6,'d'],[4,7,8,1,'l'],[5,9,6,3,'b'],[5,9,3,1,'l'],[7,3,2,1,'x']],
+    compute:[[3,3,10,10,'d'],[4,4,8,8,'b'],[6,6,4,4,'d'],[6,6,4,1,'l'],[1,5,2,1,'d'],[1,8,2,1,'d'],[13,5,2,1,'d'],[13,8,2,1,'d'],[5,1,1,2,'d'],[8,1,1,2,'d'],[5,13,1,2,'d'],[8,13,1,2,'d']],
+    infrastructure:[[8,2,3,5,'d'],[7,2,3,5,'b'],[5,7,5,3,'b'],[5,7,5,1,'l'],[5,7,4,7,'d'],[5,7,3,7,'b'],[7,8,2,4,'l']],
+    stability:[[3,2,10,4,'d'],[3,2,10,7,'b'],[3,2,10,1,'l'],[4,9,8,3,'d'],[6,12,4,2,'d'],[5,4,6,2,'l'],[7,6,2,4,'l']]
+  };
+  function iconSVG(id,size=18){const cells=ICON_CELLS[id],pal=ICON_PAL[id];if(!cells||!pal)return'';let out=`<svg class="p2-res-ico" viewBox="0 0 16 16" width="${size}" height="${size}" shape-rendering="crispEdges" aria-hidden="true" focusable="false">`;for(const c of cells)out+=`<rect x="${c[0]-1}" y="${c[1]-1}" width="${c[2]+2}" height="${c[3]+2}" fill="${ICON_INK}" opacity=".85"/>`;for(const c of cells)out+=`<rect x="${c[0]}" y="${c[1]}" width="${c[2]}" height="${c[3]}" fill="${pal[c[4]]||pal.b}"/>`;return out+'</svg>'}
+  C.ConceptResources={RESOURCE_DEFS,DISTRICT_MAP,DEFAULT_CAP,conceptKey,rewardFor,ensure,award,balances,capacities,normalizeCost,missing,canSpend,spend,refund,install,iconSVG};
 })(window.Codeopolis);
