@@ -55,10 +55,24 @@ def wait_baseline_challenge(page):
             return
     fail(f"Challenge editor never reached a stable post-bootstrap DOM baseline: {snapshot_state(page)}")
 
+def wait_surface_settled(page,kind,timeout=6000):
+    # After a live resize the mobile shell remounts the editor and re-hosts the
+    # Phaser canvas asynchronously, so the surface can momentarily measure 0x0
+    # before the reframe controller finishes its relayout. Poll until the
+    # relevant audit reports pass (or time out and let the strict assertions
+    # below report the real state). This keeps the checks strict while absorbing
+    # CI relayout jitter that a fixed post-resize wait cannot.
+    probe="Codeopolis.R14PlayerAcceptance?.codingAudit?.()" if kind=='challenge' else "Codeopolis.R14PlayerAcceptance?.audit?.()"
+    try:
+        page.wait_for_function(f"()=>{{const a={probe};return !!a&&a.pass===true}}",timeout=timeout)
+    except PlaywrightTimeoutError:
+        pass
+
 def resize_step(page,out_dir,label,width,height,kind,sentinel):
     page.set_viewport_size({'width':width,'height':height})
     page.evaluate("()=>window.Codeopolis?.LiveReframe?.schedule?.(true)")
     wait_shell_mode(page,width)
+    wait_surface_settled(page,kind)
     state=snapshot_state(page)
     if state['mode']!=('mobile' if mobile_for(width) else 'desktop'):
         fail(f"{label}: runtime mode mismatch: {state}")
