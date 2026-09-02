@@ -4,7 +4,7 @@
     constructor(){super({key:'CodeopolisCity'});this.tile=64;this.drag=null;this.pinch=null;this.ambient=[];this.buildingRefs=new Map();this.lastConstructionTick=0}
     init(data){this.adapter=data.adapter;this.world=data.world;this.snapshot=this.adapter.snapshot()}
     create(){
-      this.assets=C.Phase44Assets;this.iso=C.PixelWorldProjection;this.layout=this.iso.layout(this.snapshot.width,this.snapshot.height);this.tile=this.layout.tileW;this.generatePixelTextures();this.cameras.main.setBackgroundColor('#243d3b');this.renderWorld();
+      this.assets=C.Phase44Assets;this.iso=C.PixelWorldProjection;this.layout=this.iso.layout(this.snapshot.width,this.snapshot.height);this.tile=this.layout.tileW;this.generatePixelTextures();this.cameras.main.setBackgroundColor('#3f5138');this.renderWorld();
       const cam=this.cameras.main,s=this.world.world.camera||{};if(s.projection==='iso-pixel-v1'){cam.setZoom(Math.max(.55,Math.min(2.5,s.zoom||1)));cam.scrollX=-(s.panX||0);cam.scrollY=-(s.panY||0)}else{const fit=Math.max(.62,Math.min(1.05,(this.scale.width||390)/(this.layout.worldWidth*.92)));cam.setZoom(fit);cam.centerOn(this.layout.worldWidth/2,this.layout.worldHeight/2);s.projection='iso-pixel-v1';this.persistCamera()}
       cam.setBounds(0,0,this.layout.worldWidth,this.layout.worldHeight,true);this.input.addPointer(2);
       this.input.on('pointerdown',p=>{const down=this.input.manager.pointers.filter(q=>q.isDown);if(down.length>=2){this.beginPinch(down[0],down[1]);this.drag=null;return}this.drag={id:p.id,x:p.x,y:p.y,sx:cam.scrollX,sy:cam.scrollY,moved:false}});
@@ -24,7 +24,11 @@
     diamond(g,color,alpha=1,y0=0){g.fillStyle(color,alpha);g.fillTriangle(32,y0,64,y0+16,32,y0+32);g.fillTriangle(32,y0,32,y0+32,0,y0+16)}
     generatePixelTextures(){
       const A=this.assets;
-      for(const [name,p] of Object.entries(A.terrain))for(let v=0;v<(A.variants[name]||1);v++)for(let f=0;f<(name==='water'?2:1);f++)this.texture(`terrain-${name}-${v}-${f}`,g=>{this.diamond(g,p.base);g.lineStyle(1,p.edge,.72);g.strokePoints([{x:32,y:0},{x:63,y:16},{x:32,y:31},{x:1,y:16}],true);const dots=name==='grass'?7:name==='dirt'?9:name==='forest'?6:4;for(let i=0;i<dots;i++){const xx=13+((i*17+v*9)%38),yy=8+((i*7+v*5)%15);this.pixel(g,xx,yy,(i+v)%3===0?3:2,1,i%2?p.light:p.dark,.72)}if(name==='water'){for(let i=0;i<3;i++){const yy=8+i*6+f*2,xx=17+((i*13+v*7)%18);this.pixel(g,xx,yy,13,1,p.light,.8)}}if(name==='grass'&&v%2===0){this.pixel(g,20+v,10,2,3,p.accent,.75);this.pixel(g,42-v,20,2,2,p.dark,.6)}},64,32);
+      for(const [name,p] of Object.entries(A.terrain))for(let v=0;v<(A.variants[name]||1);v++)for(let f=0;f<(name==='water'?2:1);f++)this.texture(`terrain-${name}-${v}-${f}`,g=>{const base=(p.patch&&p.patch[v%p.patch.length])||p.base;this.diamond(g,base);
+        // No hard grid outline on land — the tonal patchwork carries the tiling.
+        // Water keeps a soft rim so the pond reads as recessed.
+        if(name==='water'){g.lineStyle(1,p.edge,.5);g.strokePoints([{x:32,y:0},{x:63,y:16},{x:32,y:31},{x:1,y:16}],true)}
+        const dots=name==='grass'?7:name==='dirt'?9:name==='forest'?6:4;for(let i=0;i<dots;i++){const xx=13+((i*17+v*9)%38),yy=8+((i*7+v*5)%15);this.pixel(g,xx,yy,(i+v)%3===0?3:2,1,i%2?p.light:p.dark,.5)}if(name==='water'){for(let i=0;i<3;i++){const yy=8+i*6+f*2,xx=17+((i*13+v*7)%18);this.pixel(g,xx,yy,13,1,p.light,.8)}}if(name==='grass'&&v%2===0){this.pixel(g,20+v,10,2,3,p.accent,.7);this.pixel(g,42-v,20,2,2,p.dark,.5)}},64,32);
       for(let v=0;v<5;v++)this.texture(`tree-${v}`,g=>{const P=A.props;
         g.fillStyle(0x24352e,.30);g.fillEllipse(24,57,26,8);// ground shadow so it sits on the tile
         this.pixel(g,22,40,5,17,P.treeTrunk);this.pixel(g,25,40,2,17,P.treeDark,.5);// trunk + shaded side
@@ -33,6 +37,7 @@
         for(const row of rows)this.pixel(g,row[1],row[0],row[2],5,P.treeMid);
         this.pixel(g,24,20,16,16,P.treeDark,.5);this.pixel(g,26,32,12,6,P.treeDark,.45);// shadow on lower-right
         this.pixel(g,12+v%3,10,12,10,P.treeLight,.9);this.pixel(g,16,15,7,6,P.treeLight,.7);// highlight upper-left
+        if(P.treeRim!==undefined){this.pixel(g,11,9,3,2,P.treeRim,.95);this.pixel(g,9,12,2,5,P.treeRim,.8);this.pixel(g,13,7,4,2,P.treeRim,.7)}// warm sunlit rim
         this.pixel(g,14+(v*5)%16,22,3,3,P.treeDark,.5);this.pixel(g,21+(v*3)%10,29,3,3,P.treeDark,.45);// foliage clumps, varied per tree
       },48,64);
       for(let mask=0;mask<16;mask++)this.texture(`road-${mask}`,g=>{const R=A.roads;
@@ -45,9 +50,13 @@
         spoke(11,R.base,1);   // paved surface
         spoke(4,R.dark,.5);   // subtle crown shading
         g.fillStyle(R.edge,1);g.fillCircle(32,16,mask?8:9);g.fillStyle(R.base,1);g.fillCircle(32,16,mask?5.5:6);// junction hub / isolated pad
-        for(const d of dirs){if(!(mask&d[0]))continue;for(let t=.34;t<.9;t+=.28)this.pixel(g,Math.round(32+(d[1]-32)*t)-1,Math.round(16+(d[2]-16)*t)-1,2,2,R.line,.7)}// dashed centreline
+        let ci=0;for(const d of dirs){if(!(mask&d[0]))continue;for(let t=.28;t<.92;t+=.2)this.pixel(g,Math.round(32+(d[1]-32)*t)-1,Math.round(16+(d[2]-16)*t)-1,2,2,(ci++%2)?R.line:R.dark,.75)}// warm cobble specks
       },64,32);
-      for(const [district,colors] of Object.entries(A.buildings))this.texture(`building-${district}`,g=>{const [wall,shadow,roof]=colors;g.fillStyle(0x25342e,.34);g.fillEllipse(32,58,43,11);this.pixel(g,12,31,20,24,shadow);this.pixel(g,32,31,20,24,wall);g.fillStyle(roof,1);g.fillTriangle(8,31,32,16,32,39);g.fillTriangle(32,16,56,31,32,39);this.pixel(g,18,39,6,7,0xd7e9d7,.8);this.pixel(g,39,38,6,7,0xf0d58b,.85);this.pixel(g,27,45,8,11,0x513d38);this.pixel(g,16,27,4,7,0xf1d18b,.65)},64,64);
+      for(const [district,colors] of Object.entries(A.buildings))this.texture(`building-${district}`,g=>{const [wall,shadow,roof]=colors,W=A.windows;g.fillStyle(0x25342e,.34);g.fillEllipse(32,58,43,11);this.pixel(g,12,31,20,24,shadow);this.pixel(g,32,31,20,24,wall);g.fillStyle(roof,1);g.fillTriangle(8,31,32,16,32,39);g.fillTriangle(32,16,56,31,32,39);
+        this.pixel(g,42,19,5,10,shadow);this.pixel(g,42,19,5,3,roof);// chimney on the ridge
+        this.pixel(g,16,37,10,11,W.glow,.45);this.pixel(g,37,36,10,11,W.glow,.45);// warm glow halos
+        this.pixel(g,18,39,6,7,W.lit,1);this.pixel(g,39,38,6,7,W.lit,1);// lit window panes
+        this.pixel(g,27,44,8,12,W.door,1);this.pixel(g,29,46,4,8,W.lit,.8)},64,64);// lit doorway
       this.texture('building-unknown',g=>{g.fillStyle(0x26352e,.35);g.fillEllipse(32,58,43,11);this.pixel(g,13,31,19,24,0x575d67);this.pixel(g,32,31,19,24,0x747c86);g.fillStyle(0xa49a86,1);g.fillTriangle(8,31,32,17,32,39);g.fillTriangle(32,17,56,31,32,39)},64,64);
     }
     beginPinch(a,b){const c=this.cameras.main,dx=b.x-a.x,dy=b.y-a.y;this.pinch={distance:Math.max(1,Math.hypot(dx,dy)),zoom:c.zoom,midX:(a.x+b.x)/2,midY:(a.y+b.y)/2,scrollX:c.scrollX,scrollY:c.scrollY}}
