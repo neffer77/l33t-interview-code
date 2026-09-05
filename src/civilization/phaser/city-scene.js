@@ -55,7 +55,7 @@
         // Ribbon roads: no full-diamond fill (that made every cell a tan blob that read
         // as a muddy trail). Draw only spokes toward connected neighbours so the terrain
         // shows through around a paved surface with a dark curb and a dashed centreline.
-        const dirs=[[1,32,0],[2,64,16],[4,32,32],[8,0,16]];
+        /* Aim each spoke at the MIDPOINT OF THE SHARED EDGE, not the diamond's corner. roadMask sets bit 1 for neighbour (x,y-1), 2 for (x+1,y), 4 for (x,y+1) and 8 for (x-1,y); in screen space those sit across the tile's four edges, whose midpoints are (48,8) (48,24) (16,24) and (16,8). The old targets were the four vertices — 17.9px off each — so a spoke stopped at a corner while the neighbour's opposing spoke stopped at its own corner ~36px away. They never met; the road only looked joined because a 16px stroke is fat enough to smear over the gap, which is what made the paths read lumpy. Ending on the shared edge makes adjacent tiles join exactly. */const dirs=[[1,48,8],[2,48,24],[4,16,24],[8,16,8]];
         const spoke=(w,color,alpha)=>{g.lineStyle(w,color,alpha);for(const d of dirs){if(mask&d[0]){g.beginPath();g.moveTo(32,16);g.lineTo(d[1],d[2]);g.strokePath()}}};
         spoke(16,R.edge,1);   // curb (dark outer)
         spoke(11,R.base,1);   // paved surface
