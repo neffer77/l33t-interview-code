@@ -60,7 +60,7 @@
         spoke(16,R.edge,1);   // curb (dark outer)
         spoke(11,R.base,1);   // paved surface
         spoke(4,R.dark,.5);   // subtle crown shading
-        g.fillStyle(R.edge,1);g.fillCircle(32,16,mask?8:9);g.fillStyle(R.base,1);g.fillCircle(32,16,mask?5.5:6);// junction hub / isolated pad
+        /* A dark disc with a lighter disc inside is a RING, and stamping one at every road tile centre printed a concentric ring the length of every road. The spokes are 16px and 11px wide and all radiate from the centre, so they already cover it — the pad is only needed for an isolated tile with no spokes at all. */if(!mask){g.fillStyle(R.edge,1);g.fillCircle(32,16,9);g.fillStyle(R.base,1);g.fillCircle(32,16,6)}// junction hub / isolated pad
         let ci=0;for(const d of dirs){if(!(mask&d[0]))continue;for(let t=.28;t<.92;t+=.2)this.pixel(g,Math.round(32+(d[1]-32)*t)-1,Math.round(16+(d[2]-16)*t)-1,2,2,(ci++%2)?R.line:R.dark,.75)}// warm cobble specks
       },64,32);
       for(const [district,colors] of Object.entries(A.buildings))this.texture(`building-${district}`,g=>{const [wall,shadow,roof]=colors,W=A.windows;g.fillStyle(0x25342e,.34);g.fillEllipse(32,58,43,11);this.pixel(g,12,31,20,24,shadow);this.pixel(g,32,31,20,24,wall);g.fillStyle(roof,1);g.fillTriangle(8,31,32,16,32,39);g.fillTriangle(32,16,56,31,32,39);
