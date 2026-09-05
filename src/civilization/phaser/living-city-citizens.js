@@ -1,15 +1,20 @@
 (function(C){'use strict';const VERSION=8,MAX_CITIZENS=18,SCHEDULE_URL='src/civilization/phaser/citizen-schedules.js',AMBIENT_URL='src/civilization/phaser/ambient-city-activity.js',REACTION_URL='src/civilization/phaser/city-event-reactions.js',IDENTITY_URL='src/civilization/phaser/citizen-identities.js',DIALOGUE_URL='src/civilization/phaser/citizen-dialogue-mentorship.js';function load(src,flag,ready,onload){if(ready())return onload?.();if(typeof document==='undefined')return;const old=document.querySelector(`script[data-${flag}="1"]`);if(old)return;const s=document.createElement('script');s.src=src;s.dataset[flag.replace(/-([a-z])/g,(_,x)=>x.toUpperCase())]='1';s.onload=()=>onload?.();document.head.appendChild(s)}function ensureSchedules(){load(SCHEDULE_URL,'p5b-schedules',()=>!!C.CitizenSchedules,refresh)}function ensureAmbient(){load(AMBIENT_URL,'p5c-ambient',()=>!!C.AmbientCityActivity,()=>{C.AmbientCityActivity?.install?.();refresh()})}function ensureReactions(){load(REACTION_URL,'p5d-reactions',()=>!!C.CityEventReactions,()=>C.CityEventReactions?.install?.())}function ensureIdentities(){load(IDENTITY_URL,'p5e-identities',()=>!!C.CitizenIdentities,refresh)}function ensureDialogue(){load(DIALOGUE_URL,'p5f-dialogue',()=>!!C.CitizenDialogueMentorship,refresh)}// Citizens were coloured dots. When the sprite atlas is loaded, draw the real
 // villager art instead, cycling the six role families so a crowd reads as a mix
 // of people. Falls straight back to the dot when no atlas frame is available.
-const ATLAS='city',ROLE_ART=['builder','scholar','merchant','gardener','keeper','messenger'];
+const ATLAS='city',BADGE_PX=11,ROLE_ART=['builder','scholar','merchant','gardener','keeper','messenger'];
 // The badge and nameplate used fixed +-offsets tuned for a 3px dot. A villager
 // sprite is many times taller, so those offsets printed the badge across its
 // chest. Derive both from the sprite's real height, keeping the old numbers for
 // the circle fallback.
 /* The activity badge was a black text box with an ASCII glyph floating over every citizen — 18 of them sitting on the art. The atlas now carries a real pixel icon per activity, so use that and drop the box. Falls back to the glyph when no atlas frame matches. */
-const ACTIVITY_ART={resting:'rest',commuting:'commute',socializing:'socialize',work:'work',craft:'craft',market:'market',study:'study',research:'research',compute:'compute',maintain:'maintain',operate:'operate',inspect:'inspect',respond:'respond'};
+const ACTIVITY_ART={walking:'commute',resting:'rest',commuting:'commute',socializing:'socialize',work:'work',craft:'craft',market:'market',study:'study',research:'research',compute:'compute',maintain:'maintain',operate:'operate',inspect:'inspect',respond:'respond'};
 function activityFrame(scene,a){const frames=scene?.art?.(),k=ACTIVITY_ART[a];return frames&&k&&frames.has(k)?k:null}
-function makeBadge(scene,x,y,activity,depth){const fr=activityFrame(scene,activity);return fr?scene.add.image(x,y,ATLAS,fr).setOrigin(.5,1).setDepth(depth).setScale(.5):scene.add.text(x,y,activityGlyph(activity),{fontFamily:'monospace',fontSize:'8px',color:'#ffffff',backgroundColor:'#14212999',padding:{x:1,y:0}}).setOrigin(.5,1).setDepth(depth)}
+function makeBadge(scene,x,y,activity,depth){const fr=activityFrame(scene,activity);
+  if(!fr)return scene.add.text(x,y,activityGlyph(activity),{fontFamily:'monospace',fontSize:'8px',color:'#ffffff',backgroundColor:'#14212999',padding:{x:1,y:0}}).setOrigin(.5,1).setDepth(depth);
+  /* Fixed pixel height, not a scale factor — atlas frames differ in size, so a
+     flat .5 made some badges taller than the citizen carrying them. */
+  const img=scene.add.image(x,y,ATLAS,fr).setOrigin(.5,1).setDepth(depth);
+  return img.setScale(BADGE_PX/Math.max(1,img.height))}
 function updateBadge(scene,badge,activity){if(!badge)return;const fr=activityFrame(scene,activity);if(fr&&badge.setFrame)badge.setFrame(fr);else badge.setText?.(activityGlyph(activity))}
 function labelY(sprite){const h=sprite?.displayHeight||0;return h>8?{top:sprite.y-h*.92,bot:sprite.y+h*.14}:{top:sprite.y-8,bot:sprite.y+7}}
 function citizenArt(scene,i){const frames=scene?.art?.();if(!frames||!frames.size)return null;const fam=ROLE_ART[i%ROLE_ART.length];for(let n=1;n<=8;n++){const k=`cit-${fam}-${n}`;if(frames.has(k))return k}return null}
