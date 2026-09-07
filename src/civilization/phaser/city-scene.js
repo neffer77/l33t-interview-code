@@ -16,8 +16,16 @@
     sprite(x,y,key){return this.hasArt(key)?this.add.image(x,y,ATLAS,key):this.add.image(x,y,key)}
     create(){
       this.assets=C.Phase44Assets;this.iso=C.PixelWorldProjection;this.layout=this.iso.layout(this.snapshot.width,this.snapshot.height);this.tile=this.layout.tileW;this.generatePixelTextures();this.cameras.main.setBackgroundColor('#3f5138');this.renderWorld();
-      const cam=this.cameras.main,s=this.world.world.camera||{};if(s.projection==='iso-pixel-v1'){cam.setZoom(Math.max(.55,Math.min(2.5,s.zoom||1)));cam.scrollX=-(s.panX||0);cam.scrollY=-(s.panY||0)}else{const fit=Math.max(.62,Math.min(1.05,(this.scale.width||390)/(this.layout.worldWidth*.92)));cam.setZoom(fit);cam.centerOn(this.layout.worldWidth/2,this.layout.worldHeight/2);s.projection='iso-pixel-v1';this.persistCamera()}
-      cam.setBounds(0,0,this.layout.worldWidth,this.layout.worldHeight,true);this.input.addPointer(2);
+      const cam=this.cameras.main,s=this.world.world.camera||{};if(s.projection==='iso-pixel-v1'){cam.setZoom(Math.max(.55,Math.min(2.5,s.zoom||1)));cam.scrollX=-(s.panX||0);cam.scrollY=-(s.panY||0)}else{/* Fit on both axes. Width still leads, because losing columns off the side
+     costs the player more than empty ground does now that the fill covers it,
+     and the grid's own padding absorbs the overhang. Height is here to stop a
+     short viewport cropping rows off the top and bottom, which measuring width
+     alone did. The upper clamp mattered more than either: at 1.05 it, not the
+     viewport, decided the zoom on every screen wider than the map, leaving the
+     city a small island in the middle of a desktop. */
+        const vw=this.scale.width||390,vh=this.scale.height||844,
+          fit=Math.max(.62,Math.min(1.9,Math.min(vw/(this.layout.worldWidth*.92),vh/this.layout.worldHeight)));cam.setZoom(fit);cam.centerOn(this.layout.worldWidth/2,this.layout.worldHeight/2);s.projection='iso-pixel-v1';this.persistCamera()}
+      cam.setBounds(0,0,this.layout.worldWidth,this.layout.worldHeight,true);this.renderSurroundDecor();this.input.addPointer(2);
       this.input.on('pointerdown',p=>{const down=this.input.manager.pointers.filter(q=>q.isDown);if(down.length>=2){this.beginPinch(down[0],down[1]);this.drag=null;return}this.drag={id:p.id,x:p.x,y:p.y,sx:cam.scrollX,sy:cam.scrollY,moved:false}});
       this.input.on('pointermove',p=>{const down=this.input.manager.pointers.filter(q=>q.isDown);if(down.length>=2){this.updatePinch(down[0],down[1]);return}if(!p.isDown||!this.drag||this.drag.id!==p.id||this.pinch)return;const dx=p.x-this.drag.x,dy=p.y-this.drag.y;if(Math.abs(dx)+Math.abs(dy)>7)this.drag.moved=true;cam.scrollX=this.drag.sx-dx/cam.zoom;cam.scrollY=this.drag.sy-dy/cam.zoom;this.persistCamera()});
       this.input.on('pointerup',p=>{const still=this.input.manager.pointers.filter(q=>q.isDown&&q.id!==p.id);if(this.pinch){if(still.length<2)this.pinch=null;this.drag=null;return}if(this.drag&&this.drag.id===p.id&&!this.drag.moved)this.selectPointer(p);this.drag=null});
@@ -28,7 +36,23 @@
     toWorld(x,y){return this.iso.toWorld(x,y,this.layout)}
     fromWorld(x,y){return this.iso.fromWorld(x,y,this.layout)}
     tilePolygon(x,y){return this.iso.corners(x,y,this.layout)}
-    update(time){if(time-this.lastConstructionTick<120)return;this.lastConstructionTick=time;let complete=false;for(const [k,ref] of this.buildingRefs){if(ref.progress>=1)continue;const [x,y]=k.split(',').map(Number),tile=this.world.tile(x,y);if(!tile?.buildingId){complete=true;continue}const p=this.world.constructionProgress(tile);ref.progress=p;ref.image?.setAlpha(.45+.55*p);if(p>=1){ref.dust?.destroy();ref.dust=null;this.celebrateBuild(ref.image);complete=true}}if(complete)this.snapshot=this.adapter.snapshot()}
+    /* Keep the map framed. When the view is bigger than the world, Phaser's
+       bounds clamp pins the world to the bounds' top-left rather than centring
+       it — that is what left the city at the top of a phone with empty ground
+       below it. Its clamp runs in the camera's preRender, after this, so it
+       cannot simply be corrected afterwards; it has to be off. The bounds
+       themselves are still set from the layout (and reset on world expansion by
+       the mobile camera and customization modules), so anything reading them
+       still sees the true world size — only the clamping is ours. */
+    frameCamera(){const cam=this.cameras.main,l=this.layout;if(!cam||!l||!cam.width||!cam.height)return;
+      cam.useBounds=false;const z=cam.zoom||1;
+      cam.scrollX=this.frameAxis(cam.scrollX,cam.width,cam.width/z,l.worldWidth);
+      cam.scrollY=this.frameAxis(cam.scrollY,cam.height,cam.height/z,l.worldHeight)}
+    /* scrollX/Y is the unzoomed top-left, so the visible edge sits half the
+       difference between view and shown width inside it. */
+    frameAxis(scroll,view,shown,world){const k=(shown-view)/2;
+      return shown>=world?world/2-view/2:Math.min(Math.max(scroll,k),world-shown+k)}
+    update(time){this.frameCamera();if(time-this.lastConstructionTick<120)return;this.lastConstructionTick=time;let complete=false;for(const [k,ref] of this.buildingRefs){if(ref.progress>=1)continue;const [x,y]=k.split(',').map(Number),tile=this.world.tile(x,y);if(!tile?.buildingId){complete=true;continue}const p=this.world.constructionProgress(tile);ref.progress=p;ref.image?.setAlpha(.45+.55*p);if(p>=1){ref.dust?.destroy();ref.dust=null;this.celebrateBuild(ref.image);complete=true}}if(complete)this.snapshot=this.adapter.snapshot()}
     celebrateBuild(img){if(!img||!img.active||!this.tweens)return;const sx=img.scaleX||1,sy=img.scaleY||1;this.tweens.add({targets:img,scaleX:sx*1.22,scaleY:sy*1.22,duration:160,yoyo:true,ease:'Back.easeOut'});if(img.setTintFill){img.setTintFill(0xfff2b0);this.time?.delayedCall?.(120,()=>{if(img&&img.active)img.clearTint()})}if(!this.add)return;const dep=(img.depth||0)+50,bx=img.x,by=img.y+2;if(this.add.ellipse){const ring=this.add.ellipse(bx,by,34,17,0xffe6a3,0);if(ring.setStrokeStyle){ring.setStrokeStyle(2.5,0xffe6a3,.95);ring.setDepth(dep);this.tweens.add({targets:ring,scaleX:2.6,scaleY:2.6,alpha:0,duration:520,ease:'Cubic.easeOut',onComplete:()=>ring.destroy&&ring.destroy()})}for(let i=0;i<6;i++){const a=(-Math.PI/2)+(i-2.5)*0.5,d=14+Math.random()*10,sp=this.add.ellipse(bx,by-6,3,3,0xfff2b0,.95);if(!sp)break;sp.setDepth(dep+1);this.tweens.add({targets:sp,x:bx+Math.cos(a)*d,y:(by-6)+Math.sin(a)*d-10,alpha:0,scaleX:.2,scaleY:.2,duration:430+Math.random()*160,ease:'Cubic.easeOut',onComplete:()=>sp.destroy&&sp.destroy()})}}}
     pixel(g,x,y,w,h,color,alpha=1){g.fillStyle(color,alpha);g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
     texture(key,draw,w=64,h=64){if(this.hasArt(key)||this.textures.exists(key))return;const g=this.make.graphics({x:0,y:0,add:false});draw(g);g.generateTexture(key,w,h);g.destroy()}
@@ -80,9 +104,43 @@
        fallback above still runs when it does not, so the game renders with no
        assets/ folder at all. */
     decor(p,d,key){if(!this.hasArt(key))return null;const s=this.sprite(p.x,p.y+9,key).setOrigin(.5,.92).setDepth(d+3);this.ambient.push(s);return s}
-    refresh(){this.snapshot=this.adapter.snapshot();this.layout=this.iso.layout(this.snapshot.width,this.snapshot.height);this.tweens.killTweensOf(this.ambient);this.ambient=[];this.buildingRefs.clear();this.children.removeAll(true);this.renderWorld()}
+    refresh(){this.snapshot=this.adapter.snapshot();this.layout=this.iso.layout(this.snapshot.width,this.snapshot.height);this.tweens.killTweensOf(this.ambient);this.ambient=[];this.buildingRefs.clear();this.children.removeAll(true);this.renderWorld();this.renderSurroundDecor()}
+    /* The playable grid is a wide, short diamond and no viewport shares that
+       shape, so framing it always leaves empty space around it. Fill that with
+       the same grass lattice, behind everything, so the city sits in a
+       landscape rather than a void. It is one tiled sprite, never interactive,
+       and selectPointer already ignores taps outside the grid. */
+    renderSurrounds(){
+      if(!this.hasArt('terrain-surround'))return null;
+      const l=this.layout,W=4096,H=3072;
+      /* (-2048,-1536) is a whole number of lattice steps from the grid origin,
+         so the fill lands on the same lattice as the playable cells. */
+      return this.add.tileSprite(l.originX-2048,l.originY-1536,W,H,ATLAS,'terrain-surround').setOrigin(0,0).setDepth(-1e5)}
+    /* Scenery over the fill, so the land beyond the grid reads as countryside
+       rather than as an unfinished map. Thickens with distance from the grid,
+       which frames the city. Runs after the camera is placed, because how much
+       ground is on screen depends on the zoom; worldView is not current until
+       the next render, so the visible rect is derived from the camera instead. */
+    renderSurroundDecor(){
+      if(!this.hasArt('terrain-surround'))return;
+      const cam=this.cameras.main,z=cam.zoom||1,s=this.snapshot;
+      if(!(cam.width>0&&cam.height>0))return;
+      const vw=cam.width/z,vh=cam.height/z,mx=cam.scrollX+cam.width/2,my=cam.scrollY+cam.height/2;
+      const corners=[[mx-vw/2,my-vh/2],[mx+vw/2,my-vh/2],[mx-vw/2,my+vh/2],[mx+vw/2,my+vh/2]].map(c=>this.fromWorld(c[0],c[1]));
+      const xs=corners.map(c=>c.x),ys=corners.map(c=>c.y);
+      const x0=Math.min(...xs)-2,x1=Math.max(...xs)+2,y0=Math.min(...ys)-2,y1=Math.max(...ys)+2;
+      /* Thin the scatter out when a wide viewport puts a lot of ground on
+         screen, so the sprite count stays flat instead of tracking the area. */
+      const cells=Math.max(1,(x1-x0+1)*(y1-y0+1)),budget=380,thin=Math.min(1,budget/(cells*.25));
+      for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+        if(x>=0&&y>=0&&x<s.width&&y<s.height)continue;
+        const edge=Math.max(x<0?-x:x-s.width+1,y<0?-y:y-s.height+1,1),roll=this.variant(x,y,1000,53)/1000;
+        if(roll>=Math.min(.30,.03+edge*.028)*thin)continue;
+        const key=roll<.018?'surround-rocks':`surround-tree-${this.variant(x,y,5,9)}`;
+        if(!this.hasArt(key))continue;
+        this.ambient.push(this.sprite(this.toWorld(x,y).x,this.toWorld(x,y).y+9,key).setOrigin(.5,.92).setDepth(this.iso.depth(x,y,8)))}}
     renderWorld(){
-      const s=this.snapshot;
+      const s=this.snapshot;this.renderSurrounds();
       for(let y=0;y<s.height;y++)for(let x=0;x<s.width;x++){const terrain=s.terrain[y][x],v=this.variant(x,y,this.assets.variants[terrain]||1),p=this.toWorld(x,y),key=`terrain-${terrain}-${v}-${terrain==='water'?this.variant(x,y,2,33):0}`,img=this.sprite(p.x,p.y,key).setDepth(this.iso.depth(x,y,0));if(terrain==='water')this.tweens.add({targets:img,alpha:{from:.88,to:1},duration:1300+v*120,yoyo:true,repeat:-1});const occupied=!!this.world.tile(x,y)?.buildingId||!!this.world.tile(x,y)?.road;this.decorateTile(x,y,terrain,occupied)}
       for(const r of s.roads){const p=this.toWorld(r.x,r.y);this.sprite(p.x,p.y,`road-${r.mask||0}`).setDepth(this.iso.depth(r.x,r.y,4))}
       for(const b of s.buildings){const p=this.toWorld(b.x,b.y),key=b.known&&this.assets.buildings[b.district]?`building-${b.district}`:b.known?'building-core':'building-unknown',img=this.sprite(p.x,p.y+9,key).setOrigin(.5,.86).setDepth(this.iso.depth(b.x,b.y,30));img.setAlpha(.45+.55*b.progress);let dust=null;if(b.progress<1){dust=this.add.rectangle(p.x,p.y-2,24,6,0xd9b26e,.4).setDepth(this.iso.depth(b.x,b.y,40));this.tweens.add({targets:dust,y:dust.y-11,alpha:0,duration:850,repeat:-1})}this.buildingRefs.set(`${b.x},${b.y}`,{image:img,dust,progress:b.progress,id:b.id})}

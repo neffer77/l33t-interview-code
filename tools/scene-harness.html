@@ -39,7 +39,7 @@ for(const [x,y] of [[1,1],[3,1],[6,1],[10,1],[1,2],[6,2],[10,2],[1,4],[3,4],[6,4
 const snapshot={width:W,height:H,terrain,roads,buildings,selected:null,
   districts:null,age:{level:1},technologies:[],services:null,construction:[],population:0};
 const world={tile:()=>({}),inside:(x,y)=>x>=0&&y>=0&&x<W&&y<H,select:()=>{},
-  constructionProgress:()=>1,world:{width:W,height:H,camera:{zoom:1,panX:0,panY:0,projection:'iso-pixel-v1'}}};
+  constructionProgress:()=>1,world:{width:W,height:H,camera:{}  /* no projection: exercises the first-run camera fit */}};
 const adapter={snapshot:()=>snapshot};
 const game=new Phaser.Game({type:Phaser.CANVAS,parent:'host',backgroundColor:'#3f5138',
   // the scene loads 'assets/city.png' relative to the page, and this page is a level down
