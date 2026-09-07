@@ -1,0 +1,52 @@
+<!doctype html><meta charset="utf-8"><title>Codeopolis scene harness</title>
+<!--
+  Renders PhaserCityScene on its own, against a stub world, so the map can be
+  looked at without booting the whole game (which needs the Python runtime).
+
+      python3 -m http.server 4180        # from the repo root
+      open http://127.0.0.1:4180/tools/scene-harness.html
+
+  Paths below are relative to the repo root, so serve from there, not from
+  tools/. This is a development aid: nothing in the shipped site loads it.
+-->
+<style>html,body{margin:0;background:#3f5138}#host{width:100vw;height:100vh}</style>
+<div id="host"></div>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+<script>window.Codeopolis={};</script>
+<script src="../src/core/namespace.js"></script>
+<script src="../src/civilization/phaser/city-assets.js"></script>
+<script src="../src/civilization/phaser/city-scene.js"></script>
+<script>
+const C=window.Codeopolis;
+const W=12,H=8;
+const ROADX=new Set([4,8]), ROADY=new Set([3]);
+const isroad=(x,y)=>ROADX.has(x)||ROADY.has(y);
+const terrain=[];
+for(let y=0;y<H;y++){const row=[];for(let x=0;x<W;x++){
+  row.push(y===7?'water':((x*7+y*3)%13===0?'forest':((x*5+y*7)%17===0?'dirt':'grass')));}terrain.push(row);}
+const roads=[];
+for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(!isroad(x,y))continue;
+  let m=0; if(isroad(x,y-1))m|=1; if(isroad(x+1,y))m|=2; if(isroad(x,y+1))m|=4; if(isroad(x-1,y))m|=8;
+  roads.push({x,y,mask:m});}
+const DISTRICTS=['core','arrays','hash','structures','search','graphs','dp','materials','trade','research','compute','infrastructure','stability'];
+const buildings=[];
+let di=0;
+for(const [x,y] of [[1,1],[3,1],[6,1],[10,1],[1,2],[6,2],[10,2],[1,4],[3,4],[6,4],[10,4],[1,5],[6,5]]){
+  buildings.push({x,y,id:'b'+di,name:'B'+di,icon:'🏠',district:DISTRICTS[di%DISTRICTS.length],
+    curriculumDistrict:'materials',districtMaturity:null,known:true,footprint:{w:1,h:1},level:1,
+    ageLevel:1,visualVariant:'standard',effects:null,adjacency:null,service:null,progress:1,
+    building:true,specialization:null,queued:false}); di++;}
+const snapshot={width:W,height:H,terrain,roads,buildings,selected:null,
+  districts:null,age:{level:1},technologies:[],services:null,construction:[],population:0};
+const world={tile:()=>({}),inside:(x,y)=>x>=0&&y>=0&&x<W&&y<H,select:()=>{},
+  constructionProgress:()=>1,world:{width:W,height:H,camera:{zoom:1,panX:0,panY:0,projection:'iso-pixel-v1'}}};
+const adapter={snapshot:()=>snapshot};
+const game=new Phaser.Game({type:Phaser.CANVAS,parent:'host',backgroundColor:'#3f5138',
+  // the scene loads 'assets/city.png' relative to the page, and this page is a level down
+  loader:{baseURL:'../'},
+  pixelArt:true,roundPixels:true,antialias:false,
+  scale:{mode:Phaser.Scale.RESIZE,width:'100%',height:'100%'},scene:[]});
+game.scene.add('CodeopolisCity',C.PhaserCityScene,false);
+game.scene.start('CodeopolisCity',{adapter,world});
+window.__harness={game};
+</script>
