@@ -34,9 +34,11 @@ BANDS = [
     ('house', 198, 322, ['thatch', 'timber', 'twostorey', 'shop', 'stilt', 'shed']),
     ('mark',  320, 442, ['townhall', 'windmill', 'watermill', 'market', 'forge', 'well']),
 ]
-# The bottom row's canopies touch, so its eight cells are taken on a fixed pitch.
+# The bottom row sits on eight evenly pitched grass tiles, but the canopies above
+# them overhang into their neighbours, so its cells need a per-row split.
 PROPS = ['tree-oak', 'tree-pine', 'tree-birch', 'tree-blossom',
          'prop-rocks', 'prop-hay', 'prop-lamp', 'prop-flowers']
+PROP_BAND = 440
 
 # key -> (origin fraction y, y offset the scene draws at)
 GEOMETRY = {'terrain': (0.5, 0), 'road': (0.5, 0), 'tree': (0.92, 9), 'building': (0.86, 9)}
@@ -171,31 +173,36 @@ def measure(im):
 def to_tile(im, mirror=False):
     """Scale so the top face is TILE_W wide and drop the slab under it.
 
-    Returns (image, diamond centre y). The slab has to go: it is drawn below the
-    tile's top face, so on a tessellated map every neighbour shows its dark side
-    wall as a grid line.
+    Returns (image, diamond centre x, diamond centre y). The slab has to go: it
+    is drawn below the tile's top face, so on a tessellated map every neighbour
+    shows its dark side wall as a grid line.
     """
     if mirror:
         im = im.transpose(Image.FLIP_LEFT_RIGHT)
-    base_w, _, waist = measure(im)
+    base_w, cx, waist = measure(im)
     im = im.crop((0, 0, im.width, min(im.height, waist + base_w // 4 - 1)))
     s = TILE_W / base_w
     im = im.resize((max(1, round(im.width * s)), max(1, round(im.height * s))), Image.LANCZOS)
-    return im, waist * s
+    return im, cx * s, waist * s
 
 
-def frame(im, centre_y, kind):
+def frame(im, centre_x, centre_y, kind):
     """Pad so the scene's origin puts the diamond centre on the cell centre.
 
     The scene draws with origin (0.5, fy) at p.y + off, so a diamond centre at
-    local y `dc` lands on p.y only when dc == fy * height - off.
+    local (cx, cy) lands on the cell only when cx is the frame's midpoint and
+    cy == fy * height - off. Sprites that lean over their tile — the cherry
+    canopy reaching past its own grass — are not centred on their base, so the
+    padding has to be worked out per side rather than split evenly.
     """
     fy, off = GEOMETRY[kind]
     top = (fy * im.height - off - centre_y) / (1 - fy) if fy < 1 else 0
     top, bottom = (int(round(top)), 0) if top >= 0 else (0, int(round((centre_y + off) / fy - im.height)))
-    w = max(im.width, TILE_W)
+    reach = max(centre_x, im.width - centre_x, TILE_W / 2)
+    left = int(round(reach - centre_x))
+    w = left + im.width + int(round(reach - (im.width - centre_x)))
     out = Image.new('RGBA', (w, im.height + top + max(0, bottom)), (0, 0, 0, 0))
-    out.alpha_composite(im, ((w - im.width) // 2, top))
+    out.alpha_composite(im, (left, top))
     return out
 
 
@@ -219,33 +226,98 @@ def road_masks(pieces):
     swaps the isometric axes and yields the x-axis street, and the corners, tees
     and crossings are those two composited a wedge at a time.
     """
-    straight_y, cy_y = pieces['y']
-    straight_x, cy_x = pieces['x']
-    cross, cy_c = pieces['cross']
-    stub, cy_s = pieces['stub']
+    straight_y, cx_y, cy_y = pieces['y']
+    straight_x, cx_x, cy_x = pieces['x']
+    cross, cx_c, cy_c = pieces['cross']
+    stub, cx_s, cy_s = pieces['stub']
     bits = {1: 'y-', 2: 'x+', 4: 'y+', 8: 'x-'}
     out = {}
     for mask in range(16):
         if mask == 0:
-            out[0] = (stub, cy_s); continue
+            out[0] = (stub, cx_s, cy_s); continue
         if mask == 5:
-            out[5] = (straight_y, cy_y); continue
+            out[5] = (straight_y, cx_y, cy_y); continue
         if mask == 10:
-            out[10] = (straight_x, cy_x); continue
+            out[10] = (straight_x, cx_x, cy_x); continue
         if mask == 15:
-            out[15] = (cross, cy_c); continue
-        # Composite onto the widest piece so every wedge has room.
-        base = max((straight_y, straight_x), key=lambda p: p.height)
-        canvas = Image.new('RGBA', base.size, (0, 0, 0, 0))
-        cy = cy_y if base is straight_y else cy_x
+            out[15] = (cross, cx_c, cy_c); continue
+        # Composite onto the taller piece so every wedge has room.
+        taller = straight_y if straight_y.height >= straight_x.height else straight_x
+        canvas = Image.new('RGBA', taller.size, (0, 0, 0, 0))
+        cx, cy = (cx_y, cy_y) if taller is straight_y else (cx_x, cy_x)
         for bit, direction in bits.items():
             if not mask & bit:
                 continue
-            src, scy = (straight_y, cy_y) if direction in ('y-', 'y+') else (straight_x, cy_x)
+            src, scx, scy = ((straight_y, cx_y, cy_y) if direction in ('y-', 'y+')
+                             else (straight_x, cx_x, cy_x))
             layer = Image.new('RGBA', canvas.size, (0, 0, 0, 0))
-            layer.alpha_composite(src, ((canvas.width - src.width) // 2, int(round(cy - scy))))
-            canvas.paste(layer, (0, 0), quadrant(canvas.size, (canvas.width / 2, cy), direction))
-        out[mask] = (canvas, cy)
+            layer.alpha_composite(src, (int(round(cx - scx)), int(round(cy - scy))))
+            canvas.paste(layer, (0, 0), quadrant(canvas.size, (cx, cy), direction))
+        out[mask] = (canvas, cx, cy)
+    return out
+
+
+def prop_cells(sheet, y0, count):
+    """Slice the props row, following the art rather than the tile pitch.
+
+    The grass tiles below are evenly spaced and separated, but the cherry
+    canopy reaches over the birch's tile and the boulder leans over the cherry's,
+    so cutting on the tile pitch takes a slice out of one sprite and staples it
+    onto its neighbour. Tile rows are therefore cut on the tile boundary and the
+    rows above them on the emptiest column between the two sprites.
+    """
+    W, H = sheet.size
+    px = sheet.load()
+    low = [sum(1 for y in range(H - 34, H) if not is_backdrop(px[x, y])) for x in range(W)]
+    runs, start = [], None
+    for x, c in enumerate(low + [0]):
+        if c > 0 and start is None:
+            start = x
+        elif c == 0 and start is not None:
+            if x - start > 15:
+                runs.append((start, x - 1))
+            start = None
+    if len(runs) != count:
+        print(f'props: found {len(runs)} tiles, expected {count}', file=sys.stderr)
+        return None
+
+    # Where each tile's top face begins, so rows above it are canopy.
+    tops = []
+    for L, R in runs:
+        rows = {}
+        for y in range(y0, H):
+            xs = [x for x in range(L, R + 1) if not is_backdrop(px[x, y])]
+            if xs:
+                rows[y] = (xs[0], xs[-1])
+        bot = max(rows)
+        waist = max((y for y in rows if y >= bot - 52), key=lambda y: rows[y][1] - rows[y][0])
+        width = rows[waist][1] - rows[waist][0] + 1
+        tops.append(int(waist - width / 4))
+
+    # Between each pair, the column carrying the least art above the tiles.
+    seams = []
+    for i in range(len(runs) - 1):
+        edge = (runs[i][1] + runs[i + 1][0]) // 2
+        ceiling = min(tops[i], tops[i + 1])
+        window = range(max(0, edge - 30), min(W, edge + 31))
+        seams.append(min(window, key=lambda x: (
+            sum(1 for y in range(y0, ceiling) if not is_backdrop(px[x, y])), abs(x - edge))))
+
+    out = []
+    for i, (L, R) in enumerate(runs):
+        left = seams[i - 1] + 1 if i else max(0, L - 30)
+        right = seams[i] if i < len(seams) else min(W - 1, R + 30)
+        cell = Image.new('RGBA', (right - left + 1, H - y0), (0, 0, 0, 0))
+        q = cell.load()
+        for y in range(y0, H):
+            canopy = y < tops[i]
+            lo, hi = (left, right) if canopy else (L, R)
+            for x in range(max(lo, left), min(hi, right) + 1):
+                c = px[x, y]
+                if not is_backdrop(c):
+                    q[x - left, y - y0] = c + (255,)
+        cell = decast(defringe(cell.crop(cell.getbbox())))
+        out.append(cell.crop(cell.getbbox()))
     return out
 
 
@@ -275,40 +347,42 @@ def main():
             return 1
         for (x0, x1), name in zip(runs, names):
             parts[f'{prefix}-{name}'] = cut(sheet, x0, x1, y0, y1)
-    pitch = W // len(PROPS)
-    for i, name in enumerate(PROPS):
-        parts[name] = cut(sheet, i * pitch, i * pitch + pitch - 1, 440, H)
+    cells = prop_cells(sheet, PROP_BAND, len(PROPS))
+    if cells is None:
+        return 1
+    for name, cell in zip(PROPS, cells):
+        parts[name] = cell
 
     os.makedirs(a.out, exist_ok=True)
     written = 0
 
-    def write(key, im, centre_y, kind):
+    def write(key, im, centre_x, centre_y, kind):
         nonlocal written
-        frame(im, centre_y, kind).save(os.path.join(a.out, f'{key}.png'))
+        frame(im, centre_x, centre_y, kind).save(os.path.join(a.out, f'{key}.png'))
         written += 1
 
     for terrain, variants in TERRAIN.items():
         for v, src in enumerate(variants):
-            im, cy = to_tile(parts[f'tile-{src}'])
+            im, cx, cy = to_tile(parts[f'tile-{src}'])
             for f in range(2 if terrain == 'water' else 1):
-                write(f'terrain-{terrain}-{v}-{f}', im, cy, 'terrain')
+                write(f'terrain-{terrain}-{v}-{f}', im, cx, cy, 'terrain')
 
     straights = {'y': to_tile(parts['road-a']), 'x': to_tile(parts['road-a'], mirror=True),
                  'cross': to_tile(parts['road-e']), 'stub': to_tile(parts['road-f'])}
-    for mask, (im, cy) in road_masks(straights).items():
-        write(f'road-{mask}', im, cy, 'road')
+    for mask, (im, cx, cy) in road_masks(straights).items():
+        write(f'road-{mask}', im, cx, cy, 'road')
 
     for district, src in BUILDINGS.items():
-        im, cy = to_tile(parts[src])
-        write(f'building-{district}', im, cy, 'building')
+        im, cx, cy = to_tile(parts[src])
+        write(f'building-{district}', im, cx, cy, 'building')
 
     for v, src in enumerate(TREES):
-        im, cy = to_tile(parts[src])
-        write(f'tree-{v}', im, cy, 'tree')
+        im, cx, cy = to_tile(parts[src])
+        write(f'tree-{v}', im, cx, cy, 'tree')
 
     for src in DECOR:
-        im, cy = to_tile(parts[src])
-        write(src, im, cy, 'tree')
+        im, cx, cy = to_tile(parts[src])
+        write(src, im, cx, cy, 'tree')
 
     print(f'{written} frames -> {a.out}')
     return 0
