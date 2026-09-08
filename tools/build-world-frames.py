@@ -63,6 +63,8 @@ BUILDINGS = {
     'trade': 'mark-market',         'research': 'mark-well',
     'compute': 'house-shed',        'infrastructure': 'house-twostorey',
     'stability': 'house-timber',    'unknown': 'house-shed',
+    # Outbuilding for plots larger than one cell, which have no sprite of their own.
+    'annex': 'house-shed',
 }
 TREES = ['tree-oak', 'tree-pine', 'tree-birch', 'tree-blossom', 'tree-oak']
 # Scatter the scene already draws, as art rather than as coloured rectangles.
