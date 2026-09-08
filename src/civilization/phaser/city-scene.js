@@ -143,13 +143,16 @@
        above the tile centre — roughly the same one — so a building with more
        than one status printed them on top of each other, and on top of its own
        roof. Each call returns the next free slot above the sprite's actual top,
-       so they stack in the order they are drawn and never cover the art. */
-    badgeY(b,slot=11){
+       so they stack in the order they are drawn and never cover the art.
+       Callers reserve their own height rather than a slot number, because the
+       markers are not all one line tall. Keyed by cell, so an overlay anchored
+       on a tile rather than a building shares the column with it. */
+    badgeY(b,height=11){
       const key=`${b.x},${b.y}`,ref=this.buildingRefs?.get?.(key),img=ref?.image;
       const top=img?img.y-img.displayHeight*(img.originY??.86):this.toWorld(b.x,b.y).y-34;
       if(!this.badgeSlots)this.badgeSlots=new Map();
-      const used=this.badgeSlots.get(key)||0;this.badgeSlots.set(key,used+1);
-      return top-6-used*slot}
+      const used=this.badgeSlots.get(key)||0;this.badgeSlots.set(key,used+height);
+      return top-6-used}
     renderWorld(){
       const s=this.snapshot;this.badgeSlots=new Map();this.renderSurrounds();
       for(let y=0;y<s.height;y++)for(let x=0;x<s.width;x++){const terrain=s.terrain[y][x],v=this.variant(x,y,this.assets.variants[terrain]||1),p=this.toWorld(x,y),key=`terrain-${terrain}-${v}-${terrain==='water'?this.variant(x,y,2,33):0}`,img=this.sprite(p.x,p.y,key).setDepth(this.iso.depth(x,y,0));if(terrain==='water')this.tweens.add({targets:img,alpha:{from:.88,to:1},duration:1300+v*120,yoyo:true,repeat:-1});const occupied=!!this.world.tile(x,y)?.buildingId||!!this.world.tile(x,y)?.road;this.decorateTile(x,y,terrain,occupied)}

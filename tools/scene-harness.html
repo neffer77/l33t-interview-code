@@ -21,6 +21,7 @@
 <script src="../src/civilization/phaser/supply-chain-visuals.js"></script>
 <script src="../src/civilization/phaser/operation-visuals.js"></script>
 <script src="../src/civilization/phaser/service-visuals.js"></script>
+<script src="../src/civilization/phaser/interview-campaign-visuals.js"></script>
 <script>
 const C=window.Codeopolis;
 const W=12,H=8;
@@ -69,6 +70,11 @@ window.state={};
 C.game={state:window.state,world};
 C.CitySupplyModel={ensure:()=>({overlay:true})};
 C.ConceptResources={RESOURCE_DEFS:{materials:{icon:'📦'}}};
+/* Campaign markers are the tallest thing that hangs over a building; two of the
+   troubled cells carry one so the stacking is exercised against the badges. */
+C.InterviewCityCampaign={snapshot:()=>({needs:[
+  {title:'Materials',icon:'📦',origin:{x:1,y:1}},
+  {title:'Housing',icon:'🏠',origin:{x:6,y:2}}],active:null,endless:false})};
 const adapter={snapshot:()=>snapshot};
 const game=new Phaser.Game({type:Phaser.CANVAS,parent:'host',backgroundColor:'#3f5138',
   // the scene loads 'assets/city.png' relative to the page, and this page is a level down
@@ -80,6 +86,7 @@ C.BuildingTierVisuals?.install?.();
 C.SupplyChainVisuals?.install?.();
 C.OperationVisuals?.install?.();
 C.ServiceVisuals?.install?.();
+C.InterviewCampaignVisuals?.install?.();
 game.scene.add('CodeopolisCity',C.PhaserCityScene,false);
 game.scene.start('CodeopolisCity',{adapter,world});
 window.__harness={game};
