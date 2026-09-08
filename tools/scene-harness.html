@@ -18,6 +18,9 @@
 <script src="../src/civilization/phaser/building-asset-system.js"></script>
 <script src="../src/civilization/phaser/city-scene.js"></script>
 <script src="../src/civilization/phaser/building-tier-visuals.js"></script>
+<script src="../src/civilization/phaser/supply-chain-visuals.js"></script>
+<script src="../src/civilization/phaser/operation-visuals.js"></script>
+<script src="../src/civilization/phaser/service-visuals.js"></script>
 <script>
 const C=window.Codeopolis;
 const W=12,H=8;
@@ -47,15 +50,34 @@ for(const [x,y] of [[1,1],[3,1],[6,1],[10,1],[1,2],[6,2],[10,2],[1,4],[3,4],[6,4
     building:true,specialization:null,queued:false}); di++;}
 const snapshot={width:W,height:H,terrain,roads,buildings,selected:null,
   districts:null,age:{level:1},technologies:[],services:null,construction:[],population:0};
+/* Enough of the status surface to make the overlay modules draw. The three
+   troubled cells below carry a supply, an operation and a service problem at
+   once, which is the case where their badges used to land on each other and on
+   the roof. */
+const TROUBLED=new Set(['1,1','6,2','9,4']);
+const troubled=(x,y)=>TROUBLED.has(`${x},${y}`);
 const world={tile:()=>({}),inside:(x,y)=>x>=0&&y>=0&&x<W&&y<H,select:()=>{},
-  constructionProgress:()=>1,world:{width:W,height:H,camera:{}  /* no projection: exercises the first-run camera fit */}};
+  constructionProgress:()=>1,
+  buildingSupplyStatus:(x,y)=>({hasRecipe:true,state:troubled(x,y)?'shortage':'running',recipe:{outputs:{materials:1}}}),
+  buildingOperationStatus:(x,y)=>troubled(x,y)?{needsAttention:true,status:'degraded',health:62}:null,
+  buildingServiceStatus:(x,y)=>troubled(x,y)?{efficiency:.55,roadConnected:false,powerDemand:1,powerConnected:false,workerDemand:1,city:{workerRatio:.5,housingRatio:.8},infrastructure:{powerRatio:.4}}:{efficiency:1},
+  infrastructureNetwork:()=>({components:[],poweredComponents:[]}),
+  world:{width:W,height:H,camera:{}  /* no projection: exercises the first-run camera fit */}};
+window.state={};
+C.game={state:window.state,world};
+C.CitySupplyModel={ensure:()=>({overlay:true})};
+C.ConceptResources={RESOURCE_DEFS:{materials:{icon:'📦'}}};
 const adapter={snapshot:()=>snapshot};
 const game=new Phaser.Game({type:Phaser.CANVAS,parent:'host',backgroundColor:'#3f5138',
   // the scene loads 'assets/city.png' relative to the page, and this page is a level down
   loader:{baseURL:'../'},
   pixelArt:true,roundPixels:true,antialias:false,
   scale:{mode:Phaser.Scale.RESIZE,width:'100%',height:'100%'},scene:[]});
-C.BuildingTierVisuals?.install?.();  /* patches the scene prototype; must run before the scene starts */
+/* all patch the scene prototype, so they must run before the scene starts */
+C.BuildingTierVisuals?.install?.();
+C.SupplyChainVisuals?.install?.();
+C.OperationVisuals?.install?.();
+C.ServiceVisuals?.install?.();
 game.scene.add('CodeopolisCity',C.PhaserCityScene,false);
 game.scene.start('CodeopolisCity',{adapter,world});
 window.__harness={game};
