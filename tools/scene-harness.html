@@ -1,0 +1,93 @@
+<!doctype html><meta charset="utf-8"><title>Codeopolis scene harness</title>
+<!--
+  Renders PhaserCityScene on its own, against a stub world, so the map can be
+  looked at without booting the whole game (which needs the Python runtime).
+
+      python3 -m http.server 4180        # from the repo root
+      open http://127.0.0.1:4180/tools/scene-harness.html
+
+  Paths below are relative to the repo root, so serve from there, not from
+  tools/. This is a development aid: nothing in the shipped site loads it.
+-->
+<style>html,body{margin:0;background:#3f5138}#host{width:100vw;height:100vh}</style>
+<div id="host"></div>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+<script>window.Codeopolis={};</script>
+<script src="../src/core/namespace.js"></script>
+<script src="../src/civilization/phaser/city-assets.js"></script>
+<script src="../src/civilization/phaser/building-asset-system.js"></script>
+<script src="../src/civilization/phaser/city-scene.js"></script>
+<script src="../src/civilization/phaser/building-tier-visuals.js"></script>
+<script src="../src/civilization/phaser/supply-chain-visuals.js"></script>
+<script src="../src/civilization/phaser/operation-visuals.js"></script>
+<script src="../src/civilization/phaser/service-visuals.js"></script>
+<script src="../src/civilization/phaser/interview-campaign-visuals.js"></script>
+<script>
+const C=window.Codeopolis;
+const W=12,H=8;
+const ROADX=new Set([4,8]), ROADY=new Set([3]);
+const isroad=(x,y)=>ROADX.has(x)||ROADY.has(y);
+const terrain=[];
+for(let y=0;y<H;y++){const row=[];for(let x=0;x<W;x++){
+  row.push(y===7?'water':((x*7+y*3)%13===0?'forest':((x*5+y*7)%17===0?'dirt':'grass')));}terrain.push(row);}
+const roads=[];
+for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(!isroad(x,y))continue;
+  let m=0; if(isroad(x,y-1))m|=1; if(isroad(x+1,y))m|=2; if(isroad(x,y+1))m|=4; if(isroad(x-1,y))m|=8;
+  roads.push({x,y,mask:m});}
+const DISTRICTS=['core','arrays','hash','structures','search','graphs','dp','materials','trade','research','compute','infrastructure','stability'];
+const RECIPE_IDS=['house','market','foundry','observatory','academy','tower','park'];
+const buildings=[];
+let di=0;
+for(const [x,y] of [[1,1],[3,1],[6,1],[10,1],[1,2],[6,2],[10,2],[1,4],[3,4],[6,4],[10,4],[1,5],[6,5]]){
+  /* last two exercise the paths the sheet does not cover: a half-built
+     structure and a 2x2 footprint both fall back to the generated asset */
+  const half=di===11, big=di===12;
+  /* a couple of upgraded buildings, so the tier pips are exercised */
+  const level=di===2?3:di===7?2:1;
+  buildings.push({x,y,id:big?'lab':RECIPE_IDS[di%RECIPE_IDS.length],name:'B'+di,icon:'🏠',
+    district:DISTRICTS[di%DISTRICTS.length],
+    curriculumDistrict:'materials',districtMaturity:null,known:true,
+    footprint:big?{w:2,h:2}:{w:1,h:1},level,
+    ageLevel:1,visualVariant:'standard',effects:null,adjacency:null,service:null,
+    progress:half?0.5:1,
+    building:true,specialization:null,queued:false}); di++;}
+const snapshot={width:W,height:H,terrain,roads,buildings,selected:null,
+  districts:null,age:{level:1},technologies:[],services:null,construction:[],population:0};
+/* Enough of the status surface to make the overlay modules draw. The three
+   troubled cells below carry a supply, an operation and a service problem at
+   once, which is the case where their badges used to land on each other and on
+   the roof. */
+const TROUBLED=new Set(['1,1','6,2','9,4']);
+const troubled=(x,y)=>TROUBLED.has(`${x},${y}`);
+const world={tile:()=>({}),inside:(x,y)=>x>=0&&y>=0&&x<W&&y<H,select:()=>{},
+  constructionProgress:()=>1,
+  buildingSupplyStatus:(x,y)=>({hasRecipe:true,state:troubled(x,y)?'shortage':'running',recipe:{outputs:{materials:1}}}),
+  buildingOperationStatus:(x,y)=>troubled(x,y)?{needsAttention:true,status:'degraded',health:62}:null,
+  buildingServiceStatus:(x,y)=>troubled(x,y)?{efficiency:.55,roadConnected:false,powerDemand:1,powerConnected:false,workerDemand:1,city:{workerRatio:.5,housingRatio:.8},infrastructure:{powerRatio:.4}}:{efficiency:1},
+  infrastructureNetwork:()=>({components:[],poweredComponents:[]}),
+  world:{width:W,height:H,camera:{}  /* no projection: exercises the first-run camera fit */}};
+window.state={};
+C.game={state:window.state,world};
+C.CitySupplyModel={ensure:()=>({overlay:true})};
+C.ConceptResources={RESOURCE_DEFS:{materials:{icon:'📦'}}};
+/* Campaign markers are the tallest thing that hangs over a building; two of the
+   troubled cells carry one so the stacking is exercised against the badges. */
+C.InterviewCityCampaign={snapshot:()=>({needs:[
+  {title:'Materials',icon:'📦',origin:{x:1,y:1}},
+  {title:'Housing',icon:'🏠',origin:{x:6,y:2}}],active:null,endless:false})};
+const adapter={snapshot:()=>snapshot};
+const game=new Phaser.Game({type:Phaser.CANVAS,parent:'host',backgroundColor:'#3f5138',
+  // the scene loads 'assets/city.png' relative to the page, and this page is a level down
+  loader:{baseURL:'../'},
+  pixelArt:true,roundPixels:true,antialias:false,
+  scale:{mode:Phaser.Scale.RESIZE,width:'100%',height:'100%'},scene:[]});
+/* all patch the scene prototype, so they must run before the scene starts */
+C.BuildingTierVisuals?.install?.();
+C.SupplyChainVisuals?.install?.();
+C.OperationVisuals?.install?.();
+C.ServiceVisuals?.install?.();
+C.InterviewCampaignVisuals?.install?.();
+game.scene.add('CodeopolisCity',C.PhaserCityScene,false);
+game.scene.start('CodeopolisCity',{adapter,world});
+window.__harness={game};
+</script>
