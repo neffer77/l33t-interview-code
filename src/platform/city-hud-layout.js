@@ -9,12 +9,19 @@
 //   - informational panels  -> two vertical flex stacks (top-left / top-right)
 //   - functional action FABs -> one horizontal "dock" (mobile) so they flow in
 //     a row and cannot overlap, inside a single opaque bar.
-// Runs on every width. Desktop keeps the two info stacks (its FABs already have
-// room); mobile additionally gets the bottom dock, which is where the collisions
-// were worst. On mobile the info rails are collapsed by default (a "📊 Info"
-// toggle in the dock reveals them) so the map is the hero instead of being
-// flanked by ~10 telemetry panels. R14 acceptance taps buildable tiles (not
-// buttons), so relocating the buttons into a dock keeps them tappable.
+// Runs on every width. Mobile additionally gets the bottom dock, which is where
+// the collisions were worst. Desktop keeps its FABs as direct children of the
+// host (they must stay there to keep the z-index the R14 flow depends on) but
+// gets them laid out into declared columns/rows instead of hand-picked offsets:
+// measured on a seeded city, four desktop pairs were landing on top of each
+// other (services/zoning at bottom 162 vs 164, construction/spec at top 54 vs
+// 58, campaign/undo at 110 vs 112, crisis/customize at 64 vs 62), which left
+// "Services" entirely buried behind "Zones".
+// At every width the info rails are collapsed by default and a "📊 Info"
+// toggle reveals them, so the map is the hero instead of being flanked by ~10
+// telemetry panels. The choice is remembered in localStorage. R14 acceptance
+// taps buildable tiles (not buttons), so relocating the buttons keeps them
+// tappable.
 (() => {
   'use strict';
 
@@ -42,17 +49,40 @@
     'p1f-spec-fab', 'p1-undo-fab', 'r11-crisis-fab',
     'phase44-diagnostics-button',
   ];
+  // Desktop layout: the same controls, but stacked along the host edges in a
+  // declared order rather than at whatever offset each feature picked. Bottom
+  // groups grow upwards as columns; top groups grow inwards as a single row so
+  // they stay clear of the info rails underneath them. Only visible controls
+  // take a slot, so a hidden FAB (crisis, specialization) leaves no gap.
+  const COLUMNS = [
+    { side: 'right', edge: 'bottom', base: 62, step: 52,
+      order: ['p1-build-fab', 'p1-road-fab', 'r8-zoning-fab', 'p1-services-fab', 'r9ef'] },
+    { side: 'left', edge: 'bottom', base: 62, step: 52,
+      order: ['p2-district-fab', 'p1-undo-fab', 'r13-campaign-fab'] },
+    { side: 'right', edge: 'top', base: 56, row: true,
+      order: ['p1-construction-fab', 'p1f-spec-fab'] },
+    { side: 'left', edge: 'top', base: 56, row: true,
+      order: ['r12-custom-fab', 'r11-crisis-fab'] },
+  ];
+
   // Customize (r12-custom-fab) is deliberately left at its native position and
   // z-index (77). The player flow opens the Campaign panel and then clicks
   // Customize while that panel is open; Customize only stays clickable because
   // its native z-index sits above the panel. Docking it (or routing it into a
   // rail, which drops it to the rail's lower z-index) puts it behind the panel
-  // and the panel intercepts the click. So it is excluded from all routing.
+  // and the panel intercepts the click. So it is never reparented — the desktop
+  // column above only moves it, leaving it a direct child of the host and so
+  // still covered by the z-index rule.
 
   function host() {
     return window.Codeopolis?.phaserCity?.host || document.getElementById('phaserCityHost');
   }
   const isMobile = () => !matchMedia('(min-width: 900px)').matches;
+
+  // Remember whether the player wants the telemetry rails up. Default closed.
+  const RAILS_KEY = 'codeopolis.hudRailsOpen';
+  function railsOpen() { try { return localStorage.getItem(RAILS_KEY) === '1'; } catch { return false; } }
+  function saveRails(open) { try { localStorage.setItem(RAILS_KEY, open ? '1' : '0'); } catch { /* private mode */ } }
 
   function ensureStyles() {
     if (document.getElementById('cityHudLayoutStyle')) return;
@@ -62,8 +92,8 @@
       .hud-stack{position:absolute;z-index:60;display:flex;flex-direction:column;gap:6px;
         pointer-events:none;max-height:calc(100% - 132px);overflow-y:auto;overflow-x:visible;scrollbar-width:none}
       .hud-stack::-webkit-scrollbar{display:none}
-      .hud-stack-tl{top:52px;left:8px;align-items:flex-start;max-width:min(346px,42%)}
-      .hud-stack-tr{top:52px;right:8px;align-items:flex-end;max-width:min(360px,42%)}
+      .hud-stack-tl{top:106px;left:8px;align-items:flex-start;max-width:min(346px,42%)}
+      .hud-stack-tr{top:106px;right:8px;align-items:flex-end;max-width:min(360px,42%)}
       .hud-stack>*{position:static!important;inset:auto!important;top:auto!important;left:auto!important;
         right:auto!important;bottom:auto!important;margin:0!important;transform:none!important;
         max-width:100%!important;pointer-events:auto}
@@ -81,18 +111,24 @@
         flex:0 0 auto;white-space:nowrap;display:inline-flex!important;align-items:center;
         box-shadow:none!important;animation:none!important}
       .hud-dock:empty{display:none}
-      /* Collapse toggle (lives in the dock on mobile). */
+      /* Collapse toggle: a dock item on mobile, a floating pill on desktop where
+         there is no dock. Desktop parks it in the top chrome band, to the left of
+         the camera controls, so it occupies no new part of the map. */
       .hud-rail-toggle{min-width:40px;min-height:40px;padding:8px 12px;border:1px solid #35566a;
-        border-radius:999px;background:#16303f;color:#cfe7d8;font:800 12px system-ui;cursor:pointer}
-      /* On mobile: keep the info rails compact, and collapse them by default so
-         the map is the hero. The dock's "Info" toggle reveals them on demand. */
+        border-radius:999px;background:#16303fee;color:#cfe7d8;font:800 12px system-ui;cursor:pointer}
+      .hud-rail-toggle-float{position:absolute;top:8px;right:108px;z-index:95;
+        box-shadow:0 5px 18px #0007}
+      /* The empty-land onboarding screen owns the whole map: no chrome at all. */
+      .phaser-city-host.r14-first-run .hud-rail-toggle{display:none!important}
+      /* The info rails are telemetry, not controls: collapsed by default at every
+         width so the map is the hero, revealed on demand by the toggle. */
+      .phaser-city-host:not(.hud-rails-open) .hud-stack-tl,
+      .phaser-city-host:not(.hud-rails-open) .hud-stack-tr{display:none}
       @media (max-width:899px){
         .hud-stack-tl,.hud-stack-tr{top:44px;max-width:44%;
           max-height:min(46%,360px);gap:5px}
         .hud-stack-tl{left:6px}
         .hud-stack-tr{right:6px}
-        .phaser-city-host:not(.hud-rails-open) .hud-stack-tl,
-        .phaser-city-host:not(.hud-rails-open) .hud-stack-tr{display:none}
       }
     `;
     document.head.appendChild(s);
@@ -146,26 +182,97 @@
         return DOCK_ORDER.length;
       };
       [...s.dock.children].sort((a, b) => rank(a) - rank(b)).forEach(el => s.dock.appendChild(el));
-      // Rail collapse toggle: only meaningful once the info rails have content.
-      // Kept as the last dock item so the primary actions stay leftmost.
-      const railCount = s.tl.children.length + s.tr.children.length;
-      if (railCount > 0) {
-        if (!s.toggle) {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.className = 'hud-rail-toggle';
-          b.setAttribute('aria-expanded', 'false');
-          b.textContent = '📊 Info';
-          b.addEventListener('click', () => {
-            const open = h.classList.toggle('hud-rails-open');
-            b.setAttribute('aria-expanded', String(open));
-            b.textContent = open ? '✕ Hide' : '📊 Info';
-          });
-          s.toggle = b;
+    }
+    ensureToggle(h, s);
+    layoutFloating(h);
+  }
+
+  // Rail collapse toggle: only meaningful once the info rails have content. On
+  // mobile it is the last dock item so the primary actions stay leftmost; on
+  // desktop it floats in the top chrome band.
+  let toggle = null;
+  function paintToggle(open) {
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.textContent = open ? '✕ Hide' : '📊 Info';
+  }
+  function ensureToggle(h, s) {
+    // Offer the toggle only when a rail actually holds something. Test each
+    // panel's own display: while the rails are collapsed they are display:none,
+    // so offsetParent/getClientRects would report every child as hidden and the
+    // toggle could never be used to open them again.
+    const hasInfo = [...s.tl.children, ...s.tr.children]
+      .some(el => getComputedStyle(el).display !== 'none');
+    if (!hasInfo) { toggle?.remove(); return; }
+    if (!toggle) {
+      toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'hud-rail-toggle';
+      toggle.addEventListener('click', () => {
+        const open = h.classList.toggle('hud-rails-open');
+        saveRails(open);
+        paintToggle(open);
+      });
+    }
+    const open = railsOpen();
+    h.classList.toggle('hud-rails-open', open);
+    paintToggle(open);
+    toggle.classList.toggle('hud-rail-toggle-float', !s.dock);
+    const home = s.dock || h;
+    // In the dock it must stay last; floating, position is fixed by CSS.
+    if (toggle.parentNode !== home || (s.dock && toggle !== home.lastElementChild)) home.appendChild(toggle);
+  }
+
+  // Only ever clear an inline offset this module wrote. Several controls set
+  // their own inline top/left (the camera cluster does), and blanket-removing
+  // those drops an absolutely positioned element to its static position — which
+  // parked the camera cluster on the host's bottom edge.
+  function setOffset(el, prop, value) {
+    (el.__hudOffsets || (el.__hudOffsets = new Set())).add(prop);
+    el.style[prop] = value;
+  }
+  function clearOffsets(el) {
+    if (!el.__hudOffsets) return;
+    for (const prop of el.__hudOffsets) el.style.removeProperty(prop);
+    el.__hudOffsets.clear();
+  }
+
+  // Desktop: give the host's own floating controls a deterministic layout so two
+  // features can never claim the same offset. Mobile clears the inline offsets —
+  // the dock owns those controls there.
+  function layoutFloating(h) {
+    const mobile = isMobile();
+    for (const col of COLUMNS) {
+      let offset = col.row ? 8 : col.base;
+      for (const cls of col.order) {
+        const el = h.querySelector(':scope > .' + cls);
+        if (!el) continue;
+        if (mobile) { clearOffsets(el); continue; }
+        if (!el.offsetParent) continue; // hidden control takes no slot
+        if (col.row) {
+          setOffset(el, 'top', col.base + 'px');
+          setOffset(el, col.side, offset + 'px');
+          offset += el.offsetWidth + 6;
+        } else {
+          setOffset(el, col.edge, offset + 'px');
+          offset += col.step;
         }
-        s.dock.appendChild(s.toggle); // keep it last
-      } else if (s.toggle && s.toggle.parentNode) {
-        s.toggle.remove();
+      }
+    }
+    // Mobile: the resource strip is forced to span the full host width, so the
+    // camera cluster pinned to the same top offset lands on top of it. Drop the
+    // cluster below the strip (measured, since the strip wraps to two lines on
+    // narrow phones) and start the info rails below that.
+    const cam = h.querySelector(':scope > .phase44-camera-controls');
+    if (cam) {
+      const strip = h.querySelector(':scope > .p2-resource-hud');
+      if (!mobile || !strip?.offsetParent || !cam.offsetParent) {
+        clearOffsets(cam);
+        if (stacks) { clearOffsets(stacks.tl); clearOffsets(stacks.tr); }
+      } else if (strip.offsetLeft + strip.offsetWidth > cam.offsetLeft) {
+        const top = strip.offsetTop + strip.offsetHeight + 6;
+        setOffset(cam, 'top', top + 'px');
+        const railTop = top + cam.offsetHeight + 6 + 'px';
+        if (stacks) { setOffset(stacks.tl, 'top', railTop); setOffset(stacks.tr, 'top', railTop); }
       }
     }
   }
