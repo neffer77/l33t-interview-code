@@ -4,7 +4,10 @@
      where it applies and the generated asset still covers the rest. Naming
      matches what the scene itself draws, so this re-selects the frame the scene
      already chose rather than picking a different one. */
-  function sheetFrame(scene,b,stage){if(stage!=='complete')return null;
+  function sheetFrame(scene,b,stage){
+    /* The sheet draws each construction stage, so a half-built plot shows the
+       drawn foundation, frame or shell rather than a generated scaffold. */
+    if(stage!=='complete'){const k=`build-${stage}`;return scene.hasArt?.(k)?k:null}
     const key=b.known&&scene.assets?.buildings?.[b.district]?`building-${b.district}`:b.known?'building-core':'building-unknown';
     return scene.hasArt?.(key)?key:null}
   /* A plot bigger than one cell has no sprite of its own, and a generated box
@@ -35,17 +38,38 @@
       g.fillStyle(0xffd166,1);g.fillTriangle(x,y-2.4,x+2.6,y,x,y+2.4);g.fillTriangle(x,y-2.4,x-2.6,y,x,y+2.4);
       out.push(g)}
     ref.pips=out;return out}
+  /* A crane over a site big enough to have somewhere to stand. The sheet also
+     draws timber, brick, sand and tool piles, but a single cell is entirely
+     taken up by the structure being built on it: dropping a pile in there put
+     it inside the shell rather than beside it. They stay unused until there is
+     somewhere for materials to sit. */
+  function site(scene,b,ref,stage){
+    if(ref.site){ref.site.destroy?.();ref.site=null}
+    const f=b.footprint||{w:1,h:1};
+    if(stage==='complete'||((f.w||1)<2&&(f.h||1)<2))return null;
+    if(!scene.hasArt?.('build-crane'))return null;
+    const p=scene.toWorld(b.x,b.y);
+    ref.site=scene.sprite(p.x,p.y+9,'build-crane').setOrigin(.5,.86)
+      .setDepth(scene.iso.depth(b.x,b.y,29));
+    return ref.site}
   function apply(scene,b,ref){if(!ref?.image||!C.BuildingAssetSystem)return null;const ageLevel=b.ageLevel||scene.snapshot?.age?.level||C.BuildingAssetSystem.currentAge?.(),
     stage=C.BuildingAssetSystem.stageFor?.(b.progress)||'complete',frame=sheetFrame(scene,b,stage),
     /* Only generate when the drawing is what gets shown; otherwise this made a
        texture per district that nothing ever drew. */
     asset=frame?null:C.BuildingAssetSystem.generate(scene,{...b,ageLevel}),p=position(scene,b);
-    if(frame){ref.image.setTexture(ATLAS,frame);ref.image.setPosition(p.x,p.y+9);ref.image.setOrigin(.5,.86);annex(scene,b,ref);pips(scene,b,ref)}
+    /* An outbuilding and a rank marker both describe a finished site, so a plot
+       still under construction gets neither. */
+    if(frame){ref.image.setTexture(ATLAS,frame);ref.image.setPosition(p.x,p.y+9);ref.image.setOrigin(.5,.86);
+      const done=stage==='complete';
+      if(done){annex(scene,b,ref);pips(scene,b,ref)}
+      else{if(ref.annex){ref.annex.destroy?.();ref.annex=null}if(ref.pips){for(const g of ref.pips)g.destroy?.();ref.pips=null}}
+      site(scene,b,ref,stage)}
     /* The generated asset still carries tier in its own silhouette, so pips
        there would say it twice. */
     else{ref.image.setTexture(asset.key);ref.image.setPosition(p.x,p.y+12);ref.image.setOrigin(.5,1);
       if(ref.annex){ref.annex.destroy?.();ref.annex=null}
-      if(ref.pips){for(const g of ref.pips)g.destroy?.();ref.pips=null}}
+      if(ref.pips){for(const g of ref.pips)g.destroy?.();ref.pips=null}
+      if(ref.site){ref.site.destroy?.();ref.site=null}}
     ref.image.clearTint?.();ref.image.setScale?.(1);ref.image.setAlpha(1);ref.image.setDepth(scene.iso.depth(b.x+(b.footprint?.w||1)-1,b.y+(b.footprint?.h||1)-1,30));
     ref.assetKey=frame||asset.key;ref.stage=stage;ref.level=b.level||1;ref.age=asset?asset.recipe.age:(C.BuildingAssetSystem.currentAge?.(ageLevel)||ageLevel||1);ref.footprint=b.footprint||{w:1,h:1};
     if(ref.dust){ref.dust.setPosition(p.x,p.y-6);ref.dust.setDepth(scene.iso.depth(b.x,b.y,42))}
