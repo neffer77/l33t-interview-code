@@ -299,6 +299,70 @@ def road_masks(pieces):
     return out
 
 
+def components(px, w, h):
+    """Connected runs of opaque pixels, largest first."""
+    seen, out = set(), []
+    for sy in range(h):
+        for sx in range(w):
+            if px[sx, sy][3] < 40 or (sx, sy) in seen:
+                continue
+            stack, blob = [(sx, sy)], []
+            seen.add((sx, sy))
+            while stack:
+                x, y = stack.pop()
+                blob.append((x, y))
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1),
+                               (1, 1), (1, -1), (-1, 1), (-1, -1)):
+                    n = (x + dx, y + dy)
+                    if (0 <= n[0] < w and 0 <= n[1] < h and n not in seen
+                            and px[n][3] >= 40):
+                        seen.add(n)
+                        stack.append(n)
+            out.append(blob)
+    out.sort(key=len, reverse=True)
+    return out
+
+
+def despeckle(im, keep=0.25):
+    """Drop fragments left behind by the slice that produced these sprites.
+
+    Several carry a few pixels of the row above, floating clear over the art.
+    Size alone does not separate them — a scrap of a neighbouring sprite can be a
+    tenth of the subject — so the test is position: a piece that sits entirely
+    above the main shape, touching none of its rows, was never part of it. A
+    genuinely detached piece that large (nothing here has one) is kept.
+    """
+    im = im.convert('RGBA')
+    px = im.load()
+    blobs = components(px, im.width, im.height)
+    if len(blobs) < 2:
+        return im
+    main = blobs[0]
+    top = min(y for _, y in main)
+    for blob in blobs[1:]:
+        if len(blob) >= len(main) * keep:
+            continue
+        if max(y for _, y in blob) >= top:
+            continue
+        for x, y in blob:
+            px[x, y] = (0, 0, 0, 0)
+    return im
+
+
+def site_frame(im, kind='building'):
+    """Re-pad a construction sprite so it lands on the cell like a building.
+
+    These have no grass base of their own — they stand directly on the terrain
+    tile — so the anchor is the centre of the footprint they cover rather than a
+    drawn diamond: the bottom of the art, half a tile up.
+    """
+    im = despeckle(im)
+    box = im.getbbox()
+    if box:
+        im = im.crop(box)
+    return frame(im, im.width / 2.0, max(1.0, im.height - TILE_W / 4.0), kind)
+
+
 def prop_cells(sheet, y0, count):
     """Slice the props row, following the art rather than the tile pitch.
 
@@ -367,6 +431,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('sheet')
     ap.add_argument('--out', required=True)
+    ap.add_argument('--construction', help='directory of already-sliced build/site sprites')
     a = ap.parse_args()
     sheet = Image.open(a.sheet).convert('RGB')
     W, H = sheet.size
@@ -438,6 +503,14 @@ def main():
         write(f'surround-tree-{v}', shade(im, SURROUND_DIM), cx, cy, 'tree')
     im, cx, cy = to_tile(parts['prop-rocks'])
     write('surround-rocks', shade(im, SURROUND_DIM), cx, cy, 'tree')
+
+    if a.construction:
+        for f in sorted(os.listdir(a.construction)):
+            if not f.endswith('.png'):
+                continue
+            src = Image.open(os.path.join(a.construction, f)).convert('RGBA')
+            site_frame(src).save(os.path.join(a.out, f))
+            written += 1
 
     print(f'{written} frames -> {a.out}')
     return 0

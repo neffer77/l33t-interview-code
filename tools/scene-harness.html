@@ -41,7 +41,9 @@ let di=0;
 for(const [x,y] of [[1,1],[3,1],[6,1],[10,1],[1,2],[6,2],[10,2],[1,4],[3,4],[6,4],[10,4],[1,5],[6,5]]){
   /* last two exercise the paths the sheet does not cover: a half-built
      structure and a 2x2 footprint both fall back to the generated asset */
-  const half=di===11, big=di===12;
+  /* one plot per construction stage, so all three drawn stages are on screen */
+  const STAGE_PROGRESS={9:0.15,10:0.55,11:0.85,12:0.6};
+  const half=di in STAGE_PROGRESS, big=di===12;
   /* a couple of upgraded buildings, so the tier pips are exercised */
   const level=di===2?3:di===7?2:1;
   buildings.push({x,y,id:big?'lab':RECIPE_IDS[di%RECIPE_IDS.length],name:'B'+di,icon:'🏠',
@@ -49,7 +51,7 @@ for(const [x,y] of [[1,1],[3,1],[6,1],[10,1],[1,2],[6,2],[10,2],[1,4],[3,4],[6,4
     curriculumDistrict:'materials',districtMaturity:null,known:true,
     footprint:big?{w:2,h:2}:{w:1,h:1},level,
     ageLevel:1,visualVariant:'standard',effects:null,adjacency:null,service:null,
-    progress:half?0.5:1,
+    progress:di in STAGE_PROGRESS?STAGE_PROGRESS[di]:1,
     building:true,specialization:null,queued:false}); di++;}
 const snapshot={width:W,height:H,terrain,roads,buildings,selected:null,
   districts:null,age:{level:1},technologies:[],services:null,construction:[],population:0};
