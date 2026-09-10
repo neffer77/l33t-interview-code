@@ -22,6 +22,8 @@
 <script src="../src/civilization/phaser/operation-visuals.js"></script>
 <script src="../src/civilization/phaser/service-visuals.js"></script>
 <script src="../src/civilization/phaser/interview-campaign-visuals.js"></script>
+<script src="../src/civilization/phaser/crisis-visuals.js"></script>
+<script src="../src/civilization/phaser/district-zoning-visuals.js"></script>
 <script>
 const C=window.Codeopolis;
 const W=12,H=8;
@@ -63,6 +65,7 @@ const TROUBLED=new Set(['1,1','6,2','9,4']);
 const troubled=(x,y)=>TROUBLED.has(`${x},${y}`);
 const world={tile:()=>({}),inside:(x,y)=>x>=0&&y>=0&&x<W&&y<H,select:()=>{},
   constructionProgress:()=>1,
+  buildingZoningStatus:(x,y)=>troubled(x,y)?{fit:'mismatch',zone:'civic'}:{fit:'unzoned'},
   buildingSupplyStatus:(x,y)=>({hasRecipe:true,state:troubled(x,y)?'shortage':'running',recipe:{outputs:{materials:1}}}),
   buildingOperationStatus:(x,y)=>troubled(x,y)?{needsAttention:true,status:'degraded',health:62}:null,
   buildingServiceStatus:(x,y)=>troubled(x,y)?{efficiency:.55,roadConnected:false,powerDemand:1,powerConnected:false,workerDemand:1,city:{workerRatio:.5,housingRatio:.8},infrastructure:{powerRatio:.4}}:{efficiency:1},
@@ -74,6 +77,13 @@ C.CitySupplyModel={ensure:()=>({overlay:true})};
 C.ConceptResources={RESOURCE_DEFS:{materials:{icon:'📦'}}};
 /* Campaign markers are the tallest thing that hangs over a building; two of the
    troubled cells carry one so the stacking is exercised against the badges. */
+/* A crisis and a zoning mismatch on cells that already carry status badges and a
+   campaign marker: the deepest column the map can produce. */
+C.CityCrisisSystem={summary:()=>({active:{type:'budget_emergency',severity:2,icon:'\u26a0',title:'Budget crunch',
+  origin:{x:1,y:1},affected:[{x:1,y:1},{x:6,y:2}]}})};
+C.DistrictZoning={ZONES:{civic:{name:'Civic',icon:'\ud83c\udfd9',color:0x8ee3c1}},
+  ensure:()=>({overlay:true,mode:null}),zoneTiles:()=>[],
+  summary:()=>({clusters:[]}),specializationFor:()=>null};
 C.InterviewCityCampaign={snapshot:()=>({needs:[
   {title:'Materials',icon:'📦',origin:{x:1,y:1}},
   {title:'Housing',icon:'🏠',origin:{x:6,y:2}}],active:null,endless:false})};
@@ -89,6 +99,8 @@ C.SupplyChainVisuals?.install?.();
 C.OperationVisuals?.install?.();
 C.ServiceVisuals?.install?.();
 C.InterviewCampaignVisuals?.install?.();
+C.CrisisVisuals?.install?.();
+C.DistrictZoningVisuals?.install?.();
 game.scene.add('CodeopolisCity',C.PhaserCityScene,false);
 game.scene.start('CodeopolisCity',{adapter,world});
 window.__harness={game};
