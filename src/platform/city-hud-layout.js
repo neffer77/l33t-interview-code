@@ -11,21 +11,17 @@
 //     a row and cannot overlap, inside a single opaque bar.
 // Runs on every width. Mobile additionally gets the bottom dock, which is where
 // the collisions were worst. Desktop keeps its FABs as direct children of the
-// host — they must stay there to keep the z-index the R14 flow depends on — and
-// gets one declared set of offsets from the stylesheet below instead of each
-// feature's hand-picked ones.
+// host (they must stay there to keep the z-index the R14 flow depends on) but
+// gets them laid out into declared columns/rows instead of hand-picked offsets:
+// measured on a seeded city, four desktop pairs were landing on top of each
+// other (services/zoning at bottom 162 vs 164, construction/spec at top 54 vs
+// 58, campaign/undo at 110 vs 112, crisis/customize at 64 vs 62), which left
+// "Services" entirely buried behind "Zones".
 // At every width the info rails are collapsed by default and a "📊 Info"
 // toggle reveals them, so the map is the hero instead of being flanked by ~10
 // telemetry panels. The choice is remembered in localStorage. R14 acceptance
 // taps buildable tiles (not buttons), so relocating the buttons keeps them
 // tappable.
-//
-// The routing pass writes to the DOM and is itself driven by a MutationObserver
-// over the whole body subtree, so it must stay cheap and must not write anything
-// it does not have to: every write it makes can wake it again on the next frame,
-// and anything it measures forces a synchronous reflow on that hot path. Hence
-// the position work lives in CSS (it is static anyway) and every write here is
-// guarded by a change check.
 (() => {
   'use strict';
 
@@ -53,6 +49,22 @@
     'p1f-spec-fab', 'p1-undo-fab', 'r11-crisis-fab',
     'phase44-diagnostics-button',
   ];
+  // Desktop layout: the same controls, but stacked along the host edges in a
+  // declared order rather than at whatever offset each feature picked. Bottom
+  // groups grow upwards as columns; top groups grow inwards as a single row so
+  // they stay clear of the info rails underneath them. Only visible controls
+  // take a slot, so a hidden FAB (crisis, specialization) leaves no gap.
+  const COLUMNS = [
+    { side: 'right', edge: 'bottom', base: 62, step: 52,
+      order: ['p1-build-fab', 'p1-road-fab', 'r8-zoning-fab', 'p1-services-fab', 'r9ef'] },
+    { side: 'left', edge: 'bottom', base: 62, step: 52,
+      order: ['p2-district-fab', 'p1-undo-fab', 'r13-campaign-fab'] },
+    { side: 'right', edge: 'top', base: 56, row: true,
+      order: ['p1-construction-fab', 'p1f-spec-fab'] },
+    { side: 'left', edge: 'top', base: 56, row: true,
+      order: ['r12-custom-fab', 'r11-crisis-fab'] },
+  ];
+
   // Customize (r12-custom-fab) is deliberately left at its native position and
   // z-index (77). The player flow opens the Campaign panel and then clicks
   // Customize while that panel is open; Customize only stays clickable because
@@ -112,43 +124,11 @@
          width so the map is the hero, revealed on demand by the toggle. */
       .phaser-city-host:not(.hud-rails-open) .hud-stack-tl,
       .phaser-city-host:not(.hud-rails-open) .hud-stack-tr{display:none}
-      /* Desktop: the action controls, given one declared set of offsets.
-         Each feature picks its own, and on a played city four pairs landed on
-         top of each other — services/zoning at bottom 162 vs 164, which left
-         "Services" entirely buried behind "Zones"; construction/spec at top 54
-         vs 58; campaign/undo at 110 vs 112; crisis/customize at 64 vs 62.
-         Fixed slots rather than a measured pass: everything here is static, so
-         computing it at runtime bought nothing and cost a forced reflow on
-         every routing pass. A hidden control leaves its slot empty, which is
-         a gap rather than a collision. Outranks each feature's own rule on
-         specificity (two classes to their one), so source order is irrelevant. */
-      @media (min-width:900px){
-        .phaser-city-host>.p1-build-fab{bottom:62px}
-        .phaser-city-host>.p1-road-fab{bottom:114px}
-        .phaser-city-host>.r8-zoning-fab{bottom:166px}
-        .phaser-city-host>.p1-services-fab{bottom:218px}
-        .phaser-city-host>.r9ef{bottom:270px}
-        .phaser-city-host>.p2-district-fab{bottom:62px}
-        .phaser-city-host>.p1-undo-fab{bottom:114px}
-        .phaser-city-host>.r13-campaign-fab{bottom:166px}
-        .phaser-city-host>.p1-construction-fab{top:56px;right:12px}
-        .phaser-city-host>.p1f-spec-fab{top:56px;left:auto;right:120px}
-        .phaser-city-host>.r12-custom-fab{top:56px;left:10px}
-        .phaser-city-host>.r11-crisis-fab{top:56px;left:158px}
-      }
       @media (max-width:899px){
-        .hud-stack-tl,.hud-stack-tr{top:98px;max-width:44%;
+        .hud-stack-tl,.hud-stack-tr{top:44px;max-width:44%;
           max-height:min(46%,360px);gap:5px}
         .hud-stack-tl{left:6px}
         .hud-stack-tr{right:6px}
-        /* The resource strip is forced to span the full host width here, so the
-           camera cluster pinned to the same top offset lands on top of it.
-           This one control sets its top inline, which outranks any stylesheet
-           rule, so overriding it needs !important. Doing it in CSS rather than
-           from script matters: a live resize back to desktop re-evaluates the
-           media query on its own, where a scripted write would have to be undone
-           and would have already clobbered the control's own inline value. */
-        .phaser-city-host>.phase44-camera-controls{top:50px!important}
       }
     `;
     document.head.appendChild(s);
@@ -209,12 +189,13 @@
       if (ordered.some((el, i) => s.dock.children[i] !== el)) ordered.forEach(el => s.dock.appendChild(el));
     }
     ensureToggle(h, s);
+    layoutFloating(h);
   }
 
   // Rail collapse toggle: only meaningful once the info rails have content. On
   // mobile it is the last dock item so the primary actions stay leftmost; on
   // desktop it floats in the top chrome band.
-  let toggle = null, railCount = -1, hasInfo = false;
+  let toggle = null;
   // Write only on an actual change. route() runs on every DOM mutation under the
   // host, and assigning textContent replaces a child node — which is itself a
   // childList mutation the observer sees, so an unconditional write reschedules
@@ -229,15 +210,9 @@
     // Offer the toggle only when a rail actually holds something. Test each
     // panel's own display: while the rails are collapsed they are display:none,
     // so offsetParent/getClientRects would report every child as hidden and the
-    // toggle could never be used to open them again. Recompute only when the
-    // rails gain or lose a panel — getComputedStyle costs a style recalc, and
-    // this runs on every routing pass.
-    const count = s.tl.children.length + s.tr.children.length;
-    if (count !== railCount) {
-      railCount = count;
-      hasInfo = [...s.tl.children, ...s.tr.children]
-        .some(el => getComputedStyle(el).display !== 'none');
-    }
+    // toggle could never be used to open them again.
+    const hasInfo = [...s.tl.children, ...s.tr.children]
+      .some(el => getComputedStyle(el).display !== 'none');
     if (!hasInfo) { toggle?.remove(); return; }
     if (!toggle) {
       toggle = document.createElement('button');
@@ -258,6 +233,67 @@
     if (toggle.parentNode !== home || (s.dock && toggle !== home.lastElementChild)) home.appendChild(toggle);
   }
 
+  // Save whatever inline offset a control already had before overwriting it, and
+  // put that back rather than merely removing ours. Several controls set their
+  // own inline top/left — the camera cluster does — so dropping the declaration
+  // leaves an absolutely positioned element at its static position, which parks
+  // the camera cluster on the host's bottom edge. That is what a live resize
+  // from a phone width back to desktop produced: we write its top under the
+  // mobile branch, then clear it on the way back, and its own value is gone.
+  // An empty string is a real saved state (no inline value), so restoring it
+  // removes the declaration exactly as before.
+  function setOffset(el, prop, value) {
+    const saved = el.__hudSaved || (el.__hudSaved = {});
+    if (!(prop in saved)) saved[prop] = el.style[prop];
+    if (el.style[prop] !== value) el.style[prop] = value;
+  }
+  function clearOffsets(el) {
+    const saved = el.__hudSaved;
+    if (!saved) return;
+    for (const prop of Object.keys(saved)) if (el.style[prop] !== saved[prop]) el.style[prop] = saved[prop];
+    el.__hudSaved = null;
+  }
+
+  // Desktop: give the host's own floating controls a deterministic layout so two
+  // features can never claim the same offset. Mobile clears the inline offsets —
+  // the dock owns those controls there.
+  function layoutFloating(h) {
+    const mobile = isMobile();
+    for (const col of COLUMNS) {
+      let offset = col.row ? 8 : col.base;
+      for (const cls of col.order) {
+        const el = h.querySelector(':scope > .' + cls);
+        if (!el) continue;
+        if (mobile) { clearOffsets(el); continue; }
+        if (!el.offsetParent) continue; // hidden control takes no slot
+        if (col.row) {
+          setOffset(el, 'top', col.base + 'px');
+          setOffset(el, col.side, offset + 'px');
+          offset += el.offsetWidth + 6;
+        } else {
+          setOffset(el, col.edge, offset + 'px');
+          offset += col.step;
+        }
+      }
+    }
+    // Mobile: the resource strip is forced to span the full host width, so the
+    // camera cluster pinned to the same top offset lands on top of it. Drop the
+    // cluster below the strip (measured, since the strip wraps to two lines on
+    // narrow phones) and start the info rails below that.
+    const cam = h.querySelector(':scope > .phase44-camera-controls');
+    if (cam) {
+      const strip = h.querySelector(':scope > .p2-resource-hud');
+      if (!mobile || !strip?.offsetParent || !cam.offsetParent) {
+        clearOffsets(cam);
+        if (stacks) { clearOffsets(stacks.tl); clearOffsets(stacks.tr); }
+      } else if (strip.offsetLeft + strip.offsetWidth > cam.offsetLeft) {
+        const top = strip.offsetTop + strip.offsetHeight + 6;
+        setOffset(cam, 'top', top + 'px');
+        const railTop = top + cam.offsetHeight + 6 + 'px';
+        if (stacks) { setOffset(stacks.tl, 'top', railTop); setOffset(stacks.tr, 'top', railTop); }
+      }
+    }
+  }
   function schedule() {
     if (queued) return;
     queued = true;
