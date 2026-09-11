@@ -65,6 +65,16 @@
       order: ['r12-custom-fab', 'r11-crisis-fab'] },
   ];
 
+  // Of those, the ones that stay on screen when the dock is collapsed. Thirteen
+  // controls wrap to four rows on a 390px phone — 23.5% of the play surface,
+  // measured on a seeded city — because the labels are wide ("Campaign 0%" alone
+  // is 167px). These four are the frequent verbs; the rest live behind "More".
+  // r13-campaign-fab is also required to be visible without interaction: R14
+  // acceptance waits for it with state='visible' and then clicks it.
+  const DOCK_PRIMARY = new Set([
+    'p1-build-fab', 'p1-road-fab', 'p1-undo-fab', 'r13-campaign-fab',
+  ]);
+
   // Customize (r12-custom-fab) is deliberately left at its native position and
   // z-index (77). The player flow opens the Campaign panel and then clicks
   // Customize while that panel is open; Customize only stays clickable because
@@ -111,6 +121,30 @@
         flex:0 0 auto;white-space:nowrap;display:inline-flex!important;align-items:center;
         box-shadow:none!important;animation:none!important}
       .hud-dock:empty{display:none}
+      /* Collapsed, the dock shows only the primary row; "More" reveals the rest. */
+      .hud-dock:not(.hud-dock-open)>*:not(.hud-dock-primary):not(.hud-dock-more){display:none!important}
+      /* An active crisis promotes itself out of the overflow: it is the one
+         control the player must not have to go looking for. Economy and Services
+         warn routinely — on a seeded city both were lit, and promoting them put
+         270px back into the collapsed bar, undoing the point. Their signal rides
+         on the More button's badge instead. */
+      .hud-dock:not(.hud-dock-open)>.r11-crisis-fab.show{display:inline-flex!important}
+      /* These two hide themselves with display:none and reveal with .show. The
+         dock's own display rule is !important and was overriding both, so each
+         rendered as an empty 26-28px stub taking a slot in the bar. */
+      .hud-dock>.p1f-spec-fab:not(.show),
+      .hud-dock>.r11-crisis-fab:not(.show){display:none!important}
+      .hud-dock-more{min-width:40px;min-height:40px;padding:8px 12px;border:1px solid #35566a;
+        border-radius:999px;background:#1d2c38;color:#cfe7d8;font:800 12px system-ui;cursor:pointer}
+      .hud-dock-more.attention{background:#5a3a22;border-color:#8a6231;color:#ffdca8}
+      /* Narrow phones: the primary row is the same five controls, but at 360px
+         and below their horizontal padding is what pushes it to a third row —
+         "Campaign 0%" alone is 167px. Trim the sides only. min-height is left
+         alone, so every control keeps its full 42-44px touch height. */
+      @media (max-width:380px){
+        .hud-dock{gap:4px;padding:5px}
+        .hud-dock>*{padding-left:9px!important;padding-right:9px!important}
+      }
       /* Collapse toggle: a dock item on mobile, a floating pill on desktop where
          there is no dock. Desktop parks it in the top chrome band, to the left of
          the camera controls, so it occupies no new part of the map. */
@@ -182,14 +216,59 @@
       // unconditional pass feeds the observer below and respins route() every
       // frame (measured at ~1500 mutations/second on a phone viewport).
       const rank = el => {
+        if (el.classList.contains('hud-dock-more')) return DOCK_ORDER.length + 2;
+        if (el.classList.contains('hud-rail-toggle')) return DOCK_ORDER.length + 1;
         for (let i = 0; i < DOCK_ORDER.length; i++) if (el.classList.contains(DOCK_ORDER[i])) return i;
         return DOCK_ORDER.length;
       };
       const ordered = [...s.dock.children].sort((a, b) => rank(a) - rank(b));
       if (ordered.some((el, i) => s.dock.children[i] !== el)) ordered.forEach(el => s.dock.appendChild(el));
+      // Mark the row that survives collapsing. classList.toggle with a force
+      // argument is a no-op when the class is already right, so this adds no
+      // mutation on a settled dock.
+      let overflow = false, attention = false;
+      for (const el of s.dock.children) {
+        if (el.classList.contains('hud-dock-more')) continue;
+        const primary = [...DOCK_PRIMARY].some(c => el.classList.contains(c));
+        el.classList.toggle('hud-dock-primary', primary);
+        if (primary) continue;
+        overflow = true;
+        // Each feature already marks its own urgency; reuse those classes rather
+        // than inventing a second source of truth for "needs attention".
+        if (el.classList.contains('alert') || el.classList.contains('warn')) attention = true;
+      }
+      ensureMore(s, overflow, attention);
     }
     ensureToggle(h, s);
     layoutFloating(h);
+  }
+
+  // Overflow control for the dock. Transient by design: unlike the info rails it
+  // is not remembered, because an overflow tray that stays open is just the old
+  // four-row bar again.
+  let more = null;
+  function ensureMore(s, overflow, attention) {
+    if (!overflow) { more?.remove(); return; }
+    if (!more) {
+      more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'hud-dock-more';
+      more.textContent = '⋯ More';
+      more.addEventListener('click', () => {
+        const isOpen = s.dock.classList.toggle('hud-dock-open');
+        more.setAttribute('aria-expanded', String(isOpen));
+        schedule(); // let the pass below repaint the label and badge
+      });
+      more.setAttribute('aria-expanded', 'false');
+    }
+    // Carry the overflow's urgency on the button, so collapsing never silences a
+    // warning. Guarded: an unconditional textContent write would feed the
+    // observer that schedules this pass.
+    const open = s.dock.classList.contains('hud-dock-open');
+    const label = open ? '✕ Less' : attention ? '⚠ More' : '⋯ More';
+    if (more.textContent !== label) more.textContent = label;
+    more.classList.toggle('attention', !!attention && !open);
+    if (more.parentNode !== s.dock || more !== s.dock.lastElementChild) s.dock.appendChild(more);
   }
 
   // Rail collapse toggle: only meaningful once the info rails have content. On
@@ -229,8 +308,12 @@
     paintToggle(open);
     toggle.classList.toggle('hud-rail-toggle-float', !s.dock);
     const home = s.dock || h;
-    // In the dock it must stay last; floating, position is fixed by CSS.
-    if (toggle.parentNode !== home || (s.dock && toggle !== home.lastElementChild)) home.appendChild(toggle);
+    // Append only when it is in the wrong parent. Do NOT also force it last:
+    // the dock's "More" button wants the last slot too, and two rules each
+    // re-appending to claim it ping-pong on every frame. Order inside the dock
+    // is the sort's job — rank() places the toggle after the actions and before
+    // More. Floating on desktop, position comes from CSS.
+    if (toggle.parentNode !== home) home.appendChild(toggle);
   }
 
   // Save whatever inline offset a control already had before overwriting it, and
