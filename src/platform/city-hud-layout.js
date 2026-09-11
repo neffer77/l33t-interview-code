@@ -233,18 +233,25 @@
     if (toggle.parentNode !== home || (s.dock && toggle !== home.lastElementChild)) home.appendChild(toggle);
   }
 
-  // Only ever clear an inline offset this module wrote. Several controls set
-  // their own inline top/left (the camera cluster does), and blanket-removing
-  // those drops an absolutely positioned element to its static position — which
-  // parked the camera cluster on the host's bottom edge.
+  // Save whatever inline offset a control already had before overwriting it, and
+  // put that back rather than merely removing ours. Several controls set their
+  // own inline top/left — the camera cluster does — so dropping the declaration
+  // leaves an absolutely positioned element at its static position, which parks
+  // the camera cluster on the host's bottom edge. That is what a live resize
+  // from a phone width back to desktop produced: we write its top under the
+  // mobile branch, then clear it on the way back, and its own value is gone.
+  // An empty string is a real saved state (no inline value), so restoring it
+  // removes the declaration exactly as before.
   function setOffset(el, prop, value) {
-    (el.__hudOffsets || (el.__hudOffsets = new Set())).add(prop);
+    const saved = el.__hudSaved || (el.__hudSaved = {});
+    if (!(prop in saved)) saved[prop] = el.style[prop];
     if (el.style[prop] !== value) el.style[prop] = value;
   }
   function clearOffsets(el) {
-    if (!el.__hudOffsets) return;
-    for (const prop of el.__hudOffsets) el.style.removeProperty(prop);
-    el.__hudOffsets.clear();
+    const saved = el.__hudSaved;
+    if (!saved) return;
+    for (const prop of Object.keys(saved)) if (el.style[prop] !== saved[prop]) el.style[prop] = saved[prop];
+    el.__hudSaved = null;
   }
 
   // Desktop: give the host's own floating controls a deterministic layout so two
