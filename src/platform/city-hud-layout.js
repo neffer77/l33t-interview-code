@@ -177,11 +177,16 @@
         });
       });
       // Keep dock children in the declared order even if some arrive late.
+      // Re-append only when the order is actually wrong: re-appending a node
+      // that is already in place still counts as a childList mutation, so an
+      // unconditional pass feeds the observer below and respins route() every
+      // frame (measured at ~1500 mutations/second on a phone viewport).
       const rank = el => {
         for (let i = 0; i < DOCK_ORDER.length; i++) if (el.classList.contains(DOCK_ORDER[i])) return i;
         return DOCK_ORDER.length;
       };
-      [...s.dock.children].sort((a, b) => rank(a) - rank(b)).forEach(el => s.dock.appendChild(el));
+      const ordered = [...s.dock.children].sort((a, b) => rank(a) - rank(b));
+      if (ordered.some((el, i) => s.dock.children[i] !== el)) ordered.forEach(el => s.dock.appendChild(el));
     }
     ensureToggle(h, s);
     layoutFloating(h);
@@ -191,9 +196,15 @@
   // mobile it is the last dock item so the primary actions stay leftmost; on
   // desktop it floats in the top chrome band.
   let toggle = null;
+  // Write only on an actual change. route() runs on every DOM mutation under the
+  // host, and assigning textContent replaces a child node — which is itself a
+  // childList mutation the observer sees, so an unconditional write reschedules
+  // route() forever at requestAnimationFrame rate.
   function paintToggle(open) {
+    const label = open ? '✕ Hide' : '📊 Info';
+    if (toggle.textContent === label) return;
     toggle.setAttribute('aria-expanded', String(open));
-    toggle.textContent = open ? '✕ Hide' : '📊 Info';
+    toggle.textContent = label;
   }
   function ensureToggle(h, s) {
     // Offer the toggle only when a rail actually holds something. Test each
@@ -228,7 +239,7 @@
   // parked the camera cluster on the host's bottom edge.
   function setOffset(el, prop, value) {
     (el.__hudOffsets || (el.__hudOffsets = new Set())).add(prop);
-    el.style[prop] = value;
+    if (el.style[prop] !== value) el.style[prop] = value;
   }
   function clearOffsets(el) {
     if (!el.__hudOffsets) return;
