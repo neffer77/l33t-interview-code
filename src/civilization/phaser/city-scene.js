@@ -6,7 +6,7 @@
   // no assets/ folder at all.
   const ATLAS='city';
   class PhaserCityScene extends Phaser.Scene{
-    constructor(){super({key:'CodeopolisCity'});this.tile=64;this.drag=null;this.pinch=null;this.ambient=[];this.buildingRefs=new Map();this.lastConstructionTick=0}
+    constructor(){super({key:'CodeopolisCity'});this.tile=64;this.drag=null;this.pinch=null;this.ambient=[];this.propTiles=new Set();this.buildingRefs=new Map();this.lastConstructionTick=0}
     init(data){this.adapter=data.adapter;this.world=data.world;this.snapshot=this.adapter.snapshot()}
     preload(){this.load.atlas(ATLAS,'assets/city.png','assets/city.json')}
     // Frame names present in the atlas. Empty when the atlas failed to load.
@@ -99,12 +99,12 @@
     persistCamera(){const c=this.cameras.main,w=this.world.world.camera;w.zoom=c.zoom;w.panX=-c.scrollX;w.panY=-c.scrollY;w.projection='iso-pixel-v1'}
     selectPointer(p){const wp=p.positionToCamera(this.cameras.main),q=this.fromWorld(wp.x,wp.y);if(this.world.inside(q.x,q.y))this.world.select(q.x,q.y)}
     variant(x,y,count,salt=0){let n=Math.imul(x+17+salt,1103515245)^Math.imul(y+31,12345)^(this.snapshot.seed||1337);n=(n^(n>>>16))>>>0;return n%Math.max(1,count)}
-    decorateTile(x,y,terrain,occupied){if(occupied||terrain==='water')return;const p=this.toWorld(x,y),roll=this.variant(x,y,1000,71)/1000,P=this.assets.props,d=this.iso.depth(x,y,8);if(terrain==='forest'||roll<.10){const tree=this.sprite(p.x,p.y+9,`tree-${this.variant(x,y,5,9)}`).setOrigin(.5,.92).setDepth(d+12);this.ambient.push(tree);return}if(roll<.18){if(!this.decor(p,d,'prop-flowers')){const g=this.add.graphics().setDepth(d+3);g.fillStyle(P.flowerA,1);g.fillRect(p.x-7,p.y-4,2,2);g.fillStyle(P.flowerB,1);g.fillRect(p.x+5,p.y+3,2,2);g.fillStyle(0x497544,1);g.fillRect(p.x-6,p.y-2,1,3);this.ambient.push(g)}}else if(roll<.24){if(!this.decor(p,d,'prop-rocks')){const g=this.add.graphics().setDepth(d+3);g.fillStyle(P.stone,1);g.fillRect(p.x-5,p.y-2,8,4);g.fillStyle(P.stoneLight,.8);g.fillRect(p.x-3,p.y-3,4,2);this.ambient.push(g)}}}
+    decorateTile(x,y,terrain,occupied){if(occupied)return;if(terrain==='water'){this.propTiles.add(`${x},${y}`);return}const p=this.toWorld(x,y),roll=this.variant(x,y,1000,71)/1000,P=this.assets.props,d=this.iso.depth(x,y,8);/* Remember which tiles carry scenery, so a citizen cutting across open ground walks round a flower bed (or a pond) instead of through it. */if(roll<.24||terrain==='forest')this.propTiles.add(`${x},${y}`);if(terrain==='forest'||roll<.10){const tree=this.sprite(p.x,p.y+9,`tree-${this.variant(x,y,5,9)}`).setOrigin(.5,.92).setDepth(d+12);this.ambient.push(tree);return}if(roll<.18){if(!this.decor(p,d,'prop-flowers')){const g=this.add.graphics().setDepth(d+3);g.fillStyle(P.flowerA,1);g.fillRect(p.x-7,p.y-4,2,2);g.fillStyle(P.flowerB,1);g.fillRect(p.x+5,p.y+3,2,2);g.fillStyle(0x497544,1);g.fillRect(p.x-6,p.y-2,1,3);this.ambient.push(g)}}else if(roll<.24){if(!this.decor(p,d,'prop-rocks')){const g=this.add.graphics().setDepth(d+3);g.fillStyle(P.stone,1);g.fillRect(p.x-5,p.y-2,8,4);g.fillStyle(P.stoneLight,.8);g.fillRect(p.x-3,p.y-3,4,2);this.ambient.push(g)}}}
     /* Scatter drawn from the atlas when it carries the art; the graphics
        fallback above still runs when it does not, so the game renders with no
        assets/ folder at all. */
     decor(p,d,key){if(!this.hasArt(key))return null;const s=this.sprite(p.x,p.y+9,key).setOrigin(.5,.92).setDepth(d+3);this.ambient.push(s);return s}
-    refresh(){this.snapshot=this.adapter.snapshot();this.layout=this.iso.layout(this.snapshot.width,this.snapshot.height);this.tweens.killTweensOf(this.ambient);this.ambient=[];this.buildingRefs.clear();this.children.removeAll(true);this.renderWorld();this.renderSurroundDecor()}
+    refresh(){this.snapshot=this.adapter.snapshot();this.layout=this.iso.layout(this.snapshot.width,this.snapshot.height);this.tweens.killTweensOf(this.ambient);this.ambient=[];this.propTiles=new Set();this.buildingRefs.clear();this.children.removeAll(true);this.renderWorld();this.renderSurroundDecor()}
     /* The playable grid is a wide, short diamond and no viewport shares that
        shape, so framing it always leaves empty space around it. Fill that with
        the same grass lattice, behind everything, so the city sits in a

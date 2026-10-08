@@ -6,4 +6,7 @@ const path=L.route(snapshot,{x:0,y:1},{x:4,y:3});assert.equal(path[0].x,0);asser
 const visible=L.populationFor(snapshot);assert.ok(visible>0&&visible<=L.MAX_CITIZENS,'visible population is bounded');assert.ok(visible<=snapshot.populationSummary.population,'visible citizens cannot exceed simulated population');assert.equal(L.populationFor({...snapshot,populationSummary:{population:0}}),0,'empty simulated city renders no citizens');
 const planned=L.plan(snapshot,0);assert.equal(planned.from.id,'a');assert.equal(planned.to.id,'b');assert.ok(planned.path.length>=4);
 const disconnected={...snapshot,roads:[{x:1,y:1},{x:8,y:8}]};const fallback=L.route(disconnected,{x:0,y:1},{x:9,y:8});assert.ok(fallback.length>=2,'disconnected roads still produce safe fallback route');
+const k=p=>`${p.x},${p.y}`;
+const big={populationSummary:{population:12},roads:[],buildings:[{id:'lab',name:'Lab',x:1,y:0,progress:1,footprint:{w:2,h:2}}]};const overBig=L.route(big,{x:0,y:0},{x:4,y:0});assert.ok(!overBig.some(p=>['1,0','2,0','1,1','2,1'].includes(k(p))),'overland legs walk round every cell of a 2x2 building, not just its anchor');
+const dressed={populationSummary:{population:12},roads:[],buildings:[],scenery:new Set(['1,0','1,1'])};const overBed=L.route(dressed,{x:0,y:0},{x:3,y:0});assert.ok(!overBed.some(p=>dressed.scenery.has(k(p))),'overland legs walk round flower beds, rocks and trees');assert.equal(k(overBed.at(-1)),'3,0');
 console.log('P5-A living city citizens and NPC pathing: ok');

@@ -8,7 +8,11 @@
     p.renderPlanningOverlay=function(mode='none'){
       this.clearPlanningOverlay();this.planningOverlayMode=mode;if(mode==='none'||!this.world.planningOverlayData)return;
       const data=this.world.planningOverlayData(mode),t=this.tile,group=this.add.group();this.planningOverlayGroup=group;
-      for(const c of data.cells){const color=COLORS[c.kind]||COLORS.neutral,alpha=.14+Math.min(.38,(c.value||0)*.32),rect=this.add.rectangle(c.x*t+t/2,c.y*t+t/2,t-3,t-3,color,alpha).setDepth(14);rect.setStrokeStyle(c.kind==='bad'?2:1,color,Math.min(.9,alpha+.25));group.add(rect)}
+      /* One isometric diamond per tile, just above that tile's ground. These were axis-aligned
+         squares on a top-down grid at depth 14, and terrain sits at (x+y)*100+x, so the ground
+         covered every square but the corner one: the overlays drew, but nobody could see them. */
+      const D=[29,0,58,14,29,28,0,14];
+      for(const c of data.cells){const color=COLORS[c.kind]||COLORS.neutral,alpha=.14+Math.min(.38,(c.value||0)*.32),at=this.toWorld?this.toWorld(c.x,c.y):{x:c.x*t+t/2,y:c.y*t+t/2},depth=this.iso?.depth?this.iso.depth(c.x,c.y,2):14,cell=this.add.polygon(at.x,at.y,D,color,alpha).setDepth(depth);cell.setStrokeStyle(c.kind==='bad'?2:1,color,Math.min(.9,alpha+.25));group.add(cell)}
       C.events.emit('planning:overlay-rendered',{mode,count:data.cells.length,summary:data.summary});
     };
     const oldRefresh=p.refresh;p.refresh=function(){const mode=this.planningOverlayMode||'none';oldRefresh.call(this);if(mode!=='none')this.renderPlanningOverlay(mode)};
