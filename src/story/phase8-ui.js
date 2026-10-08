@@ -8,7 +8,7 @@
       this.refresh()
     }
     bind(){
-      C.events.on('story:beat',b=>{this.showBeat(b);this.refresh()});
+      C.events.on('story:beat',b=>{if(!b?.inRewardCard)this.showBeat(b);this.refresh()});
       C.events.on('story:recruiter-message',()=>this.refresh());
       C.events.on('story:relationship',()=>this.refresh());
       C.events.on('story:character-unlocked',e=>{this.toast(`${e.def.icon} ${e.def.name} joined your team`);this.refresh()});

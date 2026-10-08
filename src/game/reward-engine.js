@@ -12,7 +12,8 @@
         lastMeaningfulAt:old.lastMeaningfulAt||null,
         celebrations:old.celebrations||0,
         breakthroughs:old.breakthroughs||[],
-        totalMeaningfulActions:old.totalMeaningfulActions||0
+        totalMeaningfulActions:old.totalMeaningfulActions||0,
+        passMarks:old.passMarks&&typeof old.passMarks==='object'?old.passMarks:{}
       };
     }
     decayMomentum(){
@@ -54,7 +55,14 @@
         intensity:clamp(difficulty+(first?1:0),1,4)
       };
       const target=this.world.districtTile(challenge.district);if(target){event.x=target.x;event.y=target.y}
-      C.events.emit('learning:mastered',event);C.events.emit('reward:celebration',event);C.events.emit('reward:particles',{x:event.x,y:event.y,kind:breakthrough?'discovery':'reward',count:18+event.intensity*8});
+      // The city's economy listens for challenge:solved (CodingRewardPipeline turns it into
+      // concept resources, construction boost and learning-contract progress). Nothing emitted
+      // it, so a judged pass paid credits but never grew the city. Hints and attempts count
+      // since this challenge was last passed, so a clean re-solve is not taxed for old ones.
+      const mastery=this.state.mastery?.[challenge.id]||{},mark=this.meta.passMarks||(this.meta.passMarks={}),prior=mark[challenge.id]||{attempts:0,hints:0},hints=this.state.hintsByChallenge?.[challenge.id]||0;
+      const solved={challenge,correct:true,firstSolve:first,repeat:review,hintsUsed:Math.max(0,hints-prior.hints),attempts:Math.max(1,(mastery.attempts||1)-prior.attempts),streak:this.state.streak||0,source:'judge',x:event.x,y:event.y};
+      mark[challenge.id]={attempts:mastery.attempts||0,hints};
+      C.events.emit('learning:mastered',event);C.events.emit('challenge:solved',solved);C.events.emit('reward:celebration',event);C.events.emit('reward:particles',{x:event.x,y:event.y,kind:breakthrough?'discovery':'reward',count:18+event.intensity*8});
       this.audio?.success(event.intensity);if(breakthrough)setTimeout(()=>this.audio?.discovery(),450);
       return event;
     }

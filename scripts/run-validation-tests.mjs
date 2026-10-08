@@ -25,6 +25,8 @@ const suites = [
   ['P4-F age transition reveal', 'tests/age-transition-reveal.mjs'],
   ['P4-G Phase 4 integration and balance', 'tests/p4-integration.mjs'],
   ['P5-A citizens and NPC pathing', 'tests/living-city-citizens.mjs'],
+  ['solve to city reward link', 'tests/solve-city-reward-link.mjs'],
+  ['solve to city payoff', 'tests/city-payoff.mjs'],
   ['P5-B citizen schedules and building activity', 'tests/citizen-schedules.mjs'],
   ['P5-C ambient city activity and particles', 'tests/ambient-city-activity.mjs'],
   ['P5-D city events and citizen reactions', 'tests/city-event-reactions.mjs'],
