@@ -4,6 +4,18 @@
      where it applies and the generated asset still covers the rest. Naming
      matches what the scene itself draws, so this re-selects the frame the scene
      already chose rather than picking a different one. */
+  /* Art drawn for one building at one level, or for a 2x2 site, follows the
+     importer's anchor contract (tools/import-sheets.py): centred on its base,
+     with the front corner of the base BASE_PAD px per cell above the bottom. */
+  const BASE_PAD=4;
+  function cells(b){const f=b.footprint||{w:1,h:1};return Math.max(f.w||1,f.h||1)}
+  function ownFrame(scene,b,stage){
+    if(stage==='complete'){const k=`bld-${b.id}-${Math.max(1,Math.min(3,Number(b.level)||1))}`;return scene.hasArt?.(k)?k:null}
+    if(cells(b)<2)return null;
+    /* Four drawn stages for a big site: the frame stage shows bare timber, then
+       canvas scaffolding over its second half. */
+    const p=Math.max(0,Math.min(1,Number(b.progress)||0)),k=`build2-${stage==='frame'&&p>=.53?'scaffold':stage}`;
+    return scene.hasArt?.(k)?k:null}
   function sheetFrame(scene,b,stage){
     /* The sheet draws each construction stage, so a half-built plot shows the
        drawn foundation, frame or shell rather than a generated scaffold. */
@@ -53,13 +65,18 @@
       .setDepth(scene.iso.depth(b.x,b.y,29));
     return ref.site}
   function apply(scene,b,ref){if(!ref?.image||!C.BuildingAssetSystem)return null;const ageLevel=b.ageLevel||scene.snapshot?.age?.level||C.BuildingAssetSystem.currentAge?.(),
-    stage=C.BuildingAssetSystem.stageFor?.(b.progress)||'complete',frame=sheetFrame(scene,b,stage),
+    stage=C.BuildingAssetSystem.stageFor?.(b.progress)||'complete',own=ownFrame(scene,b,stage),frame=own||sheetFrame(scene,b,stage),
     /* Only generate when the drawing is what gets shown; otherwise this made a
        texture per district that nothing ever drew. */
     asset=frame?null:C.BuildingAssetSystem.generate(scene,{...b,ageLevel}),p=position(scene,b);
     /* An outbuilding and a rank marker both describe a finished site, so a plot
        still under construction gets neither. */
-    if(frame){ref.image.setTexture(ATLAS,frame);ref.image.setPosition(p.x,p.y+9);ref.image.setOrigin(.5,.86);
+    /* A building's own drawing already shows its level and its whole plot, so it
+       needs no pips, no outbuilding and no separate crane. */
+    if(own){const k=cells(b),fr=scene.textures?.getFrame?.(ATLAS,own),h=fr?.height||ref.image.height||1;
+      ref.image.setTexture(ATLAS,own);ref.image.setOrigin(.5,(h-BASE_PAD*k)/h);ref.image.setPosition(p.x,p.y+16*k);
+      if(ref.annex){ref.annex.destroy?.();ref.annex=null}if(ref.pips){for(const g of ref.pips)g.destroy?.();ref.pips=null}if(ref.site){ref.site.destroy?.();ref.site=null}}
+    else if(frame){ref.image.setTexture(ATLAS,frame);ref.image.setPosition(p.x,p.y+9);ref.image.setOrigin(.5,.86);
       const done=stage==='complete';
       if(done){annex(scene,b,ref);pips(scene,b,ref)}
       else{if(ref.annex){ref.annex.destroy?.();ref.annex=null}if(ref.pips){for(const g of ref.pips)g.destroy?.();ref.pips=null}}
@@ -73,4 +90,4 @@
     ref.image.clearTint?.();ref.image.setScale?.(1);ref.image.setAlpha(1);ref.image.setDepth(scene.iso.depth(b.x+(b.footprint?.w||1)-1,b.y+(b.footprint?.h||1)-1,30));
     ref.assetKey=frame||asset.key;ref.stage=stage;ref.level=b.level||1;ref.age=asset?asset.recipe.age:(C.BuildingAssetSystem.currentAge?.(ageLevel)||ageLevel||1);ref.footprint=b.footprint||{w:1,h:1};
     if(ref.dust){ref.dust.setPosition(p.x,p.y-6);ref.dust.setDepth(scene.iso.depth(b.x,b.y,42))}
-    return asset||{key:frame,stage,recipe:{age:ref.age},sheet:true}}function render(scene){for(const b of scene.snapshot?.buildings||[]){const ref=scene.buildingRefs?.get?.(`${b.x},${b.y}`);apply(scene,b,ref)}return scene.buildingRefs}function install(){const Scene=C.PhaserCityScene;if(!Scene?.prototype)return false;if(Scene.prototype.__p1cTierVisuals)return true;Scene.prototype.__p1cTierVisuals=true;const original=Scene.prototype.renderWorld;Scene.prototype.renderWorld=function(){const out=original.apply(this,arguments);render(this);return out};const originalUpdate=Scene.prototype.update;Scene.prototype.update=function(time,delta){const out=originalUpdate?.call(this,time,delta);if(time-(this.__r3AssetTick||0)<150)return out;this.__r3AssetTick=time;const snap=this.adapter?.snapshot?.()||this.snapshot,age=snap?.age?.level||C.BuildingAssetSystem?.currentAge?.();for(const b of snap?.buildings||[]){const ref=this.buildingRefs?.get?.(`${b.x},${b.y}`);if(!ref)continue;const stage=C.BuildingAssetSystem?.stageFor?.(b.progress);if(stage!==ref.stage||Number(b.level||1)!==Number(ref.level||1)||Number(age||1)!==Number(ref.age||1))apply(this,{...b,ageLevel:age},ref)}return out};const scene=C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');if(scene)render(scene);C.events?.emit?.('r3:building-assets-ready',{version:VERSION,...(C.BuildingAssetSystem?.audit?.()||{})});return true}C.BuildingTierVisuals={VERSION,position,apply,render,install};})(window.Codeopolis);
+    return asset||{key:frame,stage,recipe:{age:ref.age},sheet:true}}function render(scene){for(const b of scene.snapshot?.buildings||[]){const ref=scene.buildingRefs?.get?.(`${b.x},${b.y}`);apply(scene,b,ref)}return scene.buildingRefs}function install(){const Scene=C.PhaserCityScene;if(!Scene?.prototype)return false;if(Scene.prototype.__p1cTierVisuals)return true;Scene.prototype.__p1cTierVisuals=true;const original=Scene.prototype.renderWorld;Scene.prototype.renderWorld=function(){const out=original.apply(this,arguments);render(this);return out};const originalUpdate=Scene.prototype.update;Scene.prototype.update=function(time,delta){const out=originalUpdate?.call(this,time,delta);if(time-(this.__r3AssetTick||0)<150)return out;this.__r3AssetTick=time;const snap=this.adapter?.snapshot?.()||this.snapshot,age=snap?.age?.level||C.BuildingAssetSystem?.currentAge?.();for(const b of snap?.buildings||[]){const ref=this.buildingRefs?.get?.(`${b.x},${b.y}`);if(!ref)continue;const stage=C.BuildingAssetSystem?.stageFor?.(b.progress);const own=ownFrame(this,b,stage);if(stage!==ref.stage||Number(b.level||1)!==Number(ref.level||1)||Number(age||1)!==Number(ref.age||1)||(own&&own!==ref.assetKey))apply(this,{...b,ageLevel:age},ref)}return out};const scene=C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');if(scene)render(scene);C.events?.emit?.('r3:building-assets-ready',{version:VERSION,...(C.BuildingAssetSystem?.audit?.()||{})});return true}C.BuildingTierVisuals={VERSION,BASE_PAD,position,ownFrame,apply,render,install};})(window.Codeopolis);

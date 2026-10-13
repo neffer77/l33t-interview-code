@@ -42,11 +42,11 @@
   /* The reward card's "Your city" rows, in the order they matter to the player. */
   function summary(m=current){
     if(!m||m.type!=='solve')return[];const rows=[];
-    if(m.resource)rows.push({key:'resource',icon:m.resource.icon,text:`+${m.resource.amount} ${m.resource.name}`,detail:'for your city'});
+    if(m.resource)rows.push({key:'resource',icon:m.resource.icon,ico:m.resource.id,text:`+${m.resource.amount} ${m.resource.name}`,detail:'for your city'});
     if(m.growth)rows.push(m.growth.kind==='upgrade'?{key:'growth',icon:'⬆️',text:`${m.growth.name} → Level ${m.growth.level}`,detail:'upgraded'}:{key:'growth',icon:'🏗️',text:`New ${m.growth.name}`,detail:'under construction'});
-    if(m.boostMs>0)rows.push({key:'boost',icon:'⚡',text:`+${Math.round(m.boostMs/1000)}s build boost`,detail:'banked for your crew'});
+    if(m.boostMs>0)rows.push({key:'boost',icon:'⚡',ico:'build-boost',text:`+${Math.round(m.boostMs/1000)}s build boost`,detail:'banked for your crew'});
     if(m.unlock)rows.push({key:'unlock',icon:'🏛️',text:`${m.unlock.name} unlocked`,detail:'ready to place'});
-    const next=nextGoal();if(next)rows.push({key:'goal',icon:'🎯',text:next,detail:'next city goal'});
+    const next=nextGoal();if(next)rows.push({key:'goal',icon:'🎯',ico:'goal',text:next,detail:'next city goal'});
     return rows}
   function nextGoal(){try{const s=C.game?.state||window.state,w=C.game?.world;return C.LearningCityLoop?.contract?.(s,w)?.next?.text||null}catch{return null}}
   function pending(){return queue.filter(fresh)}
