@@ -28,7 +28,7 @@ const BUILDINGS=[
 {id:'transit',name:'Graph Transit Hub',icon:'🚇',cost:650,district:'graphs',population:20,happiness:4,energy:-2,requiresTech:'graphs',desc:'+20 population · +4 happiness'},
 {id:'lab',name:'DP Research Lab',icon:'🧪',cost:700,district:'dp',researchRate:8,energy:-2,requiresTech:'dp',desc:'+8 research/min · -2 energy'},
 {id:'park',name:'Recovery Park',icon:'🌳',cost:260,district:'core',happiness:8,desc:'+8 happiness'},
-{id:'solar',name:'Solar Array',icon:'☀️',cost:360,district:'core',energy:6,requiresTech:'energy',desc:'+6 energy capacity'},
+{id:'solar',name:'Wind Farm',icon:'🌬️',cost:360,district:'core',energy:6,requiresTech:'energy',desc:'+6 energy capacity'},
 {id:'tower',name:'Algorithm Tower',icon:'🏢',cost:950,district:'core',population:45,researchRate:3,energy:-3,requiresEra:2,desc:'+45 population · +3 research/min'},
 {id:'academy',name:'Interview Academy',icon:'🎓',cost:1200,district:'core',happiness:5,researchRate:5,energy:-2,requiresEra:3,desc:'+5 happiness · +5 research/min'}
 ];
@@ -37,7 +37,7 @@ const TECH=[
 {id:'arrays',name:'Array Engineering',cost:40,desc:'Unlock Array Foundry.',prereq:[]},
 {id:'maps',name:'Hash Infrastructure',cost:70,desc:'Unlock Hash Market.',prereq:['arrays']},
 {id:'search',name:'Ordered Systems',cost:90,desc:'Unlock Search Observatory.',prereq:['arrays']},
-{id:'energy',name:'Grid Engineering',cost:120,desc:'Unlock Solar Arrays.',prereq:['arrays']},
+{id:'energy',name:'Grid Engineering',cost:120,desc:'Unlock Wind Farms.',prereq:['arrays']},
 {id:'graphs',name:'Graph Transit',cost:160,desc:'Unlock graph district infrastructure.',prereq:['maps','search']},
 {id:'dp',name:'Dynamic Planning',cost:260,desc:'Unlock DP Research Labs.',prereq:['graphs']},
 {id:'automation',name:'Civic Automation',cost:350,desc:'+25% passive production.',prereq:['dp','energy']}

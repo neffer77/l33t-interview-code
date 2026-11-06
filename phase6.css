@@ -23,3 +23,7 @@
 .reward-mentor blockquote{margin:0;font-size:13.5px;line-height:1.4;color:#dbe8ff}
 .reward-mentor figcaption{font-size:11px;color:#8fa4c4}
 @media(max-width:760px){.reward-overlay{padding:12px}.reward-card{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}.reward-card:before,.reward-card:after{display:none}.reward-title{font-size:30px}.reward-problem{margin-top:9px}.reward-mentor{margin-top:10px;padding:8px 10px}.reward-mentor blockquote{font-size:12.5px}}
+/* Drawn interface icons: 64px art shown small, so scale smoothly (the pixel-art rule for SVG icons would alias them). */
+img.ui-ico,img.p2-res-ico{display:block;image-rendering:auto;object-fit:contain}
+.reward-grid span img.ui-ico{margin:0 auto 2px}
+.reward-city-row span img.ui-ico{margin:0 auto}

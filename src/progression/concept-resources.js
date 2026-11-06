@@ -47,6 +47,6 @@
     infrastructure:[[8,2,3,5,'d'],[7,2,3,5,'b'],[5,7,5,3,'b'],[5,7,5,1,'l'],[5,7,4,7,'d'],[5,7,3,7,'b'],[7,8,2,4,'l']],
     stability:[[3,2,10,4,'d'],[3,2,10,7,'b'],[3,2,10,1,'l'],[4,9,8,3,'d'],[6,12,4,2,'d'],[5,4,6,2,'l'],[7,6,2,4,'l']]
   };
-  function iconSVG(id,size=18){const cells=ICON_CELLS[id],pal=ICON_PAL[id];if(!cells||!pal)return'';let out=`<svg class="p2-res-ico" viewBox="0 0 16 16" width="${size}" height="${size}" shape-rendering="crispEdges" aria-hidden="true" focusable="false">`;for(const c of cells)out+=`<rect x="${c[0]-1}" y="${c[1]-1}" width="${c[2]+2}" height="${c[3]+2}" fill="${ICON_INK}" opacity=".85"/>`;for(const c of cells)out+=`<rect x="${c[0]}" y="${c[1]}" width="${c[2]}" height="${c[3]}" fill="${pal[c[4]]||pal.b}"/>`;return out+'</svg>'}
+  function iconSVG(id,size=18){if(C.UIIcons?.has?.(id))return C.UIIcons.img(id,{size,cls:'p2-res-ico'});const cells=ICON_CELLS[id],pal=ICON_PAL[id];if(!cells||!pal)return'';let out=`<svg class="p2-res-ico" viewBox="0 0 16 16" width="${size}" height="${size}" shape-rendering="crispEdges" aria-hidden="true" focusable="false">`;for(const c of cells)out+=`<rect x="${c[0]-1}" y="${c[1]-1}" width="${c[2]+2}" height="${c[3]+2}" fill="${ICON_INK}" opacity=".85"/>`;for(const c of cells)out+=`<rect x="${c[0]}" y="${c[1]}" width="${c[2]}" height="${c[3]}" fill="${pal[c[4]]||pal.b}"/>`;return out+'</svg>'}
   C.ConceptResources={RESOURCE_DEFS,DISTRICT_MAP,DEFAULT_CAP,conceptKey,rewardFor,ensure,award,balances,capacities,normalizeCost,missing,canSpend,spend,refund,install,iconSVG};
 })(window.Codeopolis);

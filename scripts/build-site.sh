@@ -24,6 +24,8 @@ rsync -a \
   --exclude 'node_modules' \
   --exclude 'tests' \
   --exclude 'scripts' \
+  --exclude 'tools' \
+  --exclude 'assets/src' \
   --exclude "$OUT" \
   ./ "$OUT/"
 

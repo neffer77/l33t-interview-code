@@ -22,12 +22,12 @@ function fitBadge(img){const h=img.frame?.realHeight||img.height||BADGE_PX,w=img
   return img.setDisplaySize(Math.max(1,Math.round(BADGE_PX*(w/Math.max(1,h)))),BADGE_PX)}
 function updateBadge(scene,badge,activity){if(!badge)return;const fr=activityFrame(scene,activity);if(fr&&badge.setFrame){badge.setFrame(fr);fitBadge(badge)}else badge.setText?.(activityGlyph(activity))}
 function labelY(sprite){const h=sprite?.displayHeight||0;return h>8?{top:sprite.y-h*1.02,bot:sprite.y+h*.04}:{top:sprite.y-8,bot:sprite.y+7}}
-/* One steady front view and one back view per role, read off the sheet at 9x.
-   The other variants are pose studies, not a walk cycle — stepping through them
-   reads as fidgeting (the scholar's book appears and vanishes) — and keeper-4 is
-   a slicing error, a gardener's hat on a keeper's body. */
-const FACING=Object.freeze({builder:[1,4],scholar:[1,4],merchant:[1,7],gardener:[1,4],keeper:[1,3],messenger:[1,7]});
-function citizenArt(scene,i,view='front'){const frames=scene?.art?.();if(!frames||!frames.size)return null;const fam=ROLE_ART[i%ROLE_ART.length],pair=FACING[fam]||[1,1],want=`cit-${fam}-${view==='back'?pair[1]:pair[0]}`;if(frames.has(want))return want;for(let n=1;n<=8;n++){const k=`cit-${fam}-${n}`;if(frames.has(k))return k}return null}
+/* Six walk frames per role in each of two views: facing the camera (drawn
+   facing lower right) and walking away (drawn facing upper right). The other
+   two directions are the same frames mirrored. Frame 0 doubles as standing. */
+const WALK_FRAMES=6,FRAMES_PER_TILE=12;
+function walkFrames(scene,i,view='f'){const frames=scene?.art?.();if(!frames||!frames.size)return null;const fam=ROLE_ART[i%ROLE_ART.length],out=[];for(let n=0;n<WALK_FRAMES;n++){const k=`cit-${fam}-${view}${n}`;if(!frames.has(k))return null;out.push(k)}return out}
+function citizenArt(scene,i,view='front'){return walkFrames(scene,i,view==='back'?'b':'f')?.[0]||null}
 function key(p){return`${p.x},${p.y}`}function roadSet(s){return new Set((s?.roads||[]).map(key))}function neighbors(p,set){return[{x:p.x+1,y:p.y},{x:p.x-1,y:p.y},{x:p.x,y:p.y+1},{x:p.x,y:p.y-1}].filter(n=>set.has(key(n)))}function nearestRoad(point,roads){if(!roads?.length)return null;let best=null,dist=1e9;for(const r of roads){const d=Math.abs(r.x-point.x)+Math.abs(r.y-point.y);if(d<dist){dist=d;best=r}}return best}
   /* Every cell a building covers. Advanced buildings are 2x2, and marking only the
      anchor let citizens walk across the other three cells of the roof. */
@@ -126,7 +126,7 @@ function key(p){return`${p.x},${p.y}`}function roadSet(s){return new Set((s?.roa
   const first=held?{x:held.x,y:held.y+5}:point(scene,startTile),depth=C.PixelWorldProjection?.depth?.(startTile.x,startTile.y,60)||900,art=citizenArt(scene,i),sprite=art?scene.add.image(first.x,first.y-5,ATLAS,art).setOrigin(.5,1).setDepth(depth):scene.add.circle(first.x,first.y-5,3,i%3===0?0xffd166:i%3===1?0x8ee3c1:0x9ab8ff,1).setDepth(depth);if(!art)sprite.setStrokeStyle?.(1,0x142129,.9);/* A soft contact shadow. Without one the figures had no ground contact and,
      drawn in the same tans and greys as the cobbles, dissolved into the road. The
      shadow stays put while the body bobs, which also sells the footfalls. */
-  const shadow=scene.add.ellipse?.(sprite.x,sprite.y,11,4,0x1b120d,.34)?.setDepth?.(depth-1)||null;if(indoors){sprite.setAlpha?.(0);shadow?.setAlpha?.(0)}const badge=makeBadge(scene,sprite.x,labelY(sprite).top,p.activity,sprite.depth+1).setVisible(false),nameplate=scene.add.text(sprite.x,labelY(sprite).bot,p.person.name,{fontFamily:'system-ui',fontSize:'7px',color:'#dcecff',backgroundColor:'#0b151fcc',padding:{x:2,y:1}}).setOrigin(.5,0).setDepth(sprite.depth+1).setVisible(false),citizen={...p.person,indexSeed:i,gen:scene.citizenGen,sprite,shadow,artFront:art,artBack:art?citizenArt(scene,i,'back'):null,badge,nameplate,route:toDoor(s,routePath).path,enters:toDoor(s,routePath).enters,index:0,from:p.from,home:p.home,to:p.to,activity:p.activity,period:p.period};sprite.setInteractive?.({useHandCursor:true});sprite.on?.('pointerover',()=>{nameplate.setText?.(`${citizen.name} · ${citizen.role}`);nameplate.setVisible?.(true);badge.setVisible?.(true)});sprite.on?.('pointerout',()=>{nameplate.setText?.(citizen.name);nameplate.setVisible?.(false);badge.setVisible?.(false)});sprite.on?.('pointerdown',()=>C.CitizenDialogueMentorship?.open?.(scene,citizen,C.game?.state||window.state,C.game?.world));out.push(citizen);walk(scene,citizen)}C.CitizenIdentities?.apply?.(out);scene.livingCitizens=out;C.events?.emit?.('living-city:citizens-rendered',{count:out.length,population:s?.populationSummary?.population||0,period:C.CitizenSchedules?.phase?.(clockNow())?.id||'workday',named:out.filter(c=>c.name).length,projection:'iso-pixel-v1'});return out}function wander(scene,c,s){
+  const shadow=scene.add.ellipse?.(sprite.x,sprite.y,11,4,0x1b120d,.34)?.setDepth?.(depth-1)||null;if(indoors){sprite.setAlpha?.(0);shadow?.setAlpha?.(0)}const badge=makeBadge(scene,sprite.x,labelY(sprite).top,p.activity,sprite.depth+1).setVisible(false),nameplate=scene.add.text(sprite.x,labelY(sprite).bot,p.person.name,{fontFamily:'system-ui',fontSize:'7px',color:'#dcecff',backgroundColor:'#0b151fcc',padding:{x:2,y:1}}).setOrigin(.5,0).setDepth(sprite.depth+1).setVisible(false),citizen={...p.person,indexSeed:i,gen:scene.citizenGen,sprite,shadow,artFront:art,artBack:art?citizenArt(scene,i,'back'):null,walk:{f:walkFrames(scene,i,'f'),b:walkFrames(scene,i,'b')},view:'f',stride:0,badge,nameplate,route:toDoor(s,routePath).path,enters:toDoor(s,routePath).enters,index:0,from:p.from,home:p.home,to:p.to,activity:p.activity,period:p.period};sprite.setInteractive?.({useHandCursor:true});sprite.on?.('pointerover',()=>{nameplate.setText?.(`${citizen.name} · ${citizen.role}`);nameplate.setVisible?.(true);badge.setVisible?.(true)});sprite.on?.('pointerout',()=>{nameplate.setText?.(citizen.name);nameplate.setVisible?.(false);badge.setVisible?.(false)});sprite.on?.('pointerdown',()=>C.CitizenDialogueMentorship?.open?.(scene,citizen,C.game?.state||window.state,C.game?.world));out.push(citizen);walk(scene,citizen)}C.CitizenIdentities?.apply?.(out);scene.livingCitizens=out;C.events?.emit?.('living-city:citizens-rendered',{count:out.length,population:s?.populationSummary?.population||0,period:C.CitizenSchedules?.phase?.(clockNow())?.id||'workday',named:out.filter(c=>c.name).length,projection:'iso-pixel-v1'});return out}function wander(scene,c,s){
   /* Strolls, not shuttles. Most trips are a walk along the roads to somewhere this
      citizen has not just been and nobody else is already heading, routed with a
      shuffled tie-break — so two people between the same corners take different
@@ -148,6 +148,7 @@ function key(p){return`${p.x},${p.y}`}function roadSet(s){return new Set((s?.roa
     /* Pause between walks: a long, per-citizen linger so the street is never all in
        motion at once and arrivals do not line up. Someone who went into a building
        stays in longer — and while they are in, the street is that much quieter. */
+    const rest=c.walk?.[c.view]?.[0];if(rest&&c.sprite.frame?.name!==rest)c.sprite.setFrame?.(rest);
     if(went)fade(scene,c,0);
     const dwell=(went?4200:2200)+(seed*97%(went?5000:3800));return setTimeout(()=>walk(scene,c),dwell)}
   if(c.sprite.alpha<1)fade(scene,c,1);
@@ -161,7 +162,7 @@ function key(p){return`${p.x},${p.y}`}function roadSet(s){return new Set((s?.roa
   /* Face the way you are going: mirrored left and right, and the back view when
      walking away from the camera, the front view when walking toward it. */
   const dx=target.x-c.sprite.x,dy=target.y-5-c.sprite.y;if(Math.abs(dx)>0.5)c.sprite.setFlipX?.(dx<0);
-  if(Math.abs(dy)>0.5&&c.artFront&&c.artBack&&c.sprite.setFrame){const want=dy<0?c.artBack:c.artFront;if(c.sprite.frame?.name!==want)c.sprite.setFrame(want)}
+  if(Math.abs(dy)>0.5)c.view=dy<0?'b':'f';const cycle=c.walk?.[c.view];
   /* A stroll: roughly two seconds a tile at an even pace, easing only out of the
      first step and into the last, so a walk starts and stops rather than every tile
      surging and braking. It used to be 0.56-1.08s a tile, eased in and out on every
@@ -172,15 +173,24 @@ function key(p){return`${p.x},${p.y}`}function roadSet(s){return new Set((s?.roa
   c.step=step;
   scene.tweens.add({targets:step,t:1,duration,ease,onUpdate:()=>{if(!c.sprite?.active)return;
     const x=from.x+(to.x-from.x)*step.t,y=from.y+(to.y-from.y)*step.t;
-    /* Two footfalls a tile: the body lifts a single whole pixel and the shadow stays
-       on the ground, which is what makes slow movement read as walking. */
-    c.bob=Math.abs(Math.sin(step.t*Math.PI*2))>0.6?1:0;
+    /* Feet follow distance, not time: two full strides a tile, read off the eased
+       step, so a walk that eases in and out never slides. Without walk frames the
+       body falls back to lifting one pixel per footfall. */
+    if(cycle){const f=cycle[Math.floor(c.stride+step.t*FRAMES_PER_TILE)%WALK_FRAMES];if(c.sprite.frame?.name!==f)c.sprite.setFrame?.(f);c.bob=0}
+    else c.bob=Math.abs(Math.sin(step.t*Math.PI*2))>0.6?1:0;
     c.sprite.setPosition(x,y-c.bob);c.shadow?.setPosition(x,y);
     const L=labelY(c.sprite);c.badge?.setPosition(x,L.top);c.nameplate?.setPosition(x,L.bot)},
-    onComplete:()=>{c.bob=0;if(!c.sprite?.active)return;c.sprite.y=to.y;c.sprite.setDepth(D(tile));c.shadow?.setDepth(D(tile)-1);c.index=nextIndex;walk(scene,c)}})}/* One rebuild per burst. Each of these events used to schedule its own
+    onComplete:()=>{c.bob=0;c.stride=(c.stride+FRAMES_PER_TILE)%WALK_FRAMES;if(!c.sprite?.active)return;c.sprite.y=to.y;c.sprite.setDepth(D(tile));c.shadow?.setDepth(D(tile)-1);c.index=nextIndex;walk(scene,c)}})}/* One rebuild per burst. Each of these events used to schedule its own
      teardown-and-respawn, so painting a fifteen-tile road stroke rebuilt the whole
      population fifteen times over. Coalesce to a single trailing rebuild. */
   let refreshTimer=0;
   function queueRefresh(){if(refreshTimer)clearTimeout(refreshTimer);
     refreshTimer=setTimeout(()=>{refreshTimer=0;refresh()},260)}
-  function refresh(){const scene=C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');if(!scene)return false;spawn(scene,withScenery(scene,scene.adapter?.snapshot?.()||scene.snapshot));C.AmbientCityActivity?.render?.(scene,scene.adapter?.snapshot?.()||scene.snapshot);return true}function install(){ensureSchedules();ensureAmbient();ensureReactions();ensureIdentities();ensureDialogue();if(install._done)return true;install._done=true;for(const evt of['world:building-placed','world:building-unplaced','world:road-changed','world:building-upgraded','age:advanced','civilization:phaser-ready','population:migrated'])C.events?.on?.(evt,queueRefresh);setTimeout(refresh,120);return true}C.LivingCityCitizens={VERSION,MAX_CITIZENS,SCHEDULE_URL,AMBIENT_URL,REACTION_URL,IDENTITY_URL,DIALOGUE_URL,ensureSchedules,ensureAmbient,ensureReactions,ensureIdentities,ensureDialogue,roadSet,neighbors,nearestRoad,route,destinations,populationFor,clockNow,plan,activityGlyph,point,updateSchedule,spawn,refresh,install};})(window.Codeopolis);
+  /* A population change only matters to the street when it changes how many
+     people are out walking. It used to rebuild everyone every time the number
+     ticked, which in a growing town was every second or two: every walker
+     restarted their step and every animation snapped back to its first frame. */
+  function populationChanged(){const scene=C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');if(!scene)return false;
+    const want=populationFor(scene.adapter?.snapshot?.()||scene.snapshot),have=(scene.livingCitizens||[]).length;
+    if(want===have)return false;queueRefresh();return true}
+  function refresh(){const scene=C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');if(!scene)return false;spawn(scene,withScenery(scene,scene.adapter?.snapshot?.()||scene.snapshot));C.AmbientCityActivity?.render?.(scene,scene.adapter?.snapshot?.()||scene.snapshot);return true}function install(){ensureSchedules();ensureAmbient();ensureReactions();ensureIdentities();ensureDialogue();if(install._done)return true;install._done=true;for(const evt of['world:building-placed','world:building-unplaced','world:road-changed','world:building-upgraded','age:advanced','civilization:phaser-ready'])C.events?.on?.(evt,queueRefresh);C.events?.on?.('population:migrated',populationChanged);setTimeout(refresh,120);return true}C.LivingCityCitizens={VERSION,MAX_CITIZENS,SCHEDULE_URL,AMBIENT_URL,REACTION_URL,IDENTITY_URL,DIALOGUE_URL,ensureSchedules,ensureAmbient,ensureReactions,ensureIdentities,ensureDialogue,roadSet,neighbors,nearestRoad,route,destinations,populationFor,clockNow,plan,activityGlyph,point,updateSchedule,spawn,refresh,populationChanged,install};})(window.Codeopolis);
