@@ -4,12 +4,19 @@
   C.version='6.0.0';
   C.modules=C.modules||{};
 
-  const listeners=new Map();
+  const listeners=new Map(),quiet=new Set();let revision=0;
   C.events={
     on(name,fn){if(!listeners.has(name))listeners.set(name,new Set());listeners.get(name).add(fn);return()=>listeners.get(name)?.delete(fn)},
     once(name,fn){const off=this.on(name,(payload)=>{off();fn(payload)});return off},
     off(name,fn){listeners.get(name)?.delete(fn)},
-    emit(name,payload){for(const fn of listeners.get(name)||[]){try{fn(payload)}catch(err){console.error('[Codeopolis event]',name,err)}}}
+    emit(name,payload){if(!quiet.has(name))revision++;for(const fn of listeners.get(name)||[]){try{fn(payload)}catch(err){console.error('[Codeopolis event]',name,err)}}},
+    /* Every change to the game is announced on this bus, so the count of
+       events emitted so far tells a cache whether what it holds can still be
+       current. Frequent events that never change the game (the frame tick,
+       citizens chatting) are registered with quiet() and leave it alone. It
+       moves before listeners run, so anything they read is recomputed. */
+    get revision(){return revision},
+    quiet(...names){for(const n of names)quiet.add(n)}
   };
 
   C.util={

@@ -1,6 +1,10 @@
 (function(C){
   'use strict';
   const {clamp,lerp,seeded}=C.util;
+  /* Fired every frame. Systems that change the game on a tick announce the
+     change with an event of their own, so the tick itself does not count as
+     one (see C.events.revision). */
+  C.events.quiet?.('world:tick');
 
   class CitySimulation{
     constructor(world,gameState){

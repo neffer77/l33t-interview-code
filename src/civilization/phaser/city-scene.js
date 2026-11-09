@@ -30,7 +30,7 @@
       this.input.on('pointermove',p=>{const down=this.input.manager.pointers.filter(q=>q.isDown);if(down.length>=2){this.updatePinch(down[0],down[1]);return}if(!p.isDown||!this.drag||this.drag.id!==p.id||this.pinch)return;const dx=p.x-this.drag.x,dy=p.y-this.drag.y;if(Math.abs(dx)+Math.abs(dy)>7)this.drag.moved=true;cam.scrollX=this.drag.sx-dx/cam.zoom;cam.scrollY=this.drag.sy-dy/cam.zoom;this.persistCamera()});
       this.input.on('pointerup',p=>{const still=this.input.manager.pointers.filter(q=>q.isDown&&q.id!==p.id);if(this.pinch){if(still.length<2)this.pinch=null;this.drag=null;return}if(this.drag&&this.drag.id===p.id&&!this.drag.moved)this.selectPointer(p);this.drag=null});
       this.input.on('wheel',(_p,_g,_dx,dy)=>{cam.setZoom(Math.max(.55,Math.min(2.5,cam.zoom-dy*.001)));this.persistCamera()});this.scale.on('resize',()=>this.cameras.main.setViewport(0,0,this.scale.width,this.scale.height));
-      for(const evt of ['world:selected','world:road-changed','world:building-placed','world:building-unplaced','world:building-upgraded'])C.events.on(evt,()=>this.refresh());
+      for(const evt of ['world:selected','world:road-changed','world:building-placed','world:building-unplaced','world:building-upgraded'])C.events.on(evt,()=>this.requestRefresh());
       C.events?.emit?.('r2:pixel-world-ready',{projection:this.assets.projection,tileWidth:this.layout.tileW,tileHeight:this.layout.tileH,worldWidth:this.layout.worldWidth,worldHeight:this.layout.worldHeight});
     }
     toWorld(x,y){return this.iso.toWorld(x,y,this.layout)}
@@ -104,7 +104,24 @@
        fallback above still runs when it does not, so the game renders with no
        assets/ folder at all. */
     decor(p,d,key){if(!this.hasArt(key))return null;const s=this.sprite(p.x,p.y+9,key).setOrigin(.5,.92).setDepth(d+3);this.ambient.push(s);return s}
-    refresh(){this.snapshot=this.adapter.snapshot();this.layout=this.iso.layout(this.snapshot.width,this.snapshot.height);this.tweens.killTweensOf(this.ambient);this.ambient=[];this.propTiles=new Set();this.buildingRefs.clear();this.children.removeAll(true);this.renderWorld();this.renderSurroundDecor()}
+    /* refresh() destroys and recreates everything on the map. One edit
+       announces itself several ways (road changed, demand changed, economy
+       updated, age transformed...) and each listener used to rebuild the scene,
+       so laying one road tile rebuilt it four times. Listeners ask here
+       instead: requests made while one is pending merge into it, and it runs
+       once the current task has finished, so the whole edit is drawn at once.
+       While the city is off screen nothing is drawn; it is rebuilt once when it
+       comes back (phaser-bootstrap setActive). `after` runs once the rebuild
+       is done, for a system that draws on top of the rebuilt map. */
+    requestRefresh(after){
+      if(typeof after==='function')(this.afterRefresh||(this.afterRefresh=[])).push(after);
+      if(C.phaserCity&&C.phaserCity.active===false){this.refreshStale=true;return}
+      if(this.refreshTimer)return;
+      this.refreshTimer=setTimeout(()=>{this.refreshTimer=0;if(!this.sys?.displayList||!this.adapter)return;
+        if(C.phaserCity&&C.phaserCity.active===false){this.refreshStale=true;return}this.runRefresh()},0)}
+    runRefresh(){this.refresh();const after=this.afterRefresh;this.afterRefresh=null;
+      for(const f of after||[]){try{f(this)}catch(err){console.error('[Codeopolis refresh]',err)}}}
+    refresh(){this.refreshStale=false;this.snapshot=this.adapter.snapshot();this.layout=this.iso.layout(this.snapshot.width,this.snapshot.height);this.tweens.killTweensOf(this.ambient);this.ambient=[];this.propTiles=new Set();this.buildingRefs.clear();this.children.removeAll(true);this.renderWorld();this.renderSurroundDecor()}
     /* The playable grid is a wide, short diamond and no viewport shares that
        shape, so framing it always leaves empty space around it. Fill that with
        the same grass lattice, behind everything, so the city sits in a
@@ -163,4 +180,6 @@
     }
   }
   C.PhaserCityScene=PhaserCityScene;
+  /* For systems outside the scene that change what it draws. */
+  C.requestCityRefresh=function(){const s=C.phaserCity?.game?.scene?.getScene?.('CodeopolisCity');if(!s)return false;if(s.requestRefresh)s.requestRefresh();else s.refresh?.();return true};
 })(window.Codeopolis);

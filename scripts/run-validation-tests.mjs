@@ -28,6 +28,7 @@ const suites = [
   ['solve to city reward link', 'tests/solve-city-reward-link.mjs'],
   ['solve to city payoff', 'tests/city-payoff.mjs'],
   ['sprite art contract', 'tests/sprite-art-contract.mjs'],
+  ['city edit performance', 'tests/city-edit-performance.mjs'],
   ['P5-B citizen schedules and building activity', 'tests/citizen-schedules.mjs'],
   ['P5-C ambient city activity and particles', 'tests/ambient-city-activity.mjs'],
   ['P5-D city events and citizen reactions', 'tests/city-event-reactions.mjs'],
